@@ -62,6 +62,16 @@ def init(configpath):
     # create a Dejavu instance
     return Dejavu(config)
 
+# TV mute interface
+import requests
+harmony_api_server = "http://localhost:8282/hubs/harmony/commands/mute"
+mute_command = {'on': 'on'}
+def mute_tv():
+    try:
+        requests.post(harmony_api_server, data = mute_command)
+    except requests.exceptions.RequestException as e:
+        print(e)
+
 # Recognizer
 class RecognizerThread(threading.Thread):
     def __init__(self, tid):
@@ -79,8 +89,7 @@ class RecognizerThread(threading.Thread):
                         print('O', end='', flush=True)     # strong match
                         if ok_to_mute():
                             print(f'\nHit: [{best_match["song_id"]}] {best_match["song_name"].decode("utf-8")}')
-
-                            # TODO: mute action here
+                            mute_tv()
                     else:
                       print('o', end='', flush=True) # weak match
                 else:
