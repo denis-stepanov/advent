@@ -22,6 +22,7 @@ detection_lock = threading.Lock()
 mute_lock = threading.Lock()
 last_detection_time = datetime.now()
 last_mute_time = datetime.now() - timedelta(seconds=DEAD_TIME)
+tv_muted = False
 
 # Run next detection no earlier that OFFSET seconds
 def ok_to_detect():
@@ -79,6 +80,7 @@ class RecognizerThread(threading.Thread):
         self.tid = tid
         self.djv = init(DEFAULT_CONFIG_FILE)
     def run(self):
+        global tv_muted
         while True:
             # Space the threads in time
             if ok_to_detect():
@@ -89,7 +91,16 @@ class RecognizerThread(threading.Thread):
                         print('O', end='', flush=True)     # strong match
                         if ok_to_mute():
                             print(f'\nHit: [{best_match["song_id"]}] {best_match["song_name"].decode("utf-8")}')
-                            mute_tv()
+                            flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
+                            ad_start = flags & 0b0001
+                            ad_end = flags & 0b0010
+                            if not (ad_start or ad_end) or tv_muted and ad_end or not tv_muted and ad_start:
+                                mute_tv()
+                                tv_muted = not tv_muted
+                                if tv_muted:
+                                    print('TV muted')
+                                else:
+                                    print('TV unmuted')
                     else:
                       print('o', end='', flush=True) # weak match
                 else:
@@ -105,3 +116,7 @@ if __name__ == '__main__':
         thread = RecognizerThread(n)
         thread.start()
     print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
+    if tv_muted:
+        print('TV muted (assumed on startup)')
+    else:
+        print('TV unmuted (assumed on startup)')
