@@ -15,12 +15,15 @@ subparsers = parser.add_subparsers(dest='cmd', required=True, metavar='COMMAND')
 parser_list   = subparsers.add_parser('list', help='list tracks')
 parser_export = subparsers.add_parser('export', help='export tracks')
 parser_import = subparsers.add_parser('import', help='import tracks')
+parser_delete = subparsers.add_parser('delete', help='delete tracks')
 
 parser_list.add_argument  ('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
 parser_export.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
 parser_export.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
 parser_import.add_argument('filter', metavar='FILE', help='.' + FORMAT + ' file to import', nargs='+')
 parser_import.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
+# NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
+parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
 args = parser.parse_args()
 
 conn = psycopg2.connect("host=localhost dbname=dejavu user=dejavu password=dejavu")
@@ -106,6 +109,15 @@ with conn:
                 print()
             else:
                 print("(file not found)")
+
+    if args.cmd == 'delete':
+        cur.execute("DELETE FROM songs WHERE song_name LIKE %s RETURNING song_name", (args.filter.translate({42: 37, 63: 95}),))
+        conn.commit()
+        if cur.rowcount:
+            for song in cur:
+                print(song['song_name'])
+        else:
+            print("No records found")
 
     cur.close()
 conn.close()
