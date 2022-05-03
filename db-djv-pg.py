@@ -47,7 +47,7 @@ with conn:
                 with open(fname, mode='w') as djv_file:
                     djv_writer = csv.writer(djv_file)
                     djv_writer.writerow([FORMAT, FORMAT_VERSION])
-                    djv_writer.writerow([song['song_name'], 1, bytes(song['file_sha1']).hex(), song['total_hashes']])
+                    djv_writer.writerow([song['song_name'], song['fingerprinted'], bytes(song['file_sha1']).hex(), song['total_hashes']])
                     song_id = song['song_id']
 
                     # Fetch fingerprints
@@ -76,9 +76,10 @@ with conn:
                     # TODO: more checks
 
                     song = next(djv_reader)
-                    song_name = song[0]
-                    file_sha1 = song[2]
-                    total_hashes = song[3]
+                    song_name     = song[0]
+                    fingerprinted = song[1]
+                    file_sha1     = song[2]
+                    total_hashes  = song[3]
                     print(song_name, end="")
 
                     cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (song_name,))
@@ -90,7 +91,7 @@ with conn:
                             continue
 
                     cur.execute("INSERT INTO songs (song_name, fingerprinted, file_sha1, total_hashes) VALUES (%s, %s, %s, %s) RETURNING song_id",
-                        (song_name, 1, bytes.fromhex(file_sha1), int(total_hashes)))
+                        (song_name, int(fingerprinted), bytes.fromhex(file_sha1), int(total_hashes)))
                     song_id = int(cur.fetchone()[0])
 
                     for fingerprint in djv_reader:
