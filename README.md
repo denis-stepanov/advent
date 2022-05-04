@@ -35,7 +35,7 @@ The second line describes the jingle:
 ```
 <name>,<fingerprinted>,<file_hash>,<num_fingerprints>
 ```
-`name` is the full name of the jingle, as [defined above](https://github.com/denis-stepanov/advent/edit/main/README.md#jingle-naming-convention) (omitting file extension). It is expected (but not required) that the name as stored in the file corresponds to the file name. `fingerprinted` is a flag `0`/`1` from the Dejavu database; it should read `1` in all regular AdVent usage scenarios. `file_hash` is a SHA1 hash of the audio file once submitted to Dejavu. `num_fingerprints` is a number of fingerprints generated for the jingle.
+`name` is the full name of the jingle, as [defined above](#jingle-naming-convention) (omitting file extension). It is expected (but not required) that the name as stored in the file corresponds to the file name. `fingerprinted` is a flag `0`/`1` from the Dejavu database; it should read `1` in all regular AdVent usage scenarios. `file_hash` is a SHA1 hash of the audio file once submitted to Dejavu. `num_fingerprints` is a number of fingerprints generated for the jingle.
 
 The remaining lines are individual fingerprints. Their number should correspond to the number of fingerprints defined.
 ```
@@ -53,7 +53,7 @@ FR_TF1_220205_EVENING1_2,1,8cf22931d2f8cbfb9439fc0eb6a123bb679b6b16,227
 ```
 ## Database Service Tool (db-djv-pg.py)
 
-New jingles are fingerprinted following the regular Dejavu process (see [Fingerprinting](https://github.com/denis-stepanov/dejavu#fingerprinting)). To facilitate manipulations with jingles database, a service tool is provided. It allows exporting / importing jingles as text files using the format described above. Of the two databases supported by Dejavu (PostgreSQL and MySQL) only PostgreSQL is supported (hence the `-pg` in the name). AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name (see [Naming Convention](https://github.com/denis-stepanov/advent/edit/main/README.md#jingle-naming-convention) above).
+New jingles are fingerprinted following the regular Dejavu process (see [Fingerprinting](https://github.com/denis-stepanov/dejavu#fingerprinting)). To facilitate manipulations with jingles database, a service tool is provided. It allows exporting / importing jingles as text files using the format described above. Of the two databases supported by Dejavu (PostgreSQL and MySQL) only PostgreSQL is supported (hence the `-pg` in the name). AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name (see [Naming Convention](#jingle-naming-convention) above).
 
 The tool allows the following operations on jingles (aka "tracks"):
 
