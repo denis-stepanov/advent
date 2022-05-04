@@ -74,7 +74,8 @@ $ db-djv-pg.py list
 # Export TF1 channel jingles
 $ db-djv-pg.py export "FR_TF1*"
 
-# Import all jingles in the current directory, overwriting existing ones. Note that escaping shall not be used in this case
+# Import all jingles in the current directory, overwriting existing ones
+# Note that escaping shall not be used in this case
 $ db-djv-pg.py import -o *
 
 # Delete one jingle
