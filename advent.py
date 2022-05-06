@@ -3,6 +3,7 @@
 import json
 import threading
 import time
+import subprocess
 from datetime import datetime
 from datetime import timedelta
 from dejavu import Dejavu
@@ -121,7 +122,9 @@ if __name__ == '__main__':
         thread = RecognizerThread(n)
         thread.start()
     print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
+
+    tv_muted = subprocess.run(['pactl', 'get-sink-mute', '@DEFAULT_SINK@'], stdout=subprocess.PIPE).stdout.decode('utf-8') == "Mute: yes\n"
     if tv_muted:
-        print('TV muted (assumed on startup)')
+        print('TV starts muted')
     else:
-        print('TV unmuted (assumed on startup)')
+        print('TV starts unmuted')
