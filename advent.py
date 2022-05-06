@@ -63,15 +63,20 @@ def init(configpath):
     # create a Dejavu instance
     return Dejavu(config)
 
-# TV mute interface
+# TV mute interface (Harmony)
+# TODO: make a base class
 import requests
 harmony_api_server = "http://localhost:8282/hubs/harmony/commands/mute"
 mute_command = {'on': 'on'}
-def mute_tv():
+def mute_tv_harmony():
     try:
         requests.post(harmony_api_server, data = mute_command)
     except requests.exceptions.RequestException as e:
         print(e)
+
+# TV mute interface (PulseAudio)
+def mute_tv():
+    os.system("pactl set-sink-mute @DEFAULT_SINK@ toggle")
 
 # Recognizer
 class RecognizerThread(threading.Thread):
