@@ -1,6 +1,12 @@
 # AdVent
 This program mutes TV commercials by detecting ad jingles in the input audio stream.
 
+Watch AdVent in action:
+
+https://user-images.githubusercontent.com/22733222/174403887-37918d1e-da37-4cf5-9d7b-b04677ce8e2a.mp4
+
+Here AdVent is running next to a TV stream in browser, which user is watching using headphones. When an ad kicks in, Advent cuts the sound.
+
 **!Work in progress!** Incomplete manual, no installation guide... not yet usable by external user, but you've got the idea.
 
 ## Jingle Naming Convention
