@@ -1,13 +1,36 @@
 # AdVent
 This program mutes TV commercials by detecting ad jingles in the input audio stream.
 
-Watch AdVent in action:
+Watch AdVent in action (make sure to turn the video sound on):
 
 https://user-images.githubusercontent.com/22733222/174403887-37918d1e-da37-4cf5-9d7b-b04677ce8e2a.mp4
 
-Here AdVent is running next to a TV stream in browser, which user is watching using headphones. When an ad kicks in, Advent cuts the sound.
+Here AdVent is running next to a TV stream in browser, watched by a user using headphones. When an ad kicks in, AdVent cuts the sound.
+
+Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
 **!Work in progress!** Incomplete manual, no installation guide... not yet usable by external user, but you've got the idea.
+
+## Supported Hardware
+There are many different ways of watching TV these days. Currently supported audio inputs:
+
+* video streaming in browser
+* (planned) optical audio out from a TV
+
+Supported TV controls:
+
+* [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) (when watching TV on Linux)
+* [Logitech Harmony Hub](https://support.myharmony.com/en-es/hub)
+* (could be implemented if there's interest) IrDA TV control (vendor-specific)
+
+Supported actions:
+
+* sound on / off
+* (could be implemented if there's interest) sound fade out / in
+* (could be implemented if there's interest) changing a TV channel
+* ...
+
+It is possible to use unrelated inputs and outputs (e.g., cut a sound on a real TV-set while running AdVent over a TV web cast); however, in this case one has to accept potential time de-sync, which could be quite important (dozens of seconds, depending on a TV feed provider).
 
 ## Jingle Naming Convention
 
