@@ -65,27 +65,42 @@ def init(configpath):
     # create a Dejavu instance
     return Dejavu(config)
 
-# TV mute interface (Harmony)
-# TODO: make a base class
-import requests
-harmony_api_server = "http://localhost:8282/hubs/harmony/commands/mute"
-mute_command = {'on': 'on'}
-def mute_tv_harmony():
-    try:
-        requests.post(harmony_api_server, data = mute_command)
-    except requests.exceptions.RequestException as e:
-        print(e)
+# TV mute interface
+class TVControl:
+
+    def mute(self):
+        pass
 
 # TV mute interface (PulseAudio)
-def mute_tv():
-    os.system("pactl set-sink-mute @DEFAULT_SINK@ toggle")
+class TVControlPulseAudio(TVControl):
+
+    def mute(self):
+        os.system("pactl set-sink-mute @DEFAULT_SINK@ toggle")
+
+# TV mute interface (Harmony)
+import requests
+class TVControlHarmony(TVControl):
+
+    def __init__(self):
+        super().__init()
+        self.api_server = "http://localhost:8282/hubs/harmony/commands/mute"
+        self.mute_command = {'on': 'on'}
+
+    def mute(self):
+        try:
+            requests.post(harmony_api_server, data = mute_command)
+        except requests.exceptions.RequestException as e:
+            print(e)
 
 # Recognizer
 class RecognizerThread(threading.Thread):
-    def __init__(self, tid):
+
+    def __init__(self, tid, tvc):
         threading.Thread.__init__(self)
         self.tid = tid
+        self.tvc = tvc
         self.djv = init(DEFAULT_CONFIG_FILE)
+
     def run(self):
         global tv_muted
         while True:
@@ -102,7 +117,8 @@ class RecognizerThread(threading.Thread):
                             ad_start = flags & 0b0001
                             ad_end = flags & 0b0010
                             if not (ad_start or ad_end) or tv_muted and ad_end or not tv_muted and ad_start:
-                                mute_tv()
+                                tvc.mute_tv()
+                                # TODO: move to class
                                 tv_muted = not tv_muted
                                 if tv_muted:
                                     print('TV muted')
@@ -118,9 +134,12 @@ class RecognizerThread(threading.Thread):
 
 if __name__ == '__main__':
 
+    # TODO: make command line options
+    tv_control = TVControlPulseAudio()
+
     # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
     for n in range(1, SECONDS // OFFSET + 1 + 1):
-        thread = RecognizerThread(n)
+        thread = RecognizerThread(n, tv_control)
         thread.start()
     print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
 
