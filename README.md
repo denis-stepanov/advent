@@ -5,7 +5,7 @@ Watch AdVent in action (make sure to turn the video sound on):
 
 https://user-images.githubusercontent.com/22733222/174403887-37918d1e-da37-4cf5-9d7b-b04677ce8e2a.mp4
 
-Here AdVent is running next to a TV stream in browser, watched by a user using headphones. When an ad kicks in, AdVent cuts the sound.
+Here AdVent is running next to a TV stream in browser, watched by a user using headphones. When an ad kicks in, AdVent cuts the sound. A bit jerky video is a result of me capturing demo video on a ten years old laptop.
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
