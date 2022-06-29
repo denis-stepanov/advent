@@ -24,7 +24,6 @@ detection_lock = threading.Lock()
 mute_lock = threading.Lock()
 last_detection_time = datetime.now()
 last_mute_time = datetime.now() - timedelta(seconds=DEAD_TIME)
-tv_muted = False
 
 # Run next detection no earlier that OFFSET seconds
 def ok_to_detect():
@@ -65,32 +64,49 @@ def init(configpath):
     # create a Dejavu instance
     return Dejavu(config)
 
-# TV mute interface
+# TV interface
 class TVControl:
 
-    def mute(self):
-        pass
+    def __init__(self):
+        self.muted = False
 
-# TV mute interface (PulseAudio)
+    def isMuted(self):
+        return self.muted
+
+    def toggleMute(self):
+        self.muted = not self.muted
+        return self.muted
+
+# TV interface (PulseAudio)
+## TODO: switch to Python API?
 class TVControlPulseAudio(TVControl):
 
-    def mute(self):
-        os.system("pactl set-sink-mute @DEFAULT_SINK@ toggle")
+    def __init__(self):
+        super().__init__()
+        self.muted = subprocess.run(['pactl', 'get-sink-mute', '@DEFAULT_SINK@'], stdout=subprocess.PIPE).stdout.decode('utf-8') == "Mute: yes\n"
 
-# TV mute interface (Harmony)
+    def toggleMute(self):
+        ret = os.system("pactl set-sink-mute @DEFAULT_SINK@ toggle")
+        if os.waitstatus_to_exitcode(ret) == 0:
+            super().toggleMute()
+        return self.isMuted()
+
+# TV interface (Harmony)
 import requests
 class TVControlHarmony(TVControl):
 
     def __init__(self):
-        super().__init()
+        super().__init__()
         self.api_server = "http://localhost:8282/hubs/harmony/commands/mute"
         self.mute_command = {'on': 'on'}
 
-    def mute(self):
+    def toggleMute(self):
         try:
             requests.post(harmony_api_server, data = mute_command)
+            super().toggleMute()
         except requests.exceptions.RequestException as e:
             print(e)
+        return self.isMuted()
 
 # Recognizer
 class RecognizerThread(threading.Thread):
@@ -102,7 +118,6 @@ class RecognizerThread(threading.Thread):
         self.djv = init(DEFAULT_CONFIG_FILE)
 
     def run(self):
-        global tv_muted
         while True:
             # Space the threads in time
             if ok_to_detect():
@@ -116,11 +131,9 @@ class RecognizerThread(threading.Thread):
                             flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
                             ad_start = flags & 0b0001
                             ad_end = flags & 0b0010
+                            tv_muted = self.tvc.isMuted()
                             if not (ad_start or ad_end) or tv_muted and ad_end or not tv_muted and ad_start:
-                                tvc.mute_tv()
-                                # TODO: move to class
-                                tv_muted = not tv_muted
-                                if tv_muted:
+                                if self.tvc.toggleMute() != tv_muted:
                                     print('TV muted')
                                 else:
                                     print('TV unmuted')
@@ -135,16 +148,14 @@ class RecognizerThread(threading.Thread):
 if __name__ == '__main__':
 
     # TODO: make command line options
-    tv_control = TVControlPulseAudio()
-
-    # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
-    for n in range(1, SECONDS // OFFSET + 1 + 1):
-        thread = RecognizerThread(n, tv_control)
-        thread.start()
-    print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
-
-    tv_muted = subprocess.run(['pactl', 'get-sink-mute', '@DEFAULT_SINK@'], stdout=subprocess.PIPE).stdout.decode('utf-8') == "Mute: yes\n"
-    if tv_muted:
+    tvc = TVControlPulseAudio()
+    if tvc.isMuted():
         print('TV starts muted')
     else:
         print('TV starts unmuted')
+
+    # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
+    for n in range(1, SECONDS // OFFSET + 1 + 1):
+        thread = RecognizerThread(n, tvc)
+        thread.start()
+    print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
