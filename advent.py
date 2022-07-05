@@ -5,6 +5,7 @@ import os
 import threading
 import time
 import subprocess
+import argparse
 from datetime import datetime
 from datetime import timedelta
 from dejavu import Dejavu
@@ -24,6 +25,12 @@ detection_lock = threading.Lock()
 mute_lock = threading.Lock()
 last_detection_time = datetime.now()
 last_mute_time = datetime.now() - timedelta(seconds=DEAD_TIME)
+
+# Command-line parser
+parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
+    epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
+parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['pulseaudio', 'harmonyhub'], default='pulseaudio')
+args = parser.parse_args()
 
 # Run next detection no earlier that OFFSET seconds
 def ok_to_detect():
@@ -91,9 +98,9 @@ class TVControlPulseAudio(TVControl):
             super().toggleMute()
         return self.isMuted()
 
-# TV interface (Harmony)
+# TV interface (Harmony Hub)
 import requests
-class TVControlHarmony(TVControl):
+class TVControlHarmonyHub(TVControl):
 
     def __init__(self):
         super().__init__()
@@ -102,7 +109,7 @@ class TVControlHarmony(TVControl):
 
     def toggleMute(self):
         try:
-            requests.post(harmony_api_server, data = mute_command)
+            requests.post(self.api_server, data = self.mute_command)
             super().toggleMute()
         except requests.exceptions.RequestException as e:
             print(e)
@@ -147,8 +154,10 @@ class RecognizerThread(threading.Thread):
 
 if __name__ == '__main__':
 
-    # TODO: make command line options
-    tvc = TVControlPulseAudio()
+    if args.tv_control == 'harmonyhub':
+        tvc = TVControlHarmonyHub()
+    else:
+        tvc = TVControlPulseAudio()
     if tvc.isMuted():
         print('TV starts muted')
     else:
