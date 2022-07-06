@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 import json
-import os
 import threading
 import time
-import subprocess
 import argparse
 from datetime import datetime
 from datetime import timedelta
 from dejavu import Dejavu
 from dejavu.logic.recognizer.microphone_recognizer import MicrophoneRecognizer
+from tv_control.TVControlPulseAudio import TVControlPulseAudio
+from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 
 # Settings
 DEFAULT_CONFIG_FILE = "dejavu.cnf.SAMPLE"
@@ -70,50 +70,6 @@ def init(configpath):
 
     # create a Dejavu instance
     return Dejavu(config)
-
-# TV interface
-class TVControl:
-
-    def __init__(self):
-        self.muted = False
-
-    def isMuted(self):
-        return self.muted
-
-    def toggleMute(self):
-        self.muted = not self.muted
-        return self.muted
-
-# TV interface (PulseAudio)
-## TODO: switch to Python API?
-class TVControlPulseAudio(TVControl):
-
-    def __init__(self):
-        super().__init__()
-        self.muted = subprocess.run(['pactl', 'get-sink-mute', '@DEFAULT_SINK@'], stdout=subprocess.PIPE).stdout.decode('utf-8') == "Mute: yes\n"
-
-    def toggleMute(self):
-        ret = os.system("pactl set-sink-mute @DEFAULT_SINK@ toggle")
-        if os.waitstatus_to_exitcode(ret) == 0:
-            super().toggleMute()
-        return self.isMuted()
-
-# TV interface (Harmony Hub)
-import requests
-class TVControlHarmonyHub(TVControl):
-
-    def __init__(self):
-        super().__init__()
-        self.api_server = "http://localhost:8282/hubs/harmony/commands/mute"
-        self.mute_command = {'on': 'on'}
-
-    def toggleMute(self):
-        try:
-            requests.post(self.api_server, data = self.mute_command)
-            super().toggleMute()
-        except requests.exceptions.RequestException as e:
-            print(e)
-        return self.isMuted()
 
 # Recognizer
 class RecognizerThread(threading.Thread):
