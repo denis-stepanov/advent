@@ -12,6 +12,7 @@ from tv_control.TVControlPulseAudio import TVControlPulseAudio
 from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 
 # Settings
+VERSION="0.4-beta"
 DEFAULT_CONFIG_FILE = "dejavu.cnf.SAMPLE"
 OFFSET = 1
 SECONDS = 3
@@ -29,6 +30,7 @@ last_mute_time = datetime.now() - timedelta(seconds=DEAD_TIME)
 # Command-line parser
 parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
     epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
+parser.add_argument('-v', '--version', action='version', version=VERSION)
 parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['pulseaudio', 'harmonyhub'], default='pulseaudio')
 args = parser.parse_args()
 
