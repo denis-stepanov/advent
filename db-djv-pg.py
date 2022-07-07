@@ -26,7 +26,7 @@ parser_import.add_argument('-o', '--overwrite', action='store_true', help='overw
 parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
 args = parser.parse_args()
 
-conn = psycopg2.connect("host=localhost dbname=dejavu user=dejavu password=dejavu")
+conn = psycopg2.connect("host=localhost dbname=advent user=advent password=advent")
 
 with conn:
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)

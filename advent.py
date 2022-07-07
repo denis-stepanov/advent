@@ -12,12 +12,22 @@ from tv_control.TVControlPulseAudio import TVControlPulseAudio
 from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 
 # Settings
-VERSION="0.4.0"
-DEFAULT_CONFIG_FILE = "dejavu.cnf.SAMPLE"
+VERSION="0.5-beta"
 OFFSET = 1
 SECONDS = 3
 MATCH_CONFIDENCE = 0.2
 DEAD_TIME = 30
+
+# Dejavu config
+DJV_CONFIG = {
+    "database": {
+        "host": "localhost",
+        "user": "advent",
+        "password": "advent",
+        "database": "advent"
+    },
+    "database_type" : "postgres"
+}
 
 # Globals
 OFFSET_TD = timedelta(seconds=OFFSET)
@@ -58,21 +68,6 @@ def ok_to_mute():
     mute_lock.release()
     return ok
 
-# (c) dejavu
-def init(configpath):
-    """
-    Load config from a JSON file
-    """
-    try:
-        with open(configpath) as f:
-            config = json.load(f)
-    except IOError as err:
-        print(f"Cannot open configuration: {str(err)}. Exiting")
-        sys.exit(1)
-
-    # create a Dejavu instance
-    return Dejavu(config)
-
 # Recognizer
 class RecognizerThread(threading.Thread):
 
@@ -80,7 +75,7 @@ class RecognizerThread(threading.Thread):
         threading.Thread.__init__(self)
         self.tid = tid
         self.tvc = tvc
-        self.djv = init(DEFAULT_CONFIG_FILE)
+        self.djv = Dejavu(DJV_CONFIG)
 
     def run(self):
         while True:
