@@ -12,7 +12,7 @@ from tv_control.TVControlPulseAudio import TVControlPulseAudio
 from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 
 # Settings
-VERSION="0.4-beta"
+VERSION="0.4.0"
 DEFAULT_CONFIG_FILE = "dejavu.cnf.SAMPLE"
 OFFSET = 1
 SECONDS = 3
