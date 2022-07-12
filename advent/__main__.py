@@ -8,11 +8,12 @@ from datetime import datetime
 from datetime import timedelta
 from dejavu import Dejavu
 from dejavu.logic.recognizer.microphone_recognizer import MicrophoneRecognizer
+from advent import __version__
 from tv_control.TVControlPulseAudio import TVControlPulseAudio
 from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 
 # Settings
-VERSION="0.5-beta"
+VERSION=__version__
 OFFSET = 1
 SECONDS = 3
 MATCH_CONFIDENCE = 0.2

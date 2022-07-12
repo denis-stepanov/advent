@@ -2,7 +2,6 @@ from setuptools import setup
 
 setup(
     name="advent",
-    version="0.5-beta",
     description="Vent intrusive TV ads",
     url="https://github.com/denis-stepanov/advent",
     license="GNU GPL v3.0",
