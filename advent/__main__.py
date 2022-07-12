@@ -37,13 +37,6 @@ mute_lock = threading.Lock()
 last_detection_time = datetime.now()
 last_mute_time = datetime.now() - timedelta(seconds=DEAD_TIME)
 
-# Command-line parser
-parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
-    epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
-parser.add_argument('-v', '--version', action='version', version=VERSION)
-parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['pulseaudio', 'harmonyhub'], default='pulseaudio')
-args = parser.parse_args()
-
 # Run next detection no earlier that OFFSET seconds
 def ok_to_detect():
     global last_detection_time
@@ -104,20 +97,26 @@ class RecognizerThread(threading.Thread):
             else:
                 time.sleep(0.1)
 
+# main()
 
-if __name__ == '__main__':
+## Command-line parser
+parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
+    epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
+parser.add_argument('-v', '--version', action='version', version=VERSION)
+parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['pulseaudio', 'harmonyhub'], default='pulseaudio')
+args = parser.parse_args()
 
-    if args.tv_control == 'harmonyhub':
-        tvc = TVControlHarmonyHub()
-    else:
-        tvc = TVControlPulseAudio()
-    if tvc.isMuted():
-        print('TV starts muted')
-    else:
-        print('TV starts unmuted')
+if args.tv_control == 'harmonyhub':
+    tvc = TVControlHarmonyHub()
+else:
+    tvc = TVControlPulseAudio()
+if tvc.isMuted():
+    print('TV starts muted')
+else:
+    print('TV starts unmuted')
 
-    # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
-    for n in range(1, SECONDS // OFFSET + 1 + 1):
-        thread = RecognizerThread(n, tvc)
-        thread.start()
-    print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
+# Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
+for n in range(1, SECONDS // OFFSET + 1 + 1):
+    thread = RecognizerThread(n, tvc)
+    thread.start()
+print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
