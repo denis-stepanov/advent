@@ -1,1 +1,1 @@
-__version__="0.5-beta"
+__version__="0.5b0"
