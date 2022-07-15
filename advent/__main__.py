@@ -5,6 +5,7 @@ import json
 import threading
 import time
 import argparse
+from pkg_resources import Requirement, resource_filename
 from datetime import datetime
 from datetime import timedelta
 from dejavu import Dejavu
@@ -21,15 +22,8 @@ MATCH_CONFIDENCE = 0.2
 DEAD_TIME = 30
 
 # Dejavu config
-DJV_CONFIG = {
-    "database": {
-        "host": "localhost",
-        "user": "advent",
-        "password": "advent",
-        "database": "advent"
-    },
-    "database_type" : "postgres"
-}
+with open(resource_filename(Requirement.parse("PyDejavu"),"dejavu_py/dejavu.cnf")) as dejavu_cnf:
+    DJV_CONFIG = json.load(dejavu_cnf)
 
 # Globals
 OFFSET_TD = timedelta(seconds=OFFSET)
