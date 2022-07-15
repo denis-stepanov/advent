@@ -9,7 +9,7 @@ Here AdVent is running next to a TV stream in browser, watched by a user using h
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
-**!Work in progress!** Incomplete manual, no installation guide... not yet usable by external user, but you've got the idea.
+AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
 
 ## Supported Hardware
 There are many different ways of watching TV these days. Currently supported audio inputs:
@@ -32,11 +32,11 @@ Supported actions:
 
 It is possible to use unrelated inputs and outputs (e.g., cut a sound on a real TV-set while running AdVent over a TV web cast); however, in this case one has to accept potential time de-sync, which could be quite important (dozens of seconds, depending on a TV feed provider).
 
-## Jingle Database
+## Usage
 
-AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [DejaVu](https://github.com/denis-stepanov/dejavu). A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions. See its [README](https://github.com/denis-stepanov/advent-db/blob/main/README.md) for installation instructions.
+### AdVent (advent)
 
-### Database Service Tool (db-djv-pg.py)
+### Database Service Tool (db-djv-pg)
 
 New jingles are fingerprinted following the regular Dejavu process (see [Fingerprinting](https://github.com/denis-stepanov/dejavu#fingerprinting)). To facilitate manipulations with jingles database, a service tool is provided. It allows exporting / importing jingles as text files using the format described above. Of the two databases supported by Dejavu (PostgreSQL and MySQL) only PostgreSQL is supported (hence the `-pg` in the name). AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name.
 
@@ -54,17 +54,17 @@ The tool by default does not overwrite existing tracks in any direction; if this
 Examples of use:
 ```
 # List database content
-$ db-djv-pg.py list
+$ db-djv-pg list
 
 # Export TF1 channel jingles
-$ db-djv-pg.py export "FR_TF1*"
+$ db-djv-pg export "FR_TF1*"
 
 # Import all jingles in the current directory, overwriting existing ones
 # Note that escaping shall not be used in this case
-$ db-djv-pg.py import -o *
+$ db-djv-pg import -o *
 
 # Delete one jingle
-$ db-djv-pg.py delete FR_TF1_220205_EVENING1_2
+$ db-djv-pg delete FR_TF1_220205_EVENING1_2
 ```
 
-See `db-djv-pg.py -h` for exact synopsis.
+See `db-djv-pg -h` for exact synopsis.
