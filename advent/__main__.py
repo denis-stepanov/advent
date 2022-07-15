@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import json
 import threading
 import time
@@ -121,3 +122,4 @@ for n in range(1, SECONDS // OFFSET + 1 + 1):
     thread = RecognizerThread(n, tvc)
     thread.start()
 print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
+sys.exit(0)
