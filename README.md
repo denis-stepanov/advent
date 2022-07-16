@@ -36,13 +36,35 @@ It is possible to use unrelated inputs and outputs (e.g., cut a sound on a real 
 
 ### AdVent (advent)
 
-Coming soon.
+Runnig AdVent is as simple as:
+
+```
+(advent-pyenv) $ advent
+```
+
+The output should resemble to this:
+
+```
+TV starts unmuted
+Started 4 listening thread(s)
+.oooooooo.oooooo
+```
+
+AdVent prints every second a character reflecting recognition progress. Meaning of characters:
+
+* `.` - no match (usually when there's silence or no input connected at all)
+* `o` - weak match (quite normal on any input)
+* `O` - strong match, also called a "hit". When a hit happens, AdVent prints hit details and may take some action on a TV
+
+There is no standard way of exiting the application, as it is designed to run forever. If you need to exit, press `Ctrl-C`; if that does not work, try harder with `Ctrl-\`.
+
+The default TV control is `pulseaudio`; you can alter this with `-t` option; e.g. `-t harmonyhub` will select HarmonyHub control instead. See `advent -h` for full synopsys.
 
 ### Database Service Tool (db-djv-pg)
 
-New jingles are fingerprinted following the regular Dejavu process (see [Fingerprinting](https://github.com/denis-stepanov/dejavu#fingerprinting)). To facilitate manipulations with jingles database, a service tool is provided. It allows exporting / importing jingles as text files using the format described above. Of the two databases supported by Dejavu (PostgreSQL and MySQL) only PostgreSQL is supported (hence the `-pg` in the name). AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name.
+New jingles are fingerprinted following the regular Dejavu process (see [Fingerprinting](https://github.com/denis-stepanov/dejavu#fingerprinting)). To facilitate manipulations with jingles database, a service tool is provided. It allows exporting / importing jingles as text files using the format described above. Of the two databases supported by Dejavu only PostgreSQL is supported (hence the `-pg` in the name). AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name.
 
-The tool allows the following operations on jingles (aka "tracks"):
+The tool allows for the following operations on jingles (aka "tracks"):
 
 - `list` - list tracks available in the database
 - `export` - export tracks from database to files
@@ -77,9 +99,9 @@ See `db-djv-pg -h` for exact synopsis.
 
 Dejavu supports MySQL and PostgreSQL, with default being MySQL. Unfortunately(?), I am much more fluent with PostgreSQL, so AdVent supports PostgreSQL only (sorry MySQL folks :-) ). Setup process is a bit long, mostly because PostgreSQL and Dejavu are not readily usable pieces of software. Some of these steps are covered in (a bit dated) [Dejavu original manual](https://github.com/denis-stepanov/dejavu/blob/master/INSTALLATION.md), but I reiterate here for completeness.
 
-`#` prompt means execution from root
-
-`$` prompt means execution from user
+* `#` prompt means execution from root
+* `$` prompt means execution from user
+* `(advent-pyenv) $` prompt means execution from user in a [Python virtual environment](https://docs.python.org/3/library/venv.html)
 
 1) Install non-Python Dejavu dependencies:
 
@@ -166,7 +188,7 @@ Please specify an extension if you'd like to fingerprint a directory!
 (advent-pyenv) $
 ```
 
-Now it's data's turn. Pull an load the latest snapshot of ad fingerprints. See more details on this in [AdVent DB pages](https://github.com/denis-stepanov/advent-db#database-population-or-update-for-regular-users):
+Now it's data's turn. Pull and load the latest snapshot of ad fingerprints. See more details on this in [AdVent DB pages](https://github.com/denis-stepanov/advent-db#database-population-or-update-for-regular-users):
 
 ```
 (advent-pyenv) $ git clone https://github.com/denis-stepanov/advent-db.git
