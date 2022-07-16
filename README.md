@@ -47,7 +47,7 @@ The output should resemble to this:
 ```
 TV starts unmuted
 Started 4 listening thread(s)
-.oooooooo.oooooo
+.oooooooo.ooooooooooooo..oo
 ```
 
 AdVent prints every second a character reflecting recognition progress. Meaning of characters:
@@ -78,17 +78,17 @@ The tool by default does not overwrite existing tracks in any direction; if this
 Examples of use:
 ```
 # List database content
-$ db-djv-pg list
+(advent-pyenv) $ db-djv-pg list
 
 # Export TF1 channel jingles
-$ db-djv-pg export "FR_TF1*"
+(advent-pyenv) $ db-djv-pg export "FR_TF1*"
 
 # Import all jingles in the current directory, overwriting existing ones
 # Note that escaping shall not be used in this case
-$ db-djv-pg import -o *
+(advent-pyenv) $ db-djv-pg import -o *
 
 # Delete one jingle
-$ db-djv-pg delete FR_TF1_220205_EVENING1_2
+(advent-pyenv) $ db-djv-pg delete FR_TF1_220205_EVENING1_2
 ```
 
 See `db-djv-pg -h` for exact synopsis.
