@@ -36,6 +36,8 @@ It is possible to use unrelated inputs and outputs (e.g., cut a sound on a real 
 
 ### AdVent (advent)
 
+Coming soon.
+
 ### Database Service Tool (db-djv-pg)
 
 New jingles are fingerprinted following the regular Dejavu process (see [Fingerprinting](https://github.com/denis-stepanov/dejavu#fingerprinting)). To facilitate manipulations with jingles database, a service tool is provided. It allows exporting / importing jingles as text files using the format described above. Of the two databases supported by Dejavu (PostgreSQL and MySQL) only PostgreSQL is supported (hence the `-pg` in the name). AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name.
@@ -68,3 +70,113 @@ $ db-djv-pg delete FR_TF1_220205_EVENING1_2
 ```
 
 See `db-djv-pg -h` for exact synopsis.
+
+## Installation
+
+### Installation on a Recent Fedora (F36)
+
+Dejavu supports MySQL and PostgreSQL, with default being MySQL. Unfortunately(?), I am much more fluent with PostgreSQL, so AdVent supports PostgreSQL only (sorry MySQL folks :-) ). Setup process is a bit long, mostly because PostgreSQL and Dejavu are not readily usable pieces of software. Some of these steps are covered in (a bit dated) [Dejavu original manual](https://github.com/denis-stepanov/dejavu/blob/master/INSTALLATION.md), but I reiterate here for completeness.
+
+`#` prompt means execution from root
+
+`$` prompt means execution from user
+
+1) Install non-Python Dejavu dependencies:
+
+```
+# dnf install postgresql-server ffmpeg
+```
+
+2) Configure services. If you happen to have PostgreSQL running already, skip this step.
+
+Default PostgreSQL in Fedora has a ridiculously conservative setup. So you have quite some work to get it up and running.
+
+Initialize PostgreSQL:
+
+```
+# postgresql-setup --initdb
+```
+
+Allow localhost connections using password. As `root`, edit `/var/lib/pgsql/data/pg_hba.conf` to change `ident` method to `md5`:
+
+```
+< host    all             all             127.0.0.1/32            ident
+---
+> host    all             all             127.0.0.1/32            md5
+```
+
+Add PostgreSQL to auto-start and run it:
+
+```
+# systemctl enable postgresql
+# systemctl start postgresql
+```
+
+2a) One more word on services. Recent Fedoras bring up a particularly agressive OOMD (out-of-memory killer daemon). Despite the name, memory is not its only concern. It regularly tries shooting to death my busy Firefox in the midst of a morning coffee sip. Because AdVent is a CPU-intensive application, OOMD will try taking its life too. If you observe AdVent silently exiting after some time, you know the reason. Probably, there is a way to make an exception, but in absence of a better solution, I just disarm:
+
+```
+# systemctl stop systemd-oomd
+# systemctl mask systemd-oomd
+```
+
+3) Set up a database for AdVent:
+
+Create a database user:
+
+```
+# sudo -u postgres createuser -P advent
+Enter password for new role: (enter "advent")
+Enter it again: (enter "advent")
+#
+```
+
+Create an empty database with `advent` user owning it:
+
+```
+# sudo -u postgres createdb -O advent advent
+```
+
+Whoooah... so much for PostgreSQL.
+
+4) Install Python virtual environment for Dejavu. The latest Dejavu mainstream does not run on Python 3.10 shipped with Fedora 36 (pull requests are welcome), so we need a virtual environment for Python 3.7:
+
+```
+# dnf install python3.7 python3-virtualenv
+$ python3.7 -m venv --system-site-packages advent-pyenv
+$ source advent-pyenv/bin/activate
+(advent-pyenv) $
+```
+
+5) Install Dejavu and AdVent:
+
+[My clone of Dejavu](https://github.com/denis-stepanov/dejavu) includes several non-functional adjustments allowing better co-habitation with AdVent, so I recommend using it instead of the upstream copy:
+
+```
+(advent-pyenv) $ pip install https://github.com/denis-stepanov/dejavu/zipball/tags/0.1.3-ds1.1.1   # or any latest tag
+(advent-pyenv) $ pip install https://github.com/denis-stepanov/advent/zipball/main  # or any stable tag
+```
+
+6) Populate AdVent database:
+
+At this moment the database is void of any schema, not to say data. One can trick Dejavu into creating a database schema by asking it to scan something. The error message is not important:
+
+```
+(advent-pyenv) $ dejavu -f .
+Please specify an extension if you'd like to fingerprint a directory!
+(advent-pyenv) $
+```
+
+Now it's data's turn. Pull an load the latest snapshot of ad fingerprints. See more details on this in [AdVent DB pages](https://github.com/denis-stepanov/advent-db#database-population-or-update-for-regular-users):
+
+```
+(advent-pyenv) $ git clone https://github.com/denis-stepanov/advent-db.git
+(advent-pyenv) $ find advent-db -name "*.djv" | xargs db-djv-pg import
+```
+
+If you use PulseAudio for TV control (default), you are all set. If you would like to use HarmonyHub, you are still not done!
+
+(HarmonyHub instruction coming soon)
+
+### Installation on Raspbian
+
+Coming soon.
