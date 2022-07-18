@@ -21,11 +21,8 @@ SECONDS = 3
 MATCH_CONFIDENCE = 0.2
 DEAD_TIME = 30
 
-# Dejavu config
-with open(resource_filename(Requirement.parse("PyDejavu"),"dejavu_py/dejavu.cnf")) as dejavu_cnf:
-    DJV_CONFIG = json.load(dejavu_cnf)
-
 # Globals
+DJV_CONFIG = None
 OFFSET_TD = timedelta(seconds=OFFSET)
 DEAD_TIME_TD = timedelta(seconds=DEAD_TIME)
 detection_lock = threading.Lock()
@@ -93,27 +90,38 @@ class RecognizerThread(threading.Thread):
             else:
                 time.sleep(0.1)
 
-# main()
+def main():
+    global DJV_CONFIG
 
-## Command-line parser
-parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
-    epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
-parser.add_argument('-v', '--version', action='version', version=VERSION)
-parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['pulseaudio', 'harmonyhub'], default='pulseaudio')
-args = parser.parse_args()
+    ## Command-line parser
+    parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
+        epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
+    parser.add_argument('-v', '--version', action='version', version=VERSION)
+    parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['pulseaudio', 'harmonyhub'], default='pulseaudio')
+    args = parser.parse_args()
 
-if args.tv_control == 'harmonyhub':
-    tvc = TVControlHarmonyHub()
-else:
-    tvc = TVControlPulseAudio()
-if tvc.isMuted():
-    print('TV starts muted')
-else:
-    print('TV starts unmuted')
+    # Dejavu config
+    with open(resource_filename(Requirement.parse("PyDejavu"),"dejavu_py/dejavu.cnf")) as dejavu_cnf:
+        DJV_CONFIG = json.load(dejavu_cnf)
 
-# Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
-for n in range(1, SECONDS // OFFSET + 1 + 1):
-    thread = RecognizerThread(n, tvc)
-    thread.start()
-print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
-sys.exit(0)
+        # TV controls
+        if args.tv_control == 'harmonyhub':
+            tvc = TVControlHarmonyHub()
+        else:
+            tvc = TVControlPulseAudio()
+        if tvc.isMuted():
+            print('TV starts muted')
+        else:
+            print('TV starts unmuted')
+
+        # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
+        for n in range(1, SECONDS // OFFSET + 1 + 1):
+            thread = RecognizerThread(n, tvc)
+            thread.start()
+        print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
+        return 0
+
+    return 1
+
+if __name__ == '__main__':
+    main()
