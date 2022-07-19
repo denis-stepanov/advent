@@ -9,17 +9,18 @@ Here AdVent is running next to a TV stream in browser, watched by a user using h
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
-AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
+AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Video input is not used. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
 
-## Supported Hardware
+## Supported Environment
 There are many different ways of watching TV these days. Currently supported audio inputs:
 
-* video streaming in browser
-* (planned) optical audio out from a TV
+* video streaming in browser (via [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) monitor)
+* [S/PDIF](https://en.wikipedia.org/wiki/S/PDIF) digital audio out from a TV-set: optical [TOSLINK](https://en.wikipedia.org/wiki/TOSLINK) or electrical [RCA](https://en.wikipedia.org/wiki/RCA_connector) (RCA untested but should work)
+* (could be implemented if there's interest) microphone
 
 Supported TV controls:
 
-* [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) (when watching TV on Linux)
+* PulseAudio (when watching TV on Linux)
 * [Logitech Harmony Hub](https://support.myharmony.com/en-es/hub)
 * (could be implemented if there's interest) IrDA TV control (vendor-specific)
 
@@ -30,7 +31,15 @@ Supported actions:
 * (could be implemented if there's interest) changing a TV channel
 * ...
 
-It is possible to use unrelated inputs and outputs (e.g., cut a sound on a real TV-set while running AdVent over a TV web cast); however, in this case one has to accept potential time de-sync, which could be quite important (dozens of seconds, depending on a TV feed provider).
+Supported OS:
+
+* recent Fedora (tested on Fedora 36)
+* Raspbian 10
+* (Windows is not supported but the majority of software is in Python; should work as is, with the exception of TV controls module which would need contributions and testing)
+
+Not all combinations are supported; see below for the details.
+
+It is possible to use unrelated inputs and outputs (e.g., to cut a sound on a real TV-set while running AdVent over a TV web cast); however, in this case one has to accept potential time de-sync, which could be quite important (dozens of seconds, depending on a TV feed provider).
 
 ## Usage
 
