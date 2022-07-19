@@ -13,8 +13,8 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "advent = advent.__main__:main",
-            "db-djv-pg = db_djv_pg.__main__:main"
+            "advent = advent.advent:main",
+            "db-djv-pg = db_djv_pg.db_djv_pg:main"
         ]
     },
     install_requires=[
