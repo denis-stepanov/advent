@@ -104,7 +104,7 @@ See `db-djv-pg -h` for exact synopsis.
 
 ## Installation
 
-### Installation on a Recent Fedora (F36)
+The installation was tested on Fedora and Raspbian. The differences are marked below accordingly.
 
 Dejavu supports MySQL and PostgreSQL, with default being MySQL. Unfortunately(?), I am much more fluent with PostgreSQL, so AdVent supports PostgreSQL only (sorry MySQL folks :-) ). Setup process is a bit long, mostly because PostgreSQL and Dejavu are not readily usable pieces of software. Some of these steps are covered in (a bit dated) [Dejavu original manual](https://github.com/denis-stepanov/dejavu/blob/master/INSTALLATION.md), but I reiterate here for completeness.
 
@@ -112,15 +112,23 @@ Dejavu supports MySQL and PostgreSQL, with default being MySQL. Unfortunately(?)
 * `$` prompt means execution from user
 * `(advent-pyenv) $` prompt means execution from user in a [Python virtual environment](https://docs.python.org/3/library/venv.html)
 
-1) Install non-Python Dejavu dependencies:
+### Step 1: Install non-Python Dejavu dependencies
 
+Fedora:
 ```
-# dnf install postgresql-server ffmpeg
+# dnf install postgresql-server ffmpeg portaudio-devel
 ```
 
-2) Configure services. If you happen to have PostgreSQL running already, skip this step.
+Raspbian:
+```
+$ sudo apt-get install postgresql-11 ffmpeg libatlas-base-dev
+```
 
-Default PostgreSQL in Fedora has a ridiculously conservative setup. So you have quite some work to get it up and running.
+### Step 2: Configure services
+
+If you happen to have PostgreSQL running already, skip this step.
+
+Default PostgreSQL in Fedora has a ridiculously conservative setup, so you have some work to do to get it up and running. On Raspbian, this step is automatic; just skip it.
 
 Initialize PostgreSQL:
 
@@ -143,14 +151,14 @@ Add PostgreSQL to auto-start and run it:
 # systemctl start postgresql
 ```
 
-2a) One more word on services. Recent Fedoras bring up a particularly agressive OOMD (out-of-memory killer daemon). Despite the name, memory is not its only concern. It regularly tries shooting to death my busy Firefox in the midst of a morning coffee sip. Because AdVent is a CPU-intensive application, OOMD will try taking its life too. If you observe AdVent silently exiting after some time, you know the reason. Probably, there is a way to make an exception, but in absence of a better solution, I just disarm:
+One more word on services. Recent Fedoras bring up a particularly agressive OOMD (out-of-memory killer daemon). Despite the name, memory is not its only concern. It regularly tries shooting to death my busy Firefox in the midst of a morning coffee sip. Because AdVent is a CPU-intensive application, OOMD will try taking its life too. If you observe AdVent silently exiting after some time, you know the reason. Probably, there is a way to make an exception, but in absence of a better solution, I just disarm:
 
 ```
 # systemctl stop systemd-oomd
 # systemctl mask systemd-oomd
 ```
 
-3) Set up a database for AdVent:
+### Step 3: Set up a database for AdVent
 
 Create a database user:
 
@@ -169,25 +177,36 @@ Create an empty database with `advent` user owning it:
 
 Whoooah... so much for PostgreSQL.
 
-4) Install Python virtual environment for Dejavu. The latest Dejavu mainstream does not run on Python 3.10 shipped with Fedora 36 (pull requests are welcome), so we need a virtual environment for Python 3.7:
+On Raspbian, this step is the same, but you do not have to be `root` to run `sudo`.
 
+### Step 4: Install Python virtual environment for Dejavu
+
+The latest Dejavu mainstream does not run on Python 3.10 shipped with Fedora 36 (pull requests are welcome), so we need a virtual environment for Python 3.7:
+
+Fedora:
 ```
 # dnf install python3.7 python3-virtualenv
+```
+
+On Raspbian 10, Python is already - quite conveniently - 3.7, and support for virtual environment is installed by default.
+
+Create virtual environment:
+```
 $ python3.7 -m venv --system-site-packages advent-pyenv
 $ source advent-pyenv/bin/activate
 (advent-pyenv) $
 ```
 
-5) Install Dejavu and AdVent:
+### Step 5: Install Dejavu and AdVent
 
 [My clone of Dejavu](https://github.com/denis-stepanov/dejavu) includes several non-functional adjustments allowing better co-habitation with AdVent, so I recommend using it instead of the upstream copy:
 
 ```
-(advent-pyenv) $ pip install https://github.com/denis-stepanov/dejavu/zipball/tags/0.1.3-ds1.1.1   # or any latest tag
+(advent-pyenv) $ pip install https://github.com/denis-stepanov/dejavu/zipball/tags/0.1.3-ds1.1.2   # or any latest tag
 (advent-pyenv) $ pip install https://github.com/denis-stepanov/advent/zipball/main  # or any stable tag
 ```
 
-6) Populate AdVent database:
+### Step 6: Populate AdVent database
 
 At this moment the database is void of any schema, not to say data. One can trick Dejavu into creating a database schema by asking it to scan something. The error message is not important:
 
@@ -207,7 +226,3 @@ Now it's data's turn. Pull and load the latest snapshot of ad fingerprints. See 
 If you use PulseAudio for TV control (default), you are all set. If you would like to use HarmonyHub, you are still not done!
 
 (HarmonyHub instruction coming soon)
-
-### Installation on Raspbian
-
-Coming soon.
