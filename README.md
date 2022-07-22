@@ -11,6 +11,10 @@ Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
 AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Video input is not used. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
 
+AdVent on Raspberry Pi controlling a Sony BRAVIA TV-set:
+
+![rp2](https://user-images.githubusercontent.com/22733222/180578361-5f08129c-bd5b-498e-8b03-324fc9c2b74d.jpg)
+
 ## Supported Environment
 There are many different ways of watching TV these days. Currently supported audio inputs:
 
