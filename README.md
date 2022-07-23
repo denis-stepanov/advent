@@ -11,7 +11,7 @@ Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
 AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Video input is not used. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
 
-AdVent on Raspberry Pi controlling a Sony BRAVIA TV-set:
+AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
 
 ![AdVent on Raspberry Pi](https://user-images.githubusercontent.com/22733222/180578361-5f08129c-bd5b-498e-8b03-324fc9c2b74d.jpg)
 
@@ -71,7 +71,11 @@ AdVent prints every second a character reflecting recognition progress. Meaning 
 
 There is no standard way of exiting the application, as it is designed to run forever. If you need to exit, press `Ctrl-C`; if that does not work, try harder with `Ctrl-\`.
 
-The default TV control is `pulseaudio`; you can alter this with `-t` option; e.g. `-t harmonyhub` will select HarmonyHub control instead. See `advent -h` for full synopsys.
+The default TV control is `pulseaudio`; you can alter this with `-t` option; e.g. `-t harmonyhub` will select HarmonyHub control instead.
+
+There is no option to select an audio source; AdVent takes a system default. See more details on audio sources in a [dedicated section](#audio-sources).
+
+Refer to `advent -h` for full synopsys.
 
 ### Database Service Tool (db-djv-pg)
 
@@ -104,7 +108,7 @@ Examples of use:
 (advent-pyenv) $ db-djv-pg delete FR_TF1_220205_EVENING1_2
 ```
 
-See `db-djv-pg -h` for exact synopsis.
+Refer to `db-djv-pg -h` for exact synopsis.
 
 ## Installation
 
@@ -233,6 +237,14 @@ If you use PulseAudio for TV control (default), you are all set. If you would li
 
 ## Audio Inputs
 
+AdVent takes a system-wide default audio source as input. On modern Linux it is usually PulseAudio who takes care of sound services. If the system-wide source is not a suitable one, it has to be configured externally to AdVent (e.g., via `pavucontrol`). You can quickly check the list of available sources with:
+
+```
+$ pactl list sources short
+```
+
+Sections below detail particular configurations.
+
 ### PulseAudio
 
 (coming soon)
@@ -247,7 +259,7 @@ Setup compiled on the basis of the [original installation instruction](https://w
 
 #### TV Setup
 
-This sound card does not support Dolby Digital, so if the channels of interest in your area broadcast in Dolby, you need to enforce PCM on TV side. See the instruction for your TV-set. In the case of Sony BRAVIA, `Digital Setup` > `Audio Setup` > `Optical Out`: change `Auto` to `PCM`.
+This sound card does not support Dolby Digital, so if the channels of interest in your area broadcast in Dolby, you need to enforce PCM on TV side. You can find out the audio format by looking at the TV channel information (`Info`, `Details`, etc). Refer to the instruction for your TV-set. In the case of Sony BRAVIA, adjusting the format can be done in `Digital Setup` > `Audio Setup` > `Optical Out`: change `Auto` to `PCM`.
 
 #### Raspberry Pi Setup
 
@@ -280,7 +292,7 @@ Now reboot:
 $ sudo reboot
 ```
 
-Testing:
+#### Testing
 
 ```
 $ arecord -l
@@ -305,8 +317,10 @@ The resulting file `test.wav` recorded in 44.1 kHz shall reproduce TV sound corr
 
 Note 1: HiFiBerry manuals recommend disabling all other audio devices, so you won't be able to listen to the recorded file right on the Pi. I just copy the file to another machine where I can playback. If this behavior is undesirable, play around with options in `/boot/config.txt`. Pay attention that the default input device remains the sound card; otherwise AdVent will not work.
 
-Note 2: HifiBerry manuals strongly recommend against using PulseAudio in general, and against software re-sampling in particular, citing performance concerns. From my experience, PulseAudio is easy to configure (much easier than ALSA) and works well, but indeed, would consume ~20% of CPU (the other 80% would be eaten up by AdVent). It is possible to improve this by turning PulseAudio off and going down to ALSA level; however, I did not pursue these roads too much:
+Note 2: HifiBerry manuals strongly recommend against using PulseAudio in general, and against software re-sampling in particular, citing performance concerns. From my experience, PulseAudio is easy to configure (much easier than ALSA) and works well, but indeed, would consume ~20% of CPU (the other 80% would be eaten up by AdVent). It is possible to improve this by turning PulseAudio off and going down to ALSA level; however, I have not pursued these roads too far:
 
-a) configure down-sampling on the level of ALSA, or
+a) configure down-sampling on the level of ALSA (something I could not easily make, but should be possible), or
 
-b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear - would need extensive testing. 
+b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear. Jingle fingerprints are taken at 44.1 kHz, so one could expect side effects.
+
+Another advantage of PulseAudio is that it allows access to a sound source from multiple processes. By default it is usually only one process which can use a sound card. This is certainly true and [documented](https://www.hifiberry.com/docs/software/check-if-the-sound-card-is-in-use/) for HiFiBerry. AdVent runs several threads reading sound input in parallel. While these threads remain all part of the same process, it is unclear it it would still work through ALSA.
