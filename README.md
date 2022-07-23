@@ -13,7 +13,7 @@ AdVent functions by comparing live sound with a database of known ad jingles usi
 
 AdVent on Raspberry Pi controlling a Sony BRAVIA TV-set:
 
-![rp2](https://user-images.githubusercontent.com/22733222/180578361-5f08129c-bd5b-498e-8b03-324fc9c2b74d.jpg)
+![AdVent on Raspberry Pi](https://user-images.githubusercontent.com/22733222/180578361-5f08129c-bd5b-498e-8b03-324fc9c2b74d.jpg)
 
 ## Supported Environment
 There are many different ways of watching TV these days. Currently supported audio inputs:
@@ -230,3 +230,83 @@ Now it's data's turn. Pull and load the latest snapshot of ad fingerprints. See 
 If you use PulseAudio for TV control (default), you are all set. If you would like to use HarmonyHub, you are still not done!
 
 (HarmonyHub instruction coming soon)
+
+## Audio Inputs
+
+### PulseAudio
+
+(coming soon)
+
+### S/PDIF Digital Input
+
+Supported on Raspberry Pi using [HiFiBerry Digi+ I/O](https://www.hifiberry.com/shop/boards/hifiberry-digi-io/) sound card.
+
+![HiFiBerry Digi+ I/O](https://user-images.githubusercontent.com/22733222/180579980-93eefddf-c048-4be8-a4f6-eb30380d9b17.jpg)
+
+Setup compiled on the basis of the [original installation instruction](https://www.hifiberry.com/docs/software/configuring-linux-3-18-x/):
+
+#### TV Setup
+
+This sound card does not support Dolby Digital, so if the channels of interest in your area broadcast in Dolby, you need to enforce PCM on TV side. See the instruction for your TV-set. In the case of Sony BRAVIA, `Digital Setup` > `Audio Setup` > `Optical Out`: change `Auto` to `PCM`.
+
+#### Raspberry Pi Setup
+
+Edit `/boot/config.txt` to enable HiFiBerry and disable all other sound devices:
+
+```
+57c57
+< dtparam=audio=on
+---
+> #dtparam=audio=on
+61c61
+< dtoverlay=vc4-fkms-v3d
+---
+> dtoverlay=vc4-fkms-v3d,audio=off
+65a66,67
+>
+> dtoverlay=hifiberry-digi
+```
+S/PDIF PCM comes sampled in 48 kHz, while PulseAudio defaults to 44.1 kHz. If the sampling rate is not matched, recorder will see garbage. In addition, Dejavu inherently works in 44.1 kHz (the frequency setting it is not just a matter of input sampling, but is also used internally during recognition process). So the easiest way is to configure PulseAudio to a primary frequency of 48 kHz and to activate software down-sampling to 44.1 kHz. Edit `/etc/pulse/daemon.conf` to add these lines:
+
+```
+79a80
+> default-sample-rate = 48000
+80a82
+> alternate-sample-rate = 44100
+```
+Now reboot:
+
+```
+$ sudo reboot
+```
+
+Testing:
+
+```
+$ arecord -l
+**** List of CAPTURE Hardware Devices ****
+card 0: sndrpihifiberry [snd_rpi_hifiberry_digi], device 0: HifiBerry Digi HiFi wm8804-spdif-0 [HifiBerry Digi HiFi wm8804-spdif-0]
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+
+$ parecord -v test.wav
+Opening a recording stream with sample specification 's16le 2ch 44100Hz' and channel map 'front-left,front-right'.
+Connection established.
+Stream successfully created.
+Buffer metrics: maxlength=4194304, fragsize=352800
+Using sample spec 's16le 2ch 44100Hz', channel map 'front-left,front-right'.
+Connected to device alsa_input.platform-soc_sound.iec958-stereo (index: 1, suspended: no).
+Time: 2.602 sec; Latency: 6901 usec.          
+...
+(Ctrl-C)
+$ 
+```
+The resulting file `test.wav` recorded in 44.1 kHz shall reproduce TV sound correctly.
+
+Note 1: HiFiBerry manuals recommend disabling all other audio devices, so you won't be able to listen to the recorded file right on the Pi. I just copy the file to another machine where I can playback. If this behavior is undesirable, play around with options in `/boot/config.txt`. Pay attention that the default input device remains the sound card; otherwise AdVent will not work.
+
+Note 2: HifiBerry manuals strongly recommend against using PulseAudio in general, and against software re-sampling in particular, citing performance concerns. From my experience, PulseAudio is easy to configure (much easier than ALSA) and works well, but indeed, would consume ~20% of CPU (the other 80% would be eaten up by AdVent). It is possible to improve this by turning PulseAudio off and going down to ALSA level; however, I did not pursue these roads too much:
+
+a) configure down-sampling on the level of ALSA, or
+
+b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear - would need extensive testing. 
