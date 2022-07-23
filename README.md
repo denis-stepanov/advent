@@ -73,7 +73,7 @@ There is no standard way of exiting the application, as it is designed to run fo
 
 The default TV control is `pulseaudio`; you can alter this with `-t` option; e.g. `-t harmonyhub` will select HarmonyHub control instead.
 
-There is no option to select an audio source; AdVent takes a system default. See more details on audio sources in a [dedicated section](#audio-sources).
+There is no option to select an audio source; AdVent takes a system default. See more details on audio sources in a [dedicated section](#-audio-sources).
 
 Refer to `advent -h` for full synopsys.
 
@@ -254,6 +254,8 @@ Sections below detail particular configurations.
 Supported on Raspberry Pi using [HiFiBerry Digi+ I/O](https://www.hifiberry.com/shop/boards/hifiberry-digi-io/) sound card.
 
 ![HiFiBerry Digi+ I/O](https://user-images.githubusercontent.com/22733222/180579980-93eefddf-c048-4be8-a4f6-eb30380d9b17.jpg)
+
+With this card, one can use optical TOSLINK or coaxial RCA cables. I use an optical one, but RCA should work the same.
 
 Setup compiled on the basis of the [original installation instruction](https://www.hifiberry.com/docs/software/configuring-linux-3-18-x/):
 
