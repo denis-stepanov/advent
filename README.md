@@ -278,7 +278,7 @@ Edit `/boot/config.txt` to enable HiFiBerry and disable all other sound devices:
 >
 > dtoverlay=hifiberry-digi
 ```
-S/PDIF PCM comes sampled in 48 kHz, while PulseAudio defaults to 44.1 kHz. If the sampling rate is not matched, recorder will see garbage. In addition, Dejavu inherently works in 44.1 kHz (the frequency setting it is not just a matter of input sampling, but is also used internally during recognition process). So the easiest way is to configure PulseAudio to a primary frequency of 48 kHz and to activate software down-sampling to 44.1 kHz. Edit `/etc/pulse/daemon.conf` to add these lines:
+S/PDIF PCM comes sampled in 48 kHz, while PulseAudio defaults to 44.1 kHz. If the sampling rate is not matched, recorder will see garbage. In addition, Dejavu inherently works in 44.1 kHz (the frequency setting it is not just a matter of input sampling, but is also used internally during recognition process). So the easiest way is to configure PulseAudio to a primary frequency of 48 kHz and to activate software down-sampling to 44.1 kHz. Edit `/etc/pulse/daemon.conf` to uncomment and enable these lines:
 
 ```
 79a80
@@ -294,13 +294,19 @@ $ sudo reboot
 
 #### Testing
 
+Check that system can see your sound card:
+
 ```
 $ arecord -l
 **** List of CAPTURE Hardware Devices ****
 card 0: sndrpihifiberry [snd_rpi_hifiberry_digi], device 0: HifiBerry Digi HiFi wm8804-spdif-0 [HifiBerry Digi HiFi wm8804-spdif-0]
   Subdevices: 1/1
   Subdevice #0: subdevice #0
+```
 
+Record a test track using default settings:
+
+```
 $ parecord -v test.wav
 Opening a recording stream with sample specification 's16le 2ch 44100Hz' and channel map 'front-left,front-right'.
 Connection established.
@@ -341,7 +347,9 @@ I have been using this device for TV control from a smartphone since long time. 
 
 #### Harmony Setup
 
-The local API is not enabled by default; you need to activate it in Harmony application as follows: `Menu` > `Harmony Setup` > `Add/Edit Devices & Activities` > `Remote & Hub` > `Enable XMPP`.
+The local API is not enabled by default; you need to activate it in Harmony application as follows: `Menu` > `Harmony Setup` > `Add/Edit Devices & Activities` > `Hub` > `Enable XMPP`.
+
+![Harmony Hub XMPP](https://user-images.githubusercontent.com/22733222/180651641-57a719a1-ac53-4170-969f-f8e92409dc24.jpg)
 
 #### Linux Setup
 
@@ -366,7 +374,7 @@ Install it system-wide using `root` permissions:
 # ./harmony-api/script/install-linux
 ```
 
-Unfortunately, this installation uses a non-canonical location, so SELinux on Fedora will be unhappy about it. Label the executable file as follows (not required on Raspbian which has got no SELinux):
+Sadly, this installation uses a non-canonical location placing executables in `/var/lib`, so SELinux on Fedora will be unhappy about it. Label the executable file as follows (not required on Raspbian which has got no SELinux):
 
 ```
 # semanage fcontext -a -t var_run_t /var/lib/harmony-api/script/server
