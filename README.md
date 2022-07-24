@@ -231,9 +231,7 @@ Now it's data's turn. Pull and load the latest snapshot of ad fingerprints. See 
 (advent-pyenv) $ find advent-db -name "*.djv" | xargs db-djv-pg import
 ```
 
-If you use PulseAudio for TV control (default), you are all set. If you would like to use HarmonyHub, you are still not done!
-
-(HarmonyHub instruction coming soon)
+If you use PulseAudio for TV control (default), you are all set. If you would like to use extra hardware, such as S/PDIF digital input, or Logitech Harmony Hub for TV control, see below for addtional instructions.
 
 ## Audio Inputs
 
@@ -326,3 +324,73 @@ a) configure down-sampling on the level of ALSA (something I could not easily ma
 b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear. Jingle fingerprints are taken at 44.1 kHz, so one could expect side effects.
 
 Another advantage of PulseAudio is that it allows access to a sound source from multiple processes. By default it is usually only one process which can use a sound card. This is certainly true and [documented](https://www.hifiberry.com/docs/software/check-if-the-sound-card-is-in-use/) for HiFiBerry. AdVent runs several threads reading sound input in parallel. While these threads remain all part of the same process, it is unclear it it would still work through ALSA.
+
+## TV Controls
+
+### PulseAudio
+
+(coming soon)
+
+### Logitech Harmony Hub
+
+(selected with `-t harmonyhub` option to AdVent)
+
+I have been using this device for TV control from a smartphone since long time. Apart from the default cloud interface, it can also provide a local API, which is convenient for AdVent needs.
+
+![Logitech Harmony Hub](https://user-images.githubusercontent.com/22733222/180626764-788fca83-ede6-46e2-9b7c-7db087c13a4b.jpg)
+
+#### Harmony Setup
+
+The local API is not enabled by default; you need to activate it in Harmony application as follows: `Menu` > `Harmony Setup` > `Add/Edit Devices & Activities` > `Remote & Hub` > `Enable XMPP`.
+
+#### Linux Setup
+
+To talk to the Hub we will be using a nice piece of software called [Harmony API](https://github.com/maddox/harmony-api). It is a NodeJS server with HTTP interface running on your Linux box (in this case, next to AdVent). Follow these steps to set it up on Fedora (on Raspbian, just replace `root` `# ...` commands with `$ sudo ...`):
+
+Unfortunately, Linux installer is not yet included in any release of Harmony API, so we need to pull the latest master:
+
+```
+$ git clone https://github.com/maddox/harmony-api.git
+```
+
+Pre-configure Harmony API:
+
+```
+# npm install forever -g
+$ ./harmony-api/script/bootstrap
+```
+
+Install it system-wide using `root` permissions:
+
+```
+# ./harmony-api/script/install-linux
+```
+
+Unfortunately, this installation uses a non-canonical location, so SELinux on Fedora will be unhappy about it. Label the executable file as follows (not required on Raspbian which has got no SELinux):
+
+```
+# semanage fcontext -a -t var_run_t /var/lib/harmony-api/script/server
+# restorecon -v /var/lib/harmony-api/script/server
+```
+
+Another Fedora-specific issue is its firewall which would by default block attempts to discover Hubs. Enable discovery port as follows (not required on Raspbian which has got no firewall):
+
+```
+# firewall-cmd --permanent --add-port=61991/tcp
+```
+
+Finally, we can start our server:
+
+```
+# systemctl start harmony-api-server
+```
+
+#### Testing
+
+Run this command to test TV control:
+
+```
+$ curl -s -S -d on -X POST http://localhost:8282/hubs/harmony/commands/mute
+```
+
+It shoud mute the TV. Run it again to unmute.
