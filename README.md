@@ -402,3 +402,5 @@ $ curl -s -S -d on -X POST http://localhost:8282/hubs/harmony/commands/mute
 ```
 
 It shoud mute the TV. Run it again to unmute.
+
+Note that AdVent relies on default Hub name which is `Harmony`. If your Hub name is different, the name needs to be corrected in the source code (and in the test command above). It there will be demand, it is possible to make a command line option for this.
