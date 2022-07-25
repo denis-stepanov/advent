@@ -15,6 +15,14 @@ AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
 
 ![AdVent on Raspberry Pi](https://user-images.githubusercontent.com/22733222/180578361-5f08129c-bd5b-498e-8b03-324fc9c2b74d.jpg)
 
+## How Stuff Works
+
+Diagram below shows in blue a standard workflow for a person listening to a TV and muting TV sound with a remote.
+
+![AdVent Workflow](https://user-images.githubusercontent.com/22733222/180874326-85a9d62a-3681-4ad0-b29a-7d356529fe8d.png)
+
+AdVent is added in parallel (path in orange), using same or similar tools for mute. The main difference is the audio source. It should be different from the one that person hears, because AdVent needs to continue listening while the sound is muted. This is required to be able to unmute later on. This is why a microphone is generally not a good source; it is better to feed something not affected by the `Mute` button of a TV. S/PDIF digital output of the TV is one good candidate.
+
 ## Supported Environment
 There are many different ways of watching TV these days. Currently supported audio inputs:
 
@@ -231,7 +239,7 @@ Now it's data's turn. Pull and load the latest snapshot of ad fingerprints. See 
 (advent-pyenv) $ find advent-db -name "*.djv" | xargs db-djv-pg import
 ```
 
-If you use PulseAudio for TV control (default), you are all set. If you would like to use extra hardware, such as S/PDIF digital input, or Logitech Harmony Hub for TV control, see below for addtional instructions.
+If you use PulseAudio for TV control (default), you are all set. If you would like to use extra hardware, such as S/PDIF digital input, or Logitech Harmony Hub for TV control, see below for additional instructions.
 
 ## Audio Inputs
 
