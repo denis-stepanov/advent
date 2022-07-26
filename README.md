@@ -23,6 +23,58 @@ Diagram below shows in blue a standard workflow for a person listening to a TV a
 
 AdVent is added in parallel (path in orange), using same or similar tools for mute. The main difference is the audio source. It should be different from the one that person hears, because AdVent needs to continue listening while the sound is muted. This is required to be able to unmute later on. This is why a microphone is generally not a good source; it is better to feed something not affected by the `Mute` button of a TV. S/PDIF digital output of the TV is one good candidate.
 
+### Streaming Problem
+
+The biggest problem with Dejavu is that it does not support continuous recognition from a stream. One has to define a recognition window. It kind of works when you have a four minutes song fingerprinted, and launch recognition anytime in the middle. It does not work well when your "song" is a three seconds jingle. So I opted for parallelized approach where there are overlapping threads listening for input in a sliding manner.
+
+![Streaming Implementation](https://user-images.githubusercontent.com/22733222/181107790-0cb879a7-e7df-411c-b211-03a4ae8b40ea.png)
+
+Question is how many threads are needed. To understand this better I took a random three seconds jingle and tested its recognition once being split in two parts. Results:
+
+<table>
+<tr>
+<th>Part 1</th>
+<th>Part 2 </th>
+<th>Recognition Confidence</th>
+</tr>
+<tr>
+<td>3 s</td>
+<td>0 s</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>2 s</td>
+<td>1 s</td>
+<td>22%</td>
+</tr>
+<tr>
+<td>1.5 s</td>
+<td>1.5 s</td>
+<td>11%</td>
+</tr>
+<tr>
+<td>1 s</td>
+<td>2 s</td>
+<td>28%</td>
+</tr>
+</table>
+
+Unrelated track gives confidence of less than 10%.
+
+From this we can draw some conclusions:
+
+1. for good recognition, having 3 seconds fingerprinted is enough ([Dejavu's own estimate](https://github.com/denis-stepanov/dejavu#2-audio-over-laptop-microphone) is that 3 s fingerprinted give 98% recognition confidence);
+2. at any moment of time, there shall be at least one thread covering at least 2 seconds of a track;
+3. 20% confidence looks like a good cut-off for a "hit".
+
+These values have been recorded as parameters in AdVent source code. So we can estimate that having three recognition threads running with one second interval should give good enough coverage. Due to imperfections of timing, I added one more thread. This gives four threads in total, actively working on recognition. This means that for AdVent to perform well, it should be run on at least four cores CPU, and on such a system it will create 100% system load (four threads occupying four cores). Most of modern systems satisfy this requirement, Raspberry Pi included.
+
+Because recognition process is not deterministic, threads originally spaced in time might drift and get closer to each other. This would diminish coverage and decrease effectiveness of recognition. To avoid this effect, a mutex is used which would prevent any recognition operation firing too close to another one from a parallel thread.
+
+Another side effect from threading is that two closely running threads both yielding a hit can try flipping TV, which would cause problems at TV controls unit, as well as unpleasant user experience. To prevent this, a dead time is used (30 seconds by default), during which all actions on TV are disabled.
+
+Finally, an implicit requirement coming from threading approach is that hardware audio source shall support concurrent use from threads. This is not granted in general case (see [below](#testing)).
+
 ## Supported Environment
 There are many different ways of watching TV these days. Currently supported audio inputs:
 
