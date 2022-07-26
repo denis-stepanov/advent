@@ -383,13 +383,13 @@ The resulting file `test.wav` recorded in 44.1 kHz shall reproduce TV sound corr
 
 Note 1: HiFiBerry manuals recommend disabling all other audio devices, so you won't be able to listen to the recorded file right on the Pi. I just copy the file to another machine where I can playback. If this behavior is undesirable, play around with options in `/boot/config.txt`. Pay attention that the default input device remains the sound card; otherwise AdVent will not work.
 
-Note 2: HifiBerry manuals strongly recommend against using PulseAudio in general, and against software re-sampling in particular, citing performance concerns. From my experience, PulseAudio is easy to configure (much easier than ALSA) and works well, but indeed, would consume ~20% of CPU (the other 80% would be eaten up by AdVent). It is possible to improve this by turning PulseAudio off and going down to ALSA level; however, I have not pursued these roads too far:
+Note 2: HifiBerry manuals strongly recommend against using PulseAudio in general, and against software re-sampling in particular, citing performance concerns. From my experience, PulseAudio is easy to configure (much easier than ALSA) and works well, but indeed, would consume ~5% of the Pi CPU (20% [if used from four threads](#streaming-problem), the other 80% would be eaten up by Dejavu). And all that is for entire PulseAudio machinery, not just for down-sampling; I find this very affordable. For sure, for purists it should be possible to eliminate this margin by turning PulseAudio off and going down to ALSA level; however, I have not pursued these roads too far:
 
 a) configure down-sampling on the level of ALSA (something I could not easily make, but should be possible), or
 
-b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear. Jingle fingerprints are taken at 44.1 kHz, so one could expect side effects.
+b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear. Jingle fingerprints are taken at 44.1 kHz, so one might expect side effects.
 
-Another advantage of PulseAudio is that it allows access to a sound source from multiple processes. By default it is usually only one process which can use a sound card. This is certainly true and [documented](https://www.hifiberry.com/docs/software/check-if-the-sound-card-is-in-use/) for HiFiBerry. AdVent runs several threads reading sound input in parallel. While these threads remain all part of the same process, it is unclear it it would still work through ALSA.
+Another advantage of PulseAudio is that it allows access to a sound source from multiple processes. By default, it is usually only one process which can use a sound card. This is certainly true and [documented](https://www.hifiberry.com/docs/software/check-if-the-sound-card-is-in-use/) for HiFiBerry. AdVent runs several threads reading sound input in parallel. While these threads remain all part of the same process, it is unclear it it would still work through ALSA.
 
 ## TV Controls
 
