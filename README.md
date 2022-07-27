@@ -391,6 +391,22 @@ b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but 
 
 Another advantage of PulseAudio is that it allows access to a sound source from multiple processes. By default, it is usually only one process which can use a sound card. This is certainly true and [documented](https://www.hifiberry.com/docs/software/check-if-the-sound-card-is-in-use/) for HiFiBerry. AdVent runs several threads reading sound input in parallel. While these threads remain all part of the same process, it is unclear it it would still work through ALSA.
 
+#### Other Raspberry Pi Considerations
+
+As mentioned above, AdVent is a CPU-intensive application. This directly translates to increase of the Pi CPU temperature. Adding a sound card shield on top does not help with ventilation. You can check CPU temperature as follows:
+
+```
+$ vcgencmd measure_temp
+temp=52.1'C
+$ 
+```
+
+Be sure to observe temperature of your setup. In my case it rises from 50 to 60℃ when AdVent is running. Anything between 70 and 80℃ is a danger zone. Consider the following tips:
+
+* make sure you have a good power supply (at least 3 A for Pi 4B; 3.5 A recommended);
+* use heat sinks for principal chips (sold separately). I do have some; they are really helpful;
+* if you put the entire device in a case, foresee active cooling (a fan).
+
 ## TV Controls
 
 ### PulseAudio
