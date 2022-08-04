@@ -323,7 +323,9 @@ This sound card does not support Dolby Digital, so if the channels of interest i
 
 ![PCM vs Dolby Digital](https://user-images.githubusercontent.com/22733222/182946026-e3688570-c037-44f1-bfb7-260e6e179834.png)
 
-In the case of Sony BRAVIA, adjusting the format can be done in `Digital Setup` > `Audio Setup` > `Optical Out`: change `Auto` to `PCM`.
+In the case of Sony BRAVIA, adjusting the format can be done in `Digital Setup` > `Audio Setup` > `Optical Out`: change `Auto` to `PCM`:
+
+![Forcing PCM on TV](https://user-images.githubusercontent.com/22733222/182959454-7439e1f9-4df9-4bfd-aab7-4032192ca357.jpg)
 
 #### Raspberry Pi Setup
 
