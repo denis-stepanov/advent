@@ -295,7 +295,7 @@ If you use PulseAudio for TV control (default), you are all set. If you would li
 
 ## Audio Inputs
 
-AdVent takes a system-wide default audio source as input. On modern Linux it is usually PulseAudio who takes care of sound services. If the system-wide source is not a suitable one, it has to be configured externally to AdVent (e.g., via `pavucontrol`). You can quickly check the list of available sources with:
+AdVent takes a system-wide default audio source as input. On modern Linux it is usually PulseAudio who takes care of sound services (yeah... Fedora has switched to PipeWire, but its [PulseAudio emulation layer](https://gitlab.freedesktop.org/pipewire/pipewire/-/wikis/Migrate-PulseAudio) is good enough for our purpose). If the system-wide source is not a suitable one, it has to be configured externally to AdVent (e.g., via `pavucontrol`). You can quickly check the list of available sources with:
 
 ```
 $ pactl list sources short
