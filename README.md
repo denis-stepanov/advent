@@ -9,7 +9,7 @@ Here AdVent is running next to a TV stream in browser, watched by a user using h
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
-AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Video input is not used. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
+AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
 
 AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
 
@@ -484,3 +484,7 @@ $ curl -s -S -d on -X POST http://localhost:8282/hubs/harmony/commands/mute
 It shoud mute the TV. Run it again to unmute.
 
 Note that AdVent relies on default Hub name which is `Harmony`. If your Hub name is different, the name needs to be corrected in the source code (and in the test command above). It there will be demand, it is possible to make a command line option for this.
+
+## Privacy Statement (for paranoids)
+
+TV video input is not connected nor used. Audio matching represents a completely in-memory operation (no audio recording of any kind is performed), and a local copy of the online database is used for matching (no active network connection needed), so the information on what a person is watching on TV does not leave the local controller, and is not logged in any form on its persistent storage medium.
