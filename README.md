@@ -63,11 +63,11 @@ Unrelated track gives confidence of less than 10%.
 
 From this we can draw some conclusions:
 
-1. for good recognition, having 3 seconds fingerprinted is enough ([Dejavu's own estimate](https://github.com/denis-stepanov/dejavu#2-audio-over-laptop-microphone) is that 3 s fingerprinted give 98% recognition confidence);
-2. at any moment of time, there shall be at least one thread covering at least 2 seconds of a track;
+1. for good recognition, having 3 seconds fingerprinted is enough ([Dejavu's own estimate](https://github.com/denis-stepanov/dejavu#2-audio-over-laptop-microphone) is that 3 seconds fingerprinted gives 98% recognition confidence);
+2. every contiguous 1.5 seconds (2 seconds better) shall be covered by at least one recognition attempt. Jingle minimal duration thus should not be inferior to 1.5 seconds;
 3. 10% confidence looks like a good cut-off for a "hit".
 
-These values have been recorded as parameters in AdVent source code. So we can estimate that having three recognition threads running with one second interval should give good enough coverage. Due to imperfections of timing, I added one more thread. This gives four threads in total, actively working on recognition. This means that for AdVent to perform well, it should be run on at least four cores CPU, and on such a system it will create 100% system load (four threads occupying four cores). Most of modern systems satisfy this requirement, Raspberry Pi included.
+So we can estimate that having three recognition threads running with one second interval over three seconds window (as on figure above) should give good enough coverage. These values have been recorded as parameters in AdVent source code. Due to imperfections of timing, I added one more thread. This gives four threads in total, actively working on recognition. This means that for AdVent to perform well, it should be run on at least four cores CPU, and on such a system it will create 100% system load (four threads occupying four cores). Most of modern systems satisfy this requirement, Raspberry Pi included.
 
 Because recognition process is not deterministic, threads originally spaced in time might drift and get closer to each other. This would diminish coverage and decrease effectiveness of recognition. To avoid this effect, a mutex is used which would prevent any recognition operation firing too close to another one from a parallel thread.
 
