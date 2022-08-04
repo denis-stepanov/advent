@@ -18,7 +18,7 @@ from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 VERSION=__version__
 OFFSET = 1
 SECONDS = 3
-MATCH_CONFIDENCE = 0.2
+MATCH_CONFIDENCE = 0.1
 DEAD_TIME = 30
 
 # Globals

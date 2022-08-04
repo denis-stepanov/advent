@@ -65,7 +65,7 @@ From this we can draw some conclusions:
 
 1. for good recognition, having 3 seconds fingerprinted is enough ([Dejavu's own estimate](https://github.com/denis-stepanov/dejavu#2-audio-over-laptop-microphone) is that 3 s fingerprinted give 98% recognition confidence);
 2. at any moment of time, there shall be at least one thread covering at least 2 seconds of a track;
-3. 20% confidence looks like a good cut-off for a "hit".
+3. 10% confidence looks like a good cut-off for a "hit".
 
 These values have been recorded as parameters in AdVent source code. So we can estimate that having three recognition threads running with one second interval should give good enough coverage. Due to imperfections of timing, I added one more thread. This gives four threads in total, actively working on recognition. This means that for AdVent to perform well, it should be run on at least four cores CPU, and on such a system it will create 100% system load (four threads occupying four cores). Most of modern systems satisfy this requirement, Raspberry Pi included.
 
@@ -321,7 +321,7 @@ Setup compiled on the basis of the [original installation instruction](https://w
 
 This sound card does not support Dolby Digital, so if the channels of interest in your area broadcast in Dolby, you need to enforce PCM on TV side. You can find out the audio format by looking at the TV channel information (`Info`, `Details`, etc). Refer to the instruction for your TV-set. Example of channels in PCM and in Dolby Digital:
 
-![pcm-vs-dolby](https://user-images.githubusercontent.com/22733222/182946026-e3688570-c037-44f1-bfb7-260e6e179834.png)
+![PCM vs Dolby Digital](https://user-images.githubusercontent.com/22733222/182946026-e3688570-c037-44f1-bfb7-260e6e179834.png)
 
 In the case of Sony BRAVIA, adjusting the format can be done in `Digital Setup` > `Audio Setup` > `Optical Out`: change `Auto` to `PCM`.
 
