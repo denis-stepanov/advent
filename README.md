@@ -57,6 +57,11 @@ Question is how many threads are needed. To understand this better I took a rand
 <td>2 s</td>
 <td>28%</td>
 </tr>
+<tr>
+<td>0 s</td>
+<td>3 s</td>
+<td>100%</td>
+</tr>
 </table>
 
 Unrelated track gives confidence of less than 10%.
