@@ -319,7 +319,11 @@ Setup compiled on the basis of the [original installation instruction](https://w
 
 #### TV Setup
 
-This sound card does not support Dolby Digital, so if the channels of interest in your area broadcast in Dolby, you need to enforce PCM on TV side. You can find out the audio format by looking at the TV channel information (`Info`, `Details`, etc). Refer to the instruction for your TV-set. In the case of Sony BRAVIA, adjusting the format can be done in `Digital Setup` > `Audio Setup` > `Optical Out`: change `Auto` to `PCM`.
+This sound card does not support Dolby Digital, so if the channels of interest in your area broadcast in Dolby, you need to enforce PCM on TV side. You can find out the audio format by looking at the TV channel information (`Info`, `Details`, etc). Refer to the instruction for your TV-set. Example of channels in PCM and in Dolby Digital:
+
+![pcm-vs-dolby](https://user-images.githubusercontent.com/22733222/182946026-e3688570-c037-44f1-bfb7-260e6e179834.png)
+
+In the case of Sony BRAVIA, adjusting the format can be done in `Digital Setup` > `Audio Setup` > `Optical Out`: change `Auto` to `PCM`.
 
 #### Raspberry Pi Setup
 
