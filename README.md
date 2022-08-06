@@ -296,21 +296,86 @@ Now it's data's turn. Pull and load the latest snapshot of ad fingerprints. See 
 (advent-pyenv) $ find advent-db -name "*.djv" | xargs db-djv-pg import
 ```
 
-If you use PulseAudio for TV control (default), you are all set. If you would like to use extra hardware, such as S/PDIF digital input, or Logitech Harmony Hub for TV control, see below for additional instructions.
+This is all what concers AdVent per se. However, depending on your audio capturing options and on preferred way to control TV you might have additional work to do. See below for instructions.
 
 ## Audio Inputs
 
-AdVent takes a system-wide default audio source as input. On modern Linux it is usually PulseAudio who takes care of sound services (yeah... Fedora has switched to PipeWire, but its [PulseAudio emulation layer](https://gitlab.freedesktop.org/pipewire/pipewire/-/wikis/Migrate-PulseAudio) is good enough for our purpose). If the system-wide source is not a suitable one, it has to be configured externally to AdVent (e.g., via `pavucontrol`). You can quickly check the list of available sources with:
+AdVent takes a system-wide default audio source as input. On modern Linux it is usually PulseAudio who takes care of sound services (yeah... Fedora has switched to PipeWire, but its [PulseAudio emulation layer](https://gitlab.freedesktop.org/pipewire/pipewire/-/wikis/Migrate-PulseAudio) is good enough for our purpose). You can check the default source as follows:
+
+Fedora:
 
 ```
-$ pactl list sources short
+$ pactl get-default-source
+alsa_input.pci-0000_00_1b.0.analog-stereo
+$
+```
+Yes, this is not very descriptive. You can get more details by studying a lenghty output of:
+
+```
+$ pactl list sources
 ```
 
-Sections below detail particular configurations.
+You can also use graphical tools like `pavucontrol` presenting audio configuration in a more user friendly way.
 
-### PulseAudio
+To check the default source on Raspbian:
 
-(coming soon)
+```
+$ pacmd list-sources | grep -B1 name:
+    index: 0
+        name: <alsa_output.platform-soc_sound.iec958-stereo.monitor>
+--
+  * index: 1
+        name: <alsa_input.platform-soc_sound.iec958-stereo>
+$
+```
+
+The source marked with an asterisk `*` is the default. Omit `grep` to see more details.
+
+Sections below detail supported inputs.
+
+### Capturing a TV Web Cast
+
+The instructions below are for Fedora. I do not have an equivalent for Raspbian, because I use Raspberry Pi to capture from a real TV rather than from Web.
+
+Note that depending on your TV feed provider, live sound capturing might be considered as breaking of ToS. Actually, AdVent will not record anything, but just listen to a live feed the same way a person listens. To do this, we make use of PulseAudio "monitor" function, which allows using an audio output ("sink") as a source for another application.
+
+#### PulseAudio Setup
+
+First, ensure that the web cast is not running. Check the list of available audio sources:
+
+```
+$ pactl list short sources
+45      alsa_output.pci-0000_00_1b.0.analog-stereo.monitor      PipeWire        s32le 2ch 48000Hz       IDLE
+46      alsa_input.pci-0000_00_1b.0.analog-stereo       PipeWire        s32le 2ch 48000Hz       SUSPENDED
+$
+```
+
+On laptops and alike, by default, the sound source used is a built-in mike (hiding behind `alsa_input.pci-0000_00_1b.0.analog-stereo` here). We need to switch the default to the speaker monitor (the exact label in your case may be different):
+
+```
+$ pactl set-default-source alsa_output.pci-0000_00_1b.0.analog-stereo.monitor
+```
+
+#### Testing
+
+Start your web cast and test recording:
+
+```
+$ parecord -v test.wav
+Opening a recording stream with sample specification 's16le 2ch 44100Hz' and channel map 'front-left,front-right'.
+Connection established.
+Stream successfully created.
+Buffer metrics: maxlength=4194304, fragsize=352800
+Using sample spec 's16le 2ch 44100Hz', channel map 'front-left,front-right'.
+Connected to device alsa_output.pci-0000_00_1b.0.analog-stereo.monitor (index: 45, suspended: no).
+Time: 4.608 sec; Latency: 608164 usec.
+...
+(Ctrl-C)
+$
+```
+The resulting file should reproduce TV sound correctly.
+
+Note that PulseAudio tries to remember which sources applications use, so if you happened to run AdVent before, it might still not use the new default. The easiest way to confirm the source is to run `pavucontrol` while AdVent is running and see that it uses the monitor input.
 
 ### S/PDIF Digital Input
 
@@ -420,9 +485,17 @@ Be sure to observe temperature of your setup. In my case it rises from 50 to 60â
 
 ## TV Controls
 
-### PulseAudio
+### TV Web Cast
 
-(coming soon)
+(selected with `-t pulseaudio` option to AdVent; default)
+
+"TV" control when watching a TV web cast on a computer consists of muting the currently active speaker. With PulseAudio it is as simple as:
+
+```
+$ pactl set-sink-mute @DEFAULT_SINK@ toggle
+```
+
+AdVent does just that. Another advantage with PulseAudio is that the application can query the status of speaker on startup and thus start in sync. There is often no way to do that with other TV controls, which are mostly unidirectional.
 
 ### Logitech Harmony Hub
 
