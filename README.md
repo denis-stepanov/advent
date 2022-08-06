@@ -379,7 +379,7 @@ Note that PulseAudio tries to remember which sources applications use, so if you
 
 ![AdVent as seen in PAVUcontrol](https://user-images.githubusercontent.com/22733222/183268533-bafc2190-bc89-47ee-a4c8-a77a716ef04b.png)
 
-Here, by the way, we can observe [three parallel threads](#how-stuff-works) at work.
+Here, by the way, we can observe [three parallel threads](#streaming-problem) at work.
 
 ### S/PDIF Digital Input
 
