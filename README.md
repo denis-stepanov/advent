@@ -341,7 +341,7 @@ Note that depending on your TV feed provider, live sound capturing might be cons
 
 #### PulseAudio Setup
 
-First, ensure that the web cast is not running. Check the list of available audio sources:
+Check the list of available audio sources:
 
 ```
 $ pactl list short sources
@@ -375,7 +375,11 @@ $
 ```
 The resulting file should reproduce TV sound correctly.
 
-Note that PulseAudio tries to remember which sources applications use, so if you happened to run AdVent before, it might still not use the new default. The easiest way to confirm the source is to run `pavucontrol` while AdVent is running and see that it uses the monitor input.
+Note that PulseAudio tries to remember which sources applications use, so if you happened to run AdVent before, it might still not use the new default. The easiest way to confirm the source is to run `pavucontrol` while AdVent is running and check in the "Recording" tab that it uses the monitor input:
+
+![AdVent as seen in PAVUcontrol](https://user-images.githubusercontent.com/22733222/183268533-bafc2190-bc89-47ee-a4c8-a77a716ef04b.png)
+
+Here, by the way, we can observe [three parallel threads](#how-stuff-works) at work.
 
 ### S/PDIF Digital Input
 
