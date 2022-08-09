@@ -490,6 +490,8 @@ Be sure to observe temperature of your setup. In my case it rises from 50 to 60â
 * use heat sinks for principal chips (sold separately). I do have some; they are really helpful;
 * if you put the entire device in a case, foresee active cooling (a fan).
 
+![Raspberry Pi with Heat Sinks](https://user-images.githubusercontent.com/22733222/183757743-6d48f5ed-6b26-4fee-bde2-2d72fb8c3cfa.png)
+
 ## TV Controls
 
 ### TV Web Cast
