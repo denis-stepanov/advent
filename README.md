@@ -387,7 +387,9 @@ Supported on Raspberry Pi using [HiFiBerry Digi+ I/O](https://www.hifiberry.com/
 
 ![HiFiBerry Digi+ I/O](https://user-images.githubusercontent.com/22733222/180579980-93eefddf-c048-4be8-a4f6-eb30380d9b17.jpg)
 
-With this card, one can use optical TOSLINK or coaxial RCA cables. I use an optical one, but RCA should work the same.
+With this card, one can use optical TOSLINK or coaxial RCA cables. I use an optical one, but RCA should work the same. On the following example of Sony Bravia the cable from the Pi needs to be connected to the port `F` (Digital Audio Out, Optical):
+
+![TV Connection Diagram](https://user-images.githubusercontent.com/22733222/183753640-c41bbdb1-812e-40c4-a154-59e59c217610.png)
 
 Setup compiled on the basis of the [original installation instruction](https://www.hifiberry.com/docs/software/configuring-linux-3-18-x/):
 
@@ -442,6 +444,7 @@ $ arecord -l
 card 0: sndrpihifiberry [snd_rpi_hifiberry_digi], device 0: HifiBerry Digi HiFi wm8804-spdif-0 [HifiBerry Digi HiFi wm8804-spdif-0]
   Subdevices: 1/1
   Subdevice #0: subdevice #0
+$
 ```
 
 Record a test track using default settings:
