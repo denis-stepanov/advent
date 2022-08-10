@@ -81,6 +81,7 @@ Another side effect from threading is that two closely running threads both yiel
 Finally, an implicit requirement coming from threading approach is that hardware audio source shall support concurrent use from threads. This is not granted in general case (see [below](#testing)).
 
 ## Supported Environment
+
 There are many different ways of watching TV these days. Currently supported audio inputs:
 
 * video streaming in browser (via [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) monitor)
@@ -146,7 +147,7 @@ Refer to `advent -h` for full synopsys.
 
 ### Database Service Tool (db-djv-pg)
 
-New jingles are fingerprinted following the regular Dejavu process (see [Fingerprinting](https://github.com/denis-stepanov/dejavu#fingerprinting)). After the process they end up in the SQL database. Unfortunately, Dejavu does not provide a mechanism to share database content. To facilitate manipulations with the database, a service tool `db-djv-pg` is included with AdVent. It allows exporting / importing jingles as text files of [specific format](https://github.com/denis-stepanov/advent-db#jingle-hash-file-format-djv). Of the two databases supported by Dejavu only PostgreSQL is supported (hence the `-pg` in the name). AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name.
+New jingles are fingerprinted following the regular Dejavu process (see [Fingerprinting](https://github.com/denis-stepanov/dejavu#fingerprinting)). After the process they end up in an SQL database. Unfortunately, Dejavu does not provide a mechanism to share database content. To facilitate manipulations with the database, a service tool `db-djv-pg` is included with AdVent. It allows exporting / importing jingles as text files of [specific format](https://github.com/denis-stepanov/advent-db#jingle-hash-file-format-djv). Dejavu supports MySQL and PostgreSQL as databases, with default being MySQL. Unluckily(?), I am much more fluent with PostgreSQL, so AdVent supports PostgreSQL only (sorry MySQL folks :-); hence the `-pg` in the tool name. AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name.
 
 The tool allows for the following operations on jingles (aka "tracks"):
 
@@ -180,9 +181,7 @@ Refer to `db-djv-pg -h` for exact synopsis.
 
 ## Installation
 
-Installation was tested on Fedora and Raspbian. The differences are marked below accordingly.
-
-Dejavu supports MySQL and PostgreSQL, with default being MySQL. Unfortunately(?), I am much more fluent with PostgreSQL, so AdVent supports PostgreSQL only (sorry MySQL folks :-) ). Setup process is a bit long, mostly because PostgreSQL and Dejavu are not readily usable pieces of software. Some of these steps are covered in (a bit dated) [Dejavu original manual](https://github.com/denis-stepanov/dejavu/blob/master/INSTALLATION.md), but I reiterate here for completeness.
+Installation was tested on Fedora and Raspbian. The differences are marked below accordingly. Setup process is a bit long, mostly because Dejavu and its database need some dependencies and configuration. Some of these steps are covered in (a bit dated) [Dejavu original manual](https://github.com/denis-stepanov/dejavu/blob/master/INSTALLATION.md), but I reiterate here for completeness.
 
 * `#` prompt means execution from root
 * `$` prompt means execution from user
