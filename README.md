@@ -21,7 +21,7 @@ Diagram below shows in blue a standard workflow for a person listening to a TV a
 
 ![AdVent Workflow](https://user-images.githubusercontent.com/22733222/180874326-85a9d62a-3681-4ad0-b29a-7d356529fe8d.png)
 
-AdVent is added in parallel (path in orange), using same or similar tools for mute. The main difference is the audio source. It should be different from the one that person hears, because AdVent needs to continue listening while the sound is muted. This is required to be able to unmute later on. This is why a microphone is generally not a good source; it is better to feed something not affected by the `Mute` button of a TV. S/PDIF digital output of the TV is one good candidate.
+AdVent is added in parallel (path in orange), using the same or similar tools for mute. The main difference is the audio source. The source should be different from the one that person hears, because AdVent needs to continue listening while the sound is muted. Obviously, this is required to be able to unmute later on. This is why a microphone is generally not a good source; it is better to feed something not affected by the `Mute` button of a TV. S/PDIF digital output of the TV is one good candidate.
 
 ### Streaming Problem
 
@@ -72,7 +72,7 @@ From this we can draw some conclusions:
 2. every contiguous 1.5 seconds (2 seconds better) shall be covered by at least one recognition attempt. Jingle minimal duration thus should not be inferior to 1.5 seconds;
 3. 10% confidence looks like a good cut-off for a "hit".
 
-So we can estimate that having three recognition threads running with one second interval over three seconds window (as on figure above) should give good enough coverage. These values have been recorded as parameters in AdVent source code. Due to imperfections of timing, I added one more thread. This gives four threads in total, actively working on recognition. This means that for AdVent to perform well, it should be run on at least four cores CPU, and on such a system it will create 100% system load (four threads occupying four cores). Most of modern systems satisfy this requirement, Raspberry Pi included.
+So we can estimate that having three recognition threads running with one second interval over three seconds window (as on figure above) should give good enough coverage. These values have been recorded as parameters in AdVent source code (there is an issue [#6](https://github.com/denis-stepanov/advent/issues/6) to make them configurable). Due to imperfections of timing, I added one more thread (to be confirmed - see issue [#5](https://github.com/denis-stepanov/advent/issues/5)). This gives four threads in total, actively working on recognition. This means that for AdVent to perform well, it should be run on at least four cores CPU, and on such a system it would create 100% system load (four threads occupying four cores). Most of modern systems satisfy this requirement, Raspberry Pi included.
 
 Because recognition process is not deterministic, threads originally spaced in time might drift and get closer to each other. This would diminish coverage and decrease effectiveness of recognition. To avoid this effect, a mutex is used which would prevent any recognition operation firing too close to another one from a parallel thread.
 
@@ -85,7 +85,7 @@ There are many different ways of watching TV these days. Currently supported aud
 
 * video streaming in browser (via [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) monitor)
 * [S/PDIF](https://en.wikipedia.org/wiki/S/PDIF) digital audio out from a TV-set: optical [TOSLINK](https://en.wikipedia.org/wiki/TOSLINK) or electrical [RCA](https://en.wikipedia.org/wiki/RCA_connector) (RCA untested but should work)
-* (could be implemented if there's interest) microphone
+* (could be implemented if there's interest - see issue [#13](https://github.com/denis-stepanov/advent/issues/13)) microphone
 
 Supported TV controls:
 
@@ -96,19 +96,19 @@ Supported TV controls:
 Supported actions:
 
 * sound on / off
-* (could be implemented if there's interest) sound fade out / in
-* (could be implemented if there's interest) changing a TV channel
+* (could be implemented if there's interest - see issue [#14](https://github.com/denis-stepanov/advent/issues/14)) sound fade out / in
+* (could be implemented if there's interest - see issue [#15](https://github.com/denis-stepanov/advent/issues/15)) changing a TV channel
 * ...
 
 Supported OS:
 
 * recent Fedora (tested on Fedora 36)
 * Raspbian 10
-* (Windows is not supported but the majority of software is in Python; should work as is, with the exception of TV controls module which would need contributions and testing)
+* (Windows is not supported but the majority of software is in Python; should work as is, with the exception of TV controls module which would need contributions and testing - see issue [#16](https://github.com/denis-stepanov/advent/issues/16))
 
 Not all combinations are supported; see below for the details.
 
-It is possible to use unrelated inputs and outputs (e.g., to cut a sound on a real TV-set while running AdVent over a TV web cast); however, in this case one has to accept potential time de-sync, which could be quite important (dozens of seconds, depending on a TV feed provider).
+It is even possible to use unrelated inputs and outputs (e.g., to cut a sound on a real TV-set while running AdVent over a TV web cast of the same channel); however, in this case one has to accept potential time de-sync, which could be quite important (dozens of seconds, depending on a TV feed provider).
 
 ## Usage
 
@@ -119,6 +119,8 @@ Runnig AdVent is as simple as:
 ```
 (advent-pyenv) $ advent
 ```
+
+(support to run as a daemon planned - see issue [#7](https://github.com/denis-stepanov/advent/issues/7))
 
 The output should resemble to this:
 
@@ -134,7 +136,7 @@ AdVent prints every second a character reflecting recognition progress. Meaning 
 * `o` - weak match (quite normal on any input)
 * `O` - strong match, also called a "hit". When a hit happens, AdVent prints hit details and may take some action on a TV
 
-There is no standard way of exiting the application, as it is designed to run forever. If you need to exit, press `Ctrl-C`; if that does not work, try harder with `Ctrl-\`.
+There is no standard way of exiting the application, as it is designed to run forever (this should be somewhat alleviated with issue [#8](https://github.com/denis-stepanov/advent/issues/8)). If you need to exit, press `Ctrl-C`; if that does not work, try harder with `Ctrl-\`.
 
 The default TV control is `pulseaudio`; you can alter this with `-t` option; e.g. `-t harmonyhub` will select HarmonyHub control instead.
 
@@ -144,7 +146,7 @@ Refer to `advent -h` for full synopsys.
 
 ### Database Service Tool (db-djv-pg)
 
-New jingles are fingerprinted following the regular Dejavu process (see [Fingerprinting](https://github.com/denis-stepanov/dejavu#fingerprinting)). Unfortunately, Dejavu does not provide a mechanism to share database content. To facilitate manipulations with the database, a service tool `db-djv-pg` is included with AdVent. It allows exporting / importing jingles as text files of [specific format](https://github.com/denis-stepanov/advent-db#jingle-hash-file-format-djv). Of the two databases supported by Dejavu only PostgreSQL is supported (hence the `-pg` in the name). AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name.
+New jingles are fingerprinted following the regular Dejavu process (see [Fingerprinting](https://github.com/denis-stepanov/dejavu#fingerprinting)). After the process they end up in the SQL database. Unfortunately, Dejavu does not provide a mechanism to share database content. To facilitate manipulations with the database, a service tool `db-djv-pg` is included with AdVent. It allows exporting / importing jingles as text files of [specific format](https://github.com/denis-stepanov/advent-db#jingle-hash-file-format-djv). Of the two databases supported by Dejavu only PostgreSQL is supported (hence the `-pg` in the name). AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name.
 
 The tool allows for the following operations on jingles (aka "tracks"):
 
@@ -152,6 +154,7 @@ The tool allows for the following operations on jingles (aka "tracks"):
 - `export` - export tracks from database to files
 - `import` - import tracks from files to database
 - `delete` - delete tracks from database
+- (planned - issue [#3](https://github.com/denis-stepanov/advent/issues/3)) `rename` - rename tracks in the database
 
 Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; other commands operate on track names (without file extension). When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
 
@@ -177,7 +180,7 @@ Refer to `db-djv-pg -h` for exact synopsis.
 
 ## Installation
 
-The installation was tested on Fedora and Raspbian. The differences are marked below accordingly.
+Installation was tested on Fedora and Raspbian. The differences are marked below accordingly.
 
 Dejavu supports MySQL and PostgreSQL, with default being MySQL. Unfortunately(?), I am much more fluent with PostgreSQL, so AdVent supports PostgreSQL only (sorry MySQL folks :-) ). Setup process is a bit long, mostly because PostgreSQL and Dejavu are not readily usable pieces of software. Some of these steps are covered in (a bit dated) [Dejavu original manual](https://github.com/denis-stepanov/dejavu/blob/master/INSTALLATION.md), but I reiterate here for completeness.
 
@@ -185,14 +188,18 @@ Dejavu supports MySQL and PostgreSQL, with default being MySQL. Unfortunately(?)
 * `$` prompt means execution from user
 * `(advent-pyenv) $` prompt means execution from user in a [Python virtual environment](https://docs.python.org/3/library/venv.html)
 
+Differences in files are presented using `diff` notation, with `<` meaning old content and `>` meaning new content.
+
 ### Step 1: Install non-Python Dejavu dependencies
 
 Fedora:
+
 ```
 # dnf install postgresql-server ffmpeg portaudio-devel
 ```
 
 Raspbian:
+
 ```
 $ sudo apt-get install postgresql-11 ffmpeg libatlas-base-dev
 ```
@@ -224,7 +231,7 @@ Add PostgreSQL to auto-start and run it:
 # systemctl start postgresql
 ```
 
-One more word on services. Recent Fedoras bring up a particularly agressive OOMD (out-of-memory killer daemon). Despite the name, memory is not its only concern. It regularly tries shooting to death my busy Firefox in the midst of a morning coffee sip. Because AdVent is a CPU-intensive application, OOMD will try taking its life too. If you observe AdVent silently exiting after some time, you know the reason. Probably, there is a way to make an exception, but in absence of a better solution, I just disarm:
+One more word on services. Recent Fedoras bring up a particularly agressive OOMD (out-of-memory killer daemon). Despite the name, memory is not its only concern. It regularly tries shooting to death my busy Firefox in the midst of a morning coffee sip. Because AdVent is a CPU-intensive application, OOMD will try taking its life too. If you observe AdVent silently exiting after some time, you know the reason. Probably, there is a way to make an exception, but because I do not like it anyway, I just disarm:
 
 ```
 # systemctl stop systemd-oomd
@@ -257,6 +264,7 @@ On Raspbian, this step is the same, but you do not have to be `root` to run `sud
 The latest Dejavu mainstream does not run on Python 3.10 shipped with Fedora 36 (pull requests are welcome), so we need a virtual environment for Python 3.7:
 
 Fedora:
+
 ```
 # dnf install python3.7 python3-virtualenv
 ```
@@ -264,6 +272,7 @@ Fedora:
 On Raspbian 10, Python is already - quite conveniently - 3.7, and support for virtual environment is installed by default.
 
 Create virtual environment:
+
 ```
 $ python3.7 -m venv --system-site-packages advent-pyenv
 $ source advent-pyenv/bin/activate
@@ -281,7 +290,7 @@ $ source advent-pyenv/bin/activate
 
 ### Step 6: Populate AdVent database
 
-At this moment the database is void of any schema, not to say data. One can trick Dejavu into creating a database schema by asking it to scan something. The error message is not important:
+At this moment the database is void of any schema, not to say data. One can trick Dejavu into creating database schema by asking it to scan something. The error message is not important:
 
 ```
 (advent-pyenv) $ dejavu -f .
@@ -295,6 +304,7 @@ Now it's data's turn. Pull and load the latest snapshot of ad fingerprints. See 
 (advent-pyenv) $ git clone https://github.com/denis-stepanov/advent-db.git
 (advent-pyenv) $ find advent-db -name "*.djv" | xargs db-djv-pg import
 ```
+(the need to use `find` should go away with resolution of issue [#4](https://github.com/denis-stepanov/advent/issues/4))
 
 This is all what concers AdVent per se. However, depending on your audio capturing options and on preferred way to control TV you might have additional work to do. See below for instructions.
 
@@ -309,7 +319,8 @@ $ pactl get-default-source
 alsa_input.pci-0000_00_1b.0.analog-stereo
 $
 ```
-Yes, this is not very descriptive. You can get more details by studying a lenghty output of:
+
+Erf... not very descriptive. You can get more details by studying a lenghty output of:
 
 ```
 $ pactl list sources
@@ -335,9 +346,9 @@ Sections below detail supported inputs.
 
 ### Capturing a TV Web Cast
 
-The instructions below are for Fedora. I do not have an equivalent for Raspbian, because I use Raspberry Pi to capture from a real TV rather than from Web.
+Instructions below are for Fedora. I do not have an equivalent for Raspbian, because I use Raspberry Pi to capture from a real TV rather than from Web.
 
-Note that depending on your TV feed provider, live sound capturing might be considered as breaking of ToS. Actually, AdVent will not record anything, but just listen to a live feed the same way a person listens. To do this, we make use of PulseAudio "monitor" function, which allows using an audio output ("sink") as a source for another application.
+Note that depending on your TV feed provider, live sound capturing might be considered as violation of provider's ToS. As a matter of fact, AdVent is not recording anything, but just listens to a live feed the same way a person would listen. To do this, we make use of PulseAudio "monitor" function, which allows using an audio output ("sink") as a source for another application.
 
 #### PulseAudio Setup
 
@@ -350,7 +361,7 @@ $ pactl list short sources
 $
 ```
 
-On laptops and alike, by default, the sound source used is a built-in mike (hiding behind `alsa_input.pci-0000_00_1b.0.analog-stereo` here). We need to switch the default to the speaker monitor (the exact label in your case may be different):
+On laptops and alike, by default, the sound source used is a built-in mike (hiding behind `alsa_input.pci-0000_00_1b.0.analog-stereo` here). We need to switch the default to the speaker monitor (the exact label in your case may be different, but the `.monitor` part is important):
 
 ```
 $ pactl set-default-source alsa_output.pci-0000_00_1b.0.analog-stereo.monitor
@@ -375,7 +386,7 @@ $
 ```
 The resulting file should reproduce TV sound correctly.
 
-Note that PulseAudio tries to remember which sources applications use, so if you happened to run AdVent before, it might still not use the new default. The easiest way to confirm the source is to run `pavucontrol` while AdVent is running and check in the "Recording" tab that it uses the monitor input:
+Note that PulseAudio tries to remember which sources applications use, so if you happened to run AdVent before, it might still not use the new default. The easiest way to confirm the source is to launch `pavucontrol` while AdVent is running and check in the "Recording" tab that it uses the "monitor" input:
 
 ![AdVent as seen in PAVUcontrol](https://user-images.githubusercontent.com/22733222/183268533-bafc2190-bc89-47ee-a4c8-a77a716ef04b.png)
 
@@ -387,7 +398,7 @@ Supported on Raspberry Pi using [HiFiBerry Digi+ I/O](https://www.hifiberry.com/
 
 ![HiFiBerry Digi+ I/O](https://user-images.githubusercontent.com/22733222/180579980-93eefddf-c048-4be8-a4f6-eb30380d9b17.jpg)
 
-With this card, one can use optical TOSLINK or coaxial RCA cables. I use an optical one, but RCA should work the same. On the following example of Sony Bravia the cable from the Pi needs to be connected to the port `F` (Digital Audio Out, Optical):
+With this card, one can use optical TOSLINK or coaxial RCA cables. I use an optical one, but RCA should work the same. On the following example of Sony BRAVIA the cable from the Pi needs to be connected to the port `F` (Digital Audio Out, Optical):
 
 ![TV Connection Diagram](https://user-images.githubusercontent.com/22733222/183753640-c41bbdb1-812e-40c4-a154-59e59c217610.png)
 
@@ -420,14 +431,17 @@ Edit `/boot/config.txt` to enable HiFiBerry and disable all other sound devices:
 >
 > dtoverlay=hifiberry-digi
 ```
+
 S/PDIF PCM comes sampled in 48 kHz, while PulseAudio defaults to 44.1 kHz. If the sampling rate is not matched, recorder will see garbage. In addition, Dejavu inherently works in 44.1 kHz (the frequency setting it is not just a matter of input sampling, but is also used internally during recognition process). So the easiest way is to configure PulseAudio to a primary frequency of 48 kHz and to activate software down-sampling to 44.1 kHz. Edit `/etc/pulse/daemon.conf` to uncomment and enable these lines:
 
 ```
-79a80
+...
 > default-sample-rate = 48000
-80a82
+...
 > alternate-sample-rate = 44100
+...
 ```
+
 Now reboot:
 
 ```
@@ -472,11 +486,11 @@ a) configure down-sampling on the level of ALSA (something I could not easily ma
 
 b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear. Jingle fingerprints are taken at 44.1 kHz, so one might expect side effects.
 
-Another advantage of PulseAudio is that it allows access to a sound source from multiple processes. By default, it is usually only one process which can use a sound card. This is certainly true and [documented](https://www.hifiberry.com/docs/software/check-if-the-sound-card-is-in-use/) for HiFiBerry. AdVent runs several threads reading sound input in parallel. While these threads remain all part of the same process, it is unclear it it would still work through ALSA.
+Another advantage of PulseAudio is that it allows access to a sound source from multiple processes. By default, it is usually only one process which can use a sound card. This is certainly true and [documented](https://www.hifiberry.com/docs/software/check-if-the-sound-card-is-in-use/) for HiFiBerry. AdVent runs several threads reading sound input in parallel. While these threads remain all part of the same process, it is unclear if it would still work through ALSA.
 
 #### Other Raspberry Pi Considerations
 
-As mentioned above, AdVent is a CPU-intensive application. This directly translates to increase of the Pi CPU temperature. Adding a sound card shield on top does not help with ventilation. You can check CPU temperature as follows:
+As mentioned above, AdVent is a CPU-intensive application. This directly translates to increase of the Pi CPU temperature. Adding a sound card shield on top does not help with ventilation either. You can check CPU temperature as follows:
 
 ```
 $ vcgencmd measure_temp
@@ -543,7 +557,7 @@ Install it system-wide using `root` permissions:
 # ./harmony-api/script/install-linux
 ```
 
-Sadly, this installation uses a non-canonical location placing executables in `/var/lib`, so SELinux on Fedora will be unhappy about it. Label the executable file as follows (not required on Raspbian which has got no SELinux):
+Alas, this installation uses a non-canonical location placing executables in `/var/lib`, so SELinux on Fedora would be unhappy about it. Label the executable file as follows (not required on Raspbian which has got no SELinux):
 
 ```
 # semanage fcontext -a -t var_run_t /var/lib/harmony-api/script/server
@@ -572,7 +586,7 @@ $ curl -s -S -d on -X POST http://localhost:8282/hubs/harmony/commands/mute
 
 It shoud mute the TV. Run it again to unmute.
 
-Note that AdVent relies on default Hub name which is `Harmony`. If your Hub name is different, the name needs to be corrected in the source code (and in the test command above). It there will be demand, it is possible to make a command line option for this.
+Note that AdVent relies on default Hub name which is `Harmony`. If your Hub name is different, the name needs to be corrected in the source code (and in the test command above). It there will be demand, it is possible to make a command line option for this (issue [#17](https://github.com/denis-stepanov/advent/issues/17)).
 
 ## Privacy Statement (for paranoids)
 
