@@ -11,6 +11,7 @@ from datetime import timedelta
 from dejavu import Dejavu
 from dejavu.logic.recognizer.microphone_recognizer import MicrophoneRecognizer
 from advent import __version__
+from tv_control.TVControl import TVControl
 from tv_control.TVControlPulseAudio import TVControlPulseAudio
 from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 
@@ -80,9 +81,12 @@ class RecognizerThread(threading.Thread):
                             tv_muted = self.tvc.isMuted()
                             if not (ad_start or ad_end) or tv_muted and ad_end or not tv_muted and ad_start:
                                 if self.tvc.toggleMute() != tv_muted:
-                                    print('TV muted')
+                                    if tv_muted:
+                                        print('TV unmuted')
+                                    else:
+                                        print('TV muted')
                                 else:
-                                    print('TV unmuted')
+                                    print('TV mute failed')
                     else:
                       print('o', end='', flush=True) # weak match
                 else:
@@ -97,7 +101,7 @@ def main():
     parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
-    parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['pulseaudio', 'harmonyhub'], default='pulseaudio')
+    parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
     args = parser.parse_args()
 
     # Dejavu config
@@ -105,7 +109,9 @@ def main():
         DJV_CONFIG = json.load(dejavu_cnf)
 
         # TV controls
-        if args.tv_control == 'harmonyhub':
+        if args.tv_control == 'nil':
+            tvc = TVControl()
+        elif args.tv_control == 'harmonyhub':
             tvc = TVControlHarmonyHub()
         else:
             tvc = TVControlPulseAudio()
