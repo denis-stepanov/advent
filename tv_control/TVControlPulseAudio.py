@@ -13,6 +13,6 @@ class TVControlPulseAudio(TVControl):
 
     def toggleMute(self):
         ret = os.system("pactl set-sink-mute @DEFAULT_SINK@ toggle")
-        if os.waitstatus_to_exitcode(ret) == 0:
+        if os.WIFEXITED(ret) and os.WEXITSTATUS(ret) == 0:
             super().toggleMute()
         return self.isMuted()
