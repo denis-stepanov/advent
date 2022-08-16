@@ -109,16 +109,18 @@ def main():
     args = parser.parse_args()
 
     # Logging
+    logger.setLevel(logging.INFO)
+    lsh = logging.StreamHandler()
+    lsh.setLevel(logging.INFO)
+    logger.addHandler(lsh)
     if args.log != 'none':
         if args.log == 'debug':
             logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.INFO)
         lf = logging.Formatter('%(asctime)s %(threadName)s %(levelname)s: %(message)s')
         lfh = logging.FileHandler(LOG_FILE)
         lfh.setFormatter(lf)
         logger.addHandler(lfh)
-    logger.info('AdVent started')
+    logger.info(f'AdVent v{VERSION}')
 
     # Dejavu config
     with open(resource_filename(Requirement.parse("PyDejavu"),"dejavu_py/dejavu.cnf")) as dejavu_cnf:
@@ -132,20 +134,16 @@ def main():
             tvc = TVControlHarmonyHub()
         else:
             tvc = TVControlPulseAudio()
-        print(f'TV control is {args.tv_control}')
         logger.info(f'TV control is {args.tv_control}')
         if tvc.isMuted():
-            print('TV starts muted')
             logger.info('TV starts muted')
         else:
-            print('TV starts unmuted')
             logger.info('TV starts unmuted')
 
         # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
         for n in range(1, SECONDS // OFFSET + 1 + 1):
             thread = RecognizerThread(n, tvc)
             thread.start()
-        print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
         logger.info(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
         return 0
 
