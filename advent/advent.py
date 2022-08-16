@@ -118,11 +118,12 @@ def main():
         lfh = logging.FileHandler(LOG_FILE)
         lfh.setFormatter(lf)
         logger.addHandler(lfh)
-    logger.info("AdVent started")
+    logger.info('AdVent started')
 
     # Dejavu config
     with open(resource_filename(Requirement.parse("PyDejavu"),"dejavu_py/dejavu.cnf")) as dejavu_cnf:
         DJV_CONFIG = json.load(dejavu_cnf)
+        logger.debug(f'Dejavu config {dejavu_cnf.name} loaded')
 
         # TV controls
         if args.tv_control == 'nil':
@@ -131,16 +132,21 @@ def main():
             tvc = TVControlHarmonyHub()
         else:
             tvc = TVControlPulseAudio()
+        print(f'TV control is {args.tv_control}')
+        logger.info(f'TV control is {args.tv_control}')
         if tvc.isMuted():
             print('TV starts muted')
+            logger.info('TV starts muted')
         else:
             print('TV starts unmuted')
+            logger.info('TV starts unmuted')
 
         # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
         for n in range(1, SECONDS // OFFSET + 1 + 1):
             thread = RecognizerThread(n, tvc)
             thread.start()
         print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
+        logger.info(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
         return 0
 
     return 1
