@@ -110,12 +110,15 @@ def main():
 
     # Logging
     if args.log != 'none':
-        lfh = logging.FileHandler(LOG_FILE)
         if args.log == 'debug':
-            lfh.setLevel(logging.DEBUG)
+            logger.setLevel(logging.DEBUG)
         else:
-            lfh.setLevel(logging.INFO)
+            logger.setLevel(logging.INFO)
+        lf = logging.Formatter('%(asctime)s %(threadName)s %(levelname)s: %(message)s')
+        lfh = logging.FileHandler(LOG_FILE)
+        lfh.setFormatter(lf)
         logger.addHandler(lfh)
+    logger.info("AdVent started")
 
     # Dejavu config
     with open(resource_filename(Requirement.parse("PyDejavu"),"dejavu_py/dejavu.cnf")) as dejavu_cnf:
