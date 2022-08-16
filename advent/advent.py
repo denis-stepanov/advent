@@ -5,6 +5,7 @@ import json
 import threading
 import time
 import argparse
+import logging
 from pkg_resources import Requirement, resource_filename
 from datetime import datetime
 from datetime import timedelta
@@ -21,6 +22,7 @@ OFFSET = 1
 SECONDS = 3
 MATCH_CONFIDENCE = 0.1
 DEAD_TIME = 30
+LOG_FILE = 'advent.log'
 
 # Globals
 DJV_CONFIG = None
@@ -30,6 +32,7 @@ detection_lock = threading.Lock()
 mute_lock = threading.Lock()
 last_detection_time = datetime.now()
 last_mute_time = datetime.now() - timedelta(seconds=DEAD_TIME)
+logger = logging.getLogger('advent')
 
 # Run next detection no earlier that OFFSET seconds
 def ok_to_detect():
@@ -102,7 +105,17 @@ def main():
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
+    parser.add_argument('-l', '--log', help='log events into a file (default: none)', choices=['none', 'events', 'debug'], default='none')
     args = parser.parse_args()
+
+    # Logging
+    if args.log != 'none':
+        lfh = logging.FileHandler(LOG_FILE)
+        if args.log == 'debug':
+            lfh.setLevel(logging.DEBUG)
+        else:
+            lfh.setLevel(logging.INFO)
+        logger.addHandler(lfh)
 
     # Dejavu config
     with open(resource_filename(Requirement.parse("PyDejavu"),"dejavu_py/dejavu.cnf")) as dejavu_cnf:
