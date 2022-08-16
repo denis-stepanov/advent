@@ -77,7 +77,8 @@ class RecognizerThread(threading.Thread):
                     if best_match["fingerprinted_confidence"] >= MATCH_CONFIDENCE:
                         print('O', end='', flush=True)     # strong match
                         if ok_to_mute():
-                            print(f'\nHit: [{best_match["song_id"]}] {best_match["song_name"].decode("utf-8")}')
+                            print('')
+                            logger.info(f'Hit: [{best_match["song_id"]}] {best_match["song_name"].decode("utf-8")}')
                             flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
                             ad_start = flags & 0b0001
                             ad_end = flags & 0b0010
@@ -85,11 +86,11 @@ class RecognizerThread(threading.Thread):
                             if not (ad_start or ad_end) or tv_muted and ad_end or not tv_muted and ad_start:
                                 if self.tvc.toggleMute() != tv_muted:
                                     if tv_muted:
-                                        print('TV unmuted')
+                                        logger.info('TV unmuted')
                                     else:
-                                        print('TV muted')
+                                        logger.info('TV muted')
                                 else:
-                                    print('TV mute failed')
+                                    logger.info('TV mute failed')
                     else:
                       print('o', end='', flush=True) # weak match
                 else:
