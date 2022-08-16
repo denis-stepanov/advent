@@ -61,9 +61,8 @@ def ok_to_mute():
 # Recognizer
 class RecognizerThread(threading.Thread):
 
-    def __init__(self, tid, tvc):
+    def __init__(self, tvc):
         threading.Thread.__init__(self)
-        self.tid = tid
         self.tvc = tvc
         self.djv = Dejavu(DJV_CONFIG)
 
@@ -71,9 +70,12 @@ class RecognizerThread(threading.Thread):
         while True:
             # Space the threads in time
             if ok_to_detect():
+                start_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
                 matches = self.djv.recognize(MicrophoneRecognizer, seconds=SECONDS)[0]
+                end_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
                 if len(matches):
                     best_match = matches[0]
+                    logger.debug(f'recognition start={start_time}, end={end_time}, {len(matches)} match(es), {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
                     if best_match["fingerprinted_confidence"] >= MATCH_CONFIDENCE:
                         print('O', end='', flush=True)     # strong match
                         if ok_to_mute():
@@ -94,6 +96,7 @@ class RecognizerThread(threading.Thread):
                     else:
                       print('o', end='', flush=True) # weak match
                 else:
+                   logger.debug(f'recognition start={start_time}, end={end_time}, 0 match(es)')
                    print('.', end='', flush=True)   # no match
             else:
                 time.sleep(0.1)
@@ -143,7 +146,7 @@ def main():
 
         # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
         for n in range(1, SECONDS // OFFSET + 1 + 1):
-            thread = RecognizerThread(n, tvc)
+            thread = RecognizerThread(tvc)
             thread.start()
         logger.info(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
         return 0
