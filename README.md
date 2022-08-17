@@ -126,6 +126,8 @@ Runnig AdVent is as simple as:
 The output should resemble to this:
 
 ```
+AdVent v1.1.0
+TV control is pulseaudio
 TV starts unmuted
 Started 4 listening thread(s)
 .oooooooo.ooooooooooooo..oo
@@ -139,9 +141,11 @@ AdVent prints every second a character reflecting recognition progress. Meaning 
 
 There is no standard way of exiting the application, as it is designed to run forever (this should be somewhat alleviated with issue [#8](https://github.com/denis-stepanov/advent/issues/8)). If you need to exit, press `Ctrl-C`; if that does not work, try harder with `Ctrl-\`.
 
-The default TV control is `pulseaudio`; you can alter this with `-t` option; e.g. `-t harmonyhub` will select HarmonyHub control instead.
+The default TV control is `pulseaudio`; you can alter this with `-t` option; e.g. `-t harmonyhub` will select HarmonyHub control instead. `-t nil` will emulate TV control, i.e., make no real action. This is useful during [jingle fingerprinting process](https://github.com/denis-stepanov/advent-db#step-2-single-out-a-jingle-of-interest) and when testing AdVent itself.
 
 There is no option to select an audio source; AdVent takes a system default. See more details on audio inputs in a [dedicated section](#audio-inputs).
+
+`-l <level>` option will log recognition process into a file `advent.log`. Supported levels of logging are `none` (default), `events` and `debug`.
 
 Refer to `advent -h` for full synopsys.
 
