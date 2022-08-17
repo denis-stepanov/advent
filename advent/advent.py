@@ -75,7 +75,7 @@ class RecognizerThread(threading.Thread):
                 end_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
                 if len(matches):
                     best_match = matches[0]
-                    logger.debug(f'recognition start={start_time}, end={end_time}, {len(matches)} match(es), {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
+                    logger.debug(f'recognition start={start_time}, end={end_time}, {len(matches)} match(es), {best_match["song_name"].decode("utf-8")} best, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
                     if best_match["fingerprinted_confidence"] >= MATCH_CONFIDENCE:
                         print('O', end='', flush=True)     # strong match
                         if ok_to_mute():
