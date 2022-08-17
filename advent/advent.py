@@ -5,6 +5,7 @@ import json
 import threading
 import time
 import argparse
+import logging
 from pkg_resources import Requirement, resource_filename
 from datetime import datetime
 from datetime import timedelta
@@ -21,6 +22,7 @@ OFFSET = 1
 SECONDS = 3
 MATCH_CONFIDENCE = 0.1
 DEAD_TIME = 30
+LOG_FILE = 'advent.log'
 
 # Globals
 DJV_CONFIG = None
@@ -30,6 +32,7 @@ detection_lock = threading.Lock()
 mute_lock = threading.Lock()
 last_detection_time = datetime.now()
 last_mute_time = datetime.now() - timedelta(seconds=DEAD_TIME)
+logger = logging.getLogger('advent')
 
 # Run next detection no earlier that OFFSET seconds
 def ok_to_detect():
@@ -58,9 +61,8 @@ def ok_to_mute():
 # Recognizer
 class RecognizerThread(threading.Thread):
 
-    def __init__(self, tid, tvc):
+    def __init__(self, tvc):
         threading.Thread.__init__(self)
-        self.tid = tid
         self.tvc = tvc
         self.djv = Dejavu(DJV_CONFIG)
 
@@ -68,13 +70,17 @@ class RecognizerThread(threading.Thread):
         while True:
             # Space the threads in time
             if ok_to_detect():
+                start_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
                 matches = self.djv.recognize(MicrophoneRecognizer, seconds=SECONDS)[0]
+                end_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
                 if len(matches):
                     best_match = matches[0]
+                    logger.debug(f'recognition start={start_time}, end={end_time}, {len(matches)} match(es), {best_match["song_name"].decode("utf-8")} best, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
                     if best_match["fingerprinted_confidence"] >= MATCH_CONFIDENCE:
                         print('O', end='', flush=True)     # strong match
                         if ok_to_mute():
-                            print(f'\nHit: [{best_match["song_id"]}] {best_match["song_name"].decode("utf-8")}')
+                            print('')
+                            logger.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
                             flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
                             ad_start = flags & 0b0001
                             ad_end = flags & 0b0010
@@ -82,14 +88,15 @@ class RecognizerThread(threading.Thread):
                             if not (ad_start or ad_end) or tv_muted and ad_end or not tv_muted and ad_start:
                                 if self.tvc.toggleMute() != tv_muted:
                                     if tv_muted:
-                                        print('TV unmuted')
+                                        logger.info('TV unmuted')
                                     else:
-                                        print('TV muted')
+                                        logger.info('TV muted')
                                 else:
-                                    print('TV mute failed')
+                                    logger.info('TV mute failed')
                     else:
                       print('o', end='', flush=True) # weak match
                 else:
+                   logger.debug(f'recognition start={start_time}, end={end_time}, 0 match(es)')
                    print('.', end='', flush=True)   # no match
             else:
                 time.sleep(0.1)
@@ -102,11 +109,27 @@ def main():
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
+    parser.add_argument('-l', '--log', help='log events into a file (default: none)', choices=['none', 'events', 'debug'], default='none')
     args = parser.parse_args()
+
+    # Logging
+    logger.setLevel(logging.INFO)
+    lsh = logging.StreamHandler()
+    lsh.setLevel(logging.INFO)
+    logger.addHandler(lsh)
+    if args.log != 'none':
+        if args.log == 'debug':
+            logger.setLevel(logging.DEBUG)
+        lf = logging.Formatter('%(asctime)s %(threadName)s %(levelname)s: %(message)s')
+        lfh = logging.FileHandler(LOG_FILE)
+        lfh.setFormatter(lf)
+        logger.addHandler(lfh)
+    logger.info(f'AdVent v{VERSION}')
 
     # Dejavu config
     with open(resource_filename(Requirement.parse("PyDejavu"),"dejavu_py/dejavu.cnf")) as dejavu_cnf:
         DJV_CONFIG = json.load(dejavu_cnf)
+        logger.debug(f'Dejavu config {dejavu_cnf.name} loaded')
 
         # TV controls
         if args.tv_control == 'nil':
@@ -115,16 +138,17 @@ def main():
             tvc = TVControlHarmonyHub()
         else:
             tvc = TVControlPulseAudio()
+        logger.info(f'TV control is {args.tv_control}')
         if tvc.isMuted():
-            print('TV starts muted')
+            logger.info('TV starts muted')
         else:
-            print('TV starts unmuted')
+            logger.info('TV starts unmuted')
 
         # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
         for n in range(1, SECONDS // OFFSET + 1 + 1):
-            thread = RecognizerThread(n, tvc)
+            thread = RecognizerThread(tvc)
             thread.start()
-        print(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
+        logger.info(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
         return 0
 
     return 1
