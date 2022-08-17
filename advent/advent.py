@@ -80,7 +80,7 @@ class RecognizerThread(threading.Thread):
                         print('O', end='', flush=True)     # strong match
                         if ok_to_mute():
                             print('')
-                            logger.info(f'Hit: [{best_match["song_id"]}] {best_match["song_name"].decode("utf-8")}')
+                            logger.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
                             flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
                             ad_start = flags & 0b0001
                             ad_end = flags & 0b0010
