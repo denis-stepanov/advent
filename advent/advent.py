@@ -20,6 +20,7 @@ from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 VERSION=__version__
 OFFSET = 1
 SECONDS = 3
+REC_DEADBAND = 0.4
 MATCH_CONFIDENCE = 0.1
 DEAD_TIME = 30
 LOG_FILE = 'advent.log'
@@ -144,11 +145,11 @@ def main():
         else:
             logger.info('TV starts unmuted')
 
-        # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing. Number threads from 1
-        for n in range(1, SECONDS // OFFSET + 1 + 1):
+        # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing
+        for n in range(0, int((SECONDS + REC_DEADBAND) // OFFSET) + 1):
             thread = RecognizerThread(tvc)
             thread.start()
-        logger.info(f'Started {SECONDS // OFFSET + 1} listening thread(s)')
+        logger.info(f'Started {int((SECONDS + REC_DEADBAND) // OFFSET) + 1} listening thread(s)')
         return 0
 
     return 1
