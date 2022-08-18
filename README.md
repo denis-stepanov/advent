@@ -481,7 +481,7 @@ $
 ```
 The resulting file `test.wav` recorded in 44.1 kHz shall reproduce TV sound correctly.
 
-Note 1: HiFiBerry manuals recommend disabling all other audio devices, so you won't be able to listen to the recorded file right on the Pi. I just copy the file to another machine where I can playback. If this behavior is undesirable, play around with options in `/boot/config.txt`. Pay attention that the default input device remains the sound card; otherwise AdVent will not work.
+Note 1: HiFiBerry manuals recommend disabling all other audio devices, so you won't be able to listen to the recorded file right on the Pi (unless you hook up something PCM-enabled - like a home theater - to the output connector of HiFiBerry). I just copy the file to another machine where I can playback. If this behavior is undesirable, play around with options in `/boot/config.txt`. Pay attention that the default input device remains the sound card; otherwise AdVent will not work.
 
 Note 2: HifiBerry manuals strongly recommend against using PulseAudio in general, and against software re-sampling in particular, citing performance concerns. From my experience, PulseAudio is easy to configure (much easier than ALSA) and works well, but indeed, would consume ~5% of the Pi CPU (20% [if used from four threads](#streaming-problem), the other 80% would be eaten up by Dejavu). And all that is for entire PulseAudio machinery, not just for down-sampling; I find this very affordable. For sure, for purists it should be possible to eliminate this margin by turning PulseAudio off and going down to ALSA level; however, I have not pursued these roads too far:
 
@@ -581,7 +581,11 @@ Finally, we can start our server:
 
 #### Testing
 
-Run this command to test TV control:
+In a browser, open address `localhost:8282` (if you run the browser on a different machine, use the Harmony API machine's IP-address instead of `localhost`). In the section "Your Hubs" you should see your hub listed:
+
+![Harmony API Web](https://user-images.githubusercontent.com/22733222/185488924-ac15fd43-52e3-45aa-bdc9-f301b86b6ec9.png)
+
+In a shell, run this command to test TV control:
 
 ```
 $ curl -s -S -d on -X POST http://localhost:8282/hubs/harmony/commands/mute
