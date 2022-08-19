@@ -19,10 +19,10 @@ from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 
 # Settings
 VERSION=__version__
-REC_INTERVAL = 3
-REC_DEADBAND = 0.4
+REC_INTERVAL = 3          # (s) - typical duration of an ad jingle
+REC_DEADBAND = 0.4        # (s) - measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
 MATCH_CONFIDENCE = 0.1
-DEAD_TIME = 30
+DEAD_TIME = 30            # (s) - action dead time after previos action taken on TV
 LOG_FILE = 'advent.log'
 
 # Globals
@@ -107,6 +107,7 @@ class RecognizerThread(threading.Thread):
 def main():
     global DJV_CONFIG
     global NUM_THREADS
+    global REC_INTERVAL
     global REC_OFFSET
     global REC_OFFSET_TD
 
@@ -115,6 +116,7 @@ def main():
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
+    parser.add_argument('-i', '--rec_interval', help='audio recognition interval (s) (default: 3)', type=float)
     parser.add_argument('-n', '--num_threads', help='run N recognition threads (default: = of CPU cores available)', type=int)
     parser.add_argument('-l', '--log', help='log events into a file (default: none)', choices=['none', 'events', 'debug'], default='none')
     args = parser.parse_args()
@@ -150,6 +152,18 @@ def main():
             logger.info('TV starts muted')
         else:
             logger.info('TV starts unmuted')
+
+        # Recognition settings
+        if args.rec_interval != None:
+            if args.rec_interval <= 0:
+                logger.error(f'Error: Invalid recognition interval: {args.rec_interval}; ignoring')
+            else:
+                if args.rec_interval < 1.5:
+                    logger.warning(f'Warning: recognition interval of {args.rec_interval} s is not reliable')
+                REC_INTERVAL = args.rec_interval
+                REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
+                REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+        logger.info(f'Recognition interval is {REC_INTERVAL} s')
 
         # Thread control
         if args.num_threads != None:
