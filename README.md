@@ -72,13 +72,32 @@ From this we can draw some conclusions:
 2. every contiguous 1.5 seconds (2 seconds better) shall be covered by at least one recognition attempt. Jingle minimal duration thus should not be inferior to 1.5 seconds;
 3. 10% confidence looks like a good cut-off for a "hit".
 
-So we can estimate that having three recognition threads running with one second interval over three seconds window (as on figure above) should give good enough coverage. These values have been recorded as parameters in AdVent source code (there is an issue [#6](https://github.com/denis-stepanov/advent/issues/6) to make them configurable). Due to imperfections of timing, I added one more thread (to be confirmed - see issue [#5](https://github.com/denis-stepanov/advent/issues/5)). This gives four threads in total, actively working on recognition. This means that for AdVent to perform well, it should be run on at least four cores CPU, and on such a system it would create 100% system load (four threads occupying four cores). Most of modern systems satisfy this requirement, Raspberry Pi included.
+So we can estimate that having three recognition threads running with one second interval over three seconds window (as on figure above) should give good enough coverage. These values have been recorded as parameters in AdVent source code (there is an issue [#6](https://github.com/denis-stepanov/advent/issues/6) to make them configurable). Due to inevitable imperfections of timing, I added one more thread just in case (see more details on this below). This gives four threads in total, actively working on recognition. This means that for AdVent to perform well, it should be run on at least four cores CPU, and on such a system it would create 100% system load (four threads occupying four cores). Most of modern systems satisfy this requirement, Raspberry Pi included.
 
 Because recognition process is not deterministic, threads originally spaced in time might drift and get closer to each other. This would diminish coverage and decrease effectiveness of recognition. To avoid this effect, a mutex is used which would prevent any recognition operation firing too close to another one from a parallel thread.
 
 Another side effect from threading is that two closely running threads both yielding a hit can try flipping TV, which would cause problems at TV controls unit, as well as unpleasant user experience. To prevent this, a dead time is used (30 seconds by default), during which all actions on TV are disabled.
 
 Finally, an implicit requirement coming from threading approach is that hardware audio source shall support concurrent use from threads. This is not granted in general case (see [below](#testing)).
+
+To confirm the number of threads needed, I undertook a specific test profiling recognition process of a jingle of 3.2 seconds long. Dejavu listening interval is 3 seconds, and thread spacing is 1 second. The results are shown below:
+
+![AdVent running 4 threads](https://user-images.githubusercontent.com/22733222/185672902-cde37f43-4aa4-4b34-8867-519ab6c3929d.png)
+
+Here a green bar is the jingle; the red bar is the time when the first hit was reported.
+
+Observations:
+
+1. there is a non-negligible "deadband" in Dejavu processing (marked in blue on the graph). For every 3 seconds recognition period, the actual recognition takes anytime between 3.2 and 3.5 seconds (on a 4 x 1200 MHz machine). Apparently, the engine just listens for 3 seconds and then does its jobs in the remaining time. So this deadband should be taken into account in calculations;
+2. threads are respecting the minimal distance of 1 second between each other (mutex is working). Due to this the duty cycle of a thread is not 100% but close to 80%. This is not bad for a default setup, as it keeps machine loaded close to 100% but still leaves some time for OS to do other tasks;
+3. new recognition starts not exactly at 1 second interval, but anytime between 1 and 1.1 seconds (because of `sleep(0.1)` when mutex cannot be taken). This error accumulates with time; but it is not very important for the purpose of the app.
+
+Because of the above, the need for extra listening thread looks evident now. There are indeed periods of time where all four threads are active.
+
+Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This would need further study. Possible effects to check:
+
+1. check that audio input submitted to Dejavu is not distorted because of threading;
+2. check that Dejavu itself is reenterable.
 
 ## Supported Environment
 
