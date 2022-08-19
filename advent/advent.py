@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import json
 import threading
@@ -18,16 +19,17 @@ from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 
 # Settings
 VERSION=__version__
-OFFSET = 1
-SECONDS = 3
-REC_DEADBAND = 0.4
+REC_INTERVAL = 3          # (s) - typical duration of an ad jingle
+REC_DEADBAND = 0.4        # (s) - measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
 MATCH_CONFIDENCE = 0.1
-DEAD_TIME = 30
+DEAD_TIME = 30            # (s) - action dead time after previos action taken on TV
 LOG_FILE = 'advent.log'
 
 # Globals
 DJV_CONFIG = None
-OFFSET_TD = timedelta(seconds=OFFSET)
+NUM_THREADS = os.cpu_count()
+REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
+REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
 DEAD_TIME_TD = timedelta(seconds=DEAD_TIME)
 detection_lock = threading.Lock()
 mute_lock = threading.Lock()
@@ -35,13 +37,13 @@ last_detection_time = datetime.now()
 last_mute_time = datetime.now() - timedelta(seconds=DEAD_TIME)
 logger = logging.getLogger('advent')
 
-# Run next detection no earlier that OFFSET seconds
+# Run next detection no earlier that REC_OFFSET seconds
 def ok_to_detect():
     global last_detection_time
     curr_time = datetime.now()
     ok = False
     detection_lock.acquire()
-    if curr_time - last_detection_time >= OFFSET_TD:
+    if curr_time - last_detection_time >= REC_OFFSET_TD:
         last_detection_time = curr_time
         ok = True
     detection_lock.release()
@@ -72,11 +74,11 @@ class RecognizerThread(threading.Thread):
             # Space the threads in time
             if ok_to_detect():
                 start_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
-                matches = self.djv.recognize(MicrophoneRecognizer, seconds=SECONDS)[0]
+                matches = self.djv.recognize(MicrophoneRecognizer, seconds=REC_INTERVAL)[0]
                 end_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
                 if len(matches):
                     best_match = matches[0]
-                    logger.debug(f'recognition start={start_time}, end={end_time}, {len(matches)} match(es), {best_match["song_name"].decode("utf-8")} best, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
+                    logger.debug(f'Recognition start={start_time}, end={end_time}, {len(matches)} match(es), {best_match["song_name"].decode("utf-8")} best, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
                     if best_match["fingerprinted_confidence"] >= MATCH_CONFIDENCE:
                         print('O', end='', flush=True)     # strong match
                         if ok_to_mute():
@@ -97,19 +99,25 @@ class RecognizerThread(threading.Thread):
                     else:
                       print('o', end='', flush=True) # weak match
                 else:
-                   logger.debug(f'recognition start={start_time}, end={end_time}, 0 match(es)')
+                   logger.debug(f'Recognition start={start_time}, end={end_time}, 0 match(es)')
                    print('.', end='', flush=True)   # no match
             else:
                 time.sleep(0.1)
 
 def main():
     global DJV_CONFIG
+    global NUM_THREADS
+    global REC_INTERVAL
+    global REC_OFFSET
+    global REC_OFFSET_TD
 
     ## Command-line parser
     parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
+    parser.add_argument('-i', '--rec_interval', help='audio recognition interval (s) (default: 3)', type=float)
+    parser.add_argument('-n', '--num_threads', help='run N recognition threads (default: = of CPU cores available)', type=int)
     parser.add_argument('-l', '--log', help='log events into a file (default: none)', choices=['none', 'events', 'debug'], default='none')
     args = parser.parse_args()
 
@@ -145,11 +153,35 @@ def main():
         else:
             logger.info('TV starts unmuted')
 
-        # Launch enough threads to cover SECONDS listening period with offset of OFFSET plus one more to cover for imprecise timing
-        for n in range(0, int((SECONDS + REC_DEADBAND) // OFFSET) + 1):
+        # Recognition settings
+        if args.rec_interval != None:
+            if args.rec_interval <= 0:
+                logger.error(f'Error: Invalid recognition interval: {args.rec_interval}; ignoring')
+            else:
+                if args.rec_interval < 1.5:
+                    logger.warning(f'Warning: recognition interval of {args.rec_interval} s is not reliable')
+                REC_INTERVAL = args.rec_interval
+                REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
+                REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+        logger.info(f'Recognition interval is {REC_INTERVAL} s')
+
+        # Thread control
+        if args.num_threads != None:
+            if args.num_threads < 1:
+                logger.error(f'Error: Invalid number of threads: {args.num_threads}; ignoring')
+            else:
+                if args.num_threads > 2 * os.cpu_count():
+                    logger.warning(f'Warning: Too high number of threads requested: {args.num_threads}; risk of system saturation')
+                NUM_THREADS = args.num_threads
+                REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
+                REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+
+        # Launch threads
+        for n in range(0, NUM_THREADS):
             thread = RecognizerThread(tvc)
             thread.start()
-        logger.info(f'Started {int((SECONDS + REC_DEADBAND) // OFFSET) + 1} listening thread(s)')
+        logger.info(f'Started {NUM_THREADS} listening thread(s)')
+        logger.debug(f'Thread offset is {REC_OFFSET} s')
         return 0
 
     return 1
