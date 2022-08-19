@@ -94,10 +94,7 @@ Observations:
 
 Because of the above, the need for extra listening thread looks evident now. There are indeed periods of time where all four threads are active.
 
-Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This would need further study. Possible effects to check:
-
-1. check that audio input submitted to Dejavu is not distorted because of threading;
-2. check that Dejavu itself is reenterable.
+Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This would need further study (see issue [#26](https://github.com/denis-stepanov/advent/issues/26)).
 
 ## Supported Environment
 
