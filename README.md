@@ -23,6 +23,16 @@ Diagram below shows in blue a standard workflow for a person listening to a TV a
 
 AdVent is added in parallel (path in orange), using the same or similar tools for mute. The main difference is the audio source. The source should be different from the one that person hears, because AdVent needs to continue listening while the sound is muted. Obviously, this is required to be able to unmute later on. This is why a microphone is generally not a good source; it is better to feed something not affected by the `Mute` button of a TV. S/PDIF digital output of the TV is one good candidate.
 
+### Limitations
+
+Clearly, the approach of looking for ad jingles has inherent limitations:
+
+* TV channels not using entry / exit jingles would not work (I do not have these in my reach);
+* complex ad breaks (such as lasting for 20 mins and employing multiple jingles in between) would likely not work well (there are means to combat these too);
+* very short jingles (< 1.5s) would have recognition issues (not seen in practice).
+
+However, most TV channels I watch here in France do fall in line. So the mission was, taking into account these external limitations, make the rest working  - and working well. The particular use case is evening movie watching, where ad breaks are sparsed and of simple structure.
+
 ### Streaming Problem
 
 The biggest problem with Dejavu is that it does not support continuous recognition from a stream. One has to define a recognition window. It kind of works when you have a four minutes song fingerprinted, and launch recognition anytime in the middle. It does not work well when your "song" is a three seconds jingle. So I opted for parallelized approach where there are overlapping threads listening for input in a sliding manner.
