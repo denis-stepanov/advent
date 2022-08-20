@@ -9,7 +9,7 @@ Here AdVent is running next to a TV stream in browser, watched by a user using h
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
-AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
+AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, the rest of the code is ridiculously small - AdVent core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
 
 AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
 
