@@ -318,7 +318,7 @@ $ source advent-pyenv/bin/activate
 [My clone of Dejavu](https://github.com/denis-stepanov/dejavu) includes several non-functional adjustments allowing better co-habitation with AdVent, so I recommend using it instead of the upstream copy:
 
 ```
-(advent-pyenv) $ pip install https://github.com/denis-stepanov/dejavu/zipball/tags/0.1.3-ds1.1.2   # or any latest tag
+(advent-pyenv) $ pip install https://github.com/denis-stepanov/dejavu/zipball/tags/0.1.3-ds1.2.0   # or any latest tag
 (advent-pyenv) $ pip install https://github.com/denis-stepanov/advent/zipball/main  # or any stable tag
 ```
 
