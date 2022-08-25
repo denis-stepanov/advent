@@ -21,7 +21,7 @@ from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 VERSION=__version__
 REC_INTERVAL = 3          # (s) - typical duration of an ad jingle
 REC_DEADBAND = 0.4        # (s) - measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
-MATCH_CONFIDENCE = 0.05
+REC_CONFIDENCE = 5        # (%) - lowest still OK without false positives
 DEAD_TIME = 30            # (s) - action dead time after previos action taken on TV
 LOG_FILE = 'advent.log'
 
@@ -79,7 +79,7 @@ class RecognizerThread(threading.Thread):
                 if len(matches):
                     best_match = matches[0]
                     logger.debug(f'Recognition start={start_time}, end={end_time}, {len(matches)} match(es), {best_match["song_name"].decode("utf-8")} best, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
-                    if best_match["fingerprinted_confidence"] >= MATCH_CONFIDENCE:
+                    if best_match["fingerprinted_confidence"] >= REC_CONFIDENCE / 100:
                         print('O', end='', flush=True)     # strong match
                         if ok_to_mute():
                             print('')
@@ -108,6 +108,7 @@ def main():
     global DJV_CONFIG
     global NUM_THREADS
     global REC_INTERVAL
+    global REC_CONFIDENCE
     global REC_OFFSET
     global REC_OFFSET_TD
 
@@ -116,8 +117,9 @@ def main():
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
-    parser.add_argument('-i', '--rec_interval', help='audio recognition interval (s) (default: 3)', type=float)
     parser.add_argument('-n', '--num_threads', help='run N recognition threads (default: = of CPU cores available)', type=int)
+    parser.add_argument('-i', '--rec_interval', help='audio recognition interval (s) (default: 3)', type=float)
+    parser.add_argument('-c', '--rec_confidence', help='audio recognition confidence (%%) (default: 5)', type=int)
     parser.add_argument('-l', '--log', help='log events into a file (default: none)', choices=['none', 'events', 'debug'], default='none')
     args = parser.parse_args()
 
@@ -163,7 +165,15 @@ def main():
                 REC_INTERVAL = args.rec_interval
                 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
                 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
-        logger.info(f'Recognition interval is {REC_INTERVAL} s')
+
+        if args.rec_confidence != None:
+            if args.rec_confidence < 0 or args.rec_confidence > 100:
+                logger.error(f'Error: Invalid recognition confidence: {args.rec_confidence}; ignoring')
+            else:
+                if args.rec_confidence < 3:
+                    logger.warning(f'Warning: recognition confidence of {args.rec_confidence}% is not reliable')
+                REC_CONFIDENCE = args.rec_confidence
+        logger.info(f'Recognition interval is {REC_INTERVAL} s with confidence of {REC_CONFIDENCE}%')
 
         # Thread control
         if args.num_threads != None:
