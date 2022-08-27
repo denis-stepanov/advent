@@ -90,7 +90,7 @@ Another side effect from threading is that two closely running threads both yiel
 
 Finally, an implicit requirement coming from threading approach is that hardware audio source shall support concurrent use from threads. This is not granted in general case (see [below](#testing)).
 
-To confirm the number of threads needed, I undertook a specific test profiling recognition process of a jingle of 3.2 seconds long. Dejavu listening interval is 3 seconds, and thread spacing is 1 second. The results are shown below:
+To confirm the number of threads needed, I undertook a specific test profiling recognition process of a jingle of 3.2 seconds long. Dejavu listening interval was 3 seconds, thread spacing was 1 second, and recognition confidence was 10%. The results are shown below:
 
 ![AdVent running 4 threads](https://user-images.githubusercontent.com/22733222/185672902-cde37f43-4aa4-4b34-8867-519ab6c3929d.png)
 
@@ -104,7 +104,7 @@ Observations:
 
 Because of the above, the need for extra listening thread looks evident now. There are indeed periods of time where all four threads are active.
 
-Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This has been studied (see issue [#26](https://github.com/denis-stepanov/advent/issues/26)) and multi-threading was found to be not at fault. Maybe fine-tuning of Dejavu could help.
+Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This has been studied (see issue [#26](https://github.com/denis-stepanov/advent/issues/26)) and multi-threading was found not to be at fault. Maybe fine-tuning of Dejavu could help.
 
 ## Supported Environment
 
