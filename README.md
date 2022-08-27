@@ -162,8 +162,9 @@ Started 4 listening thread(s)
 
 AdVent prints every second a character reflecting recognition progress. Meaning of characters:
 
-* `.` - no match (usually when there's silence or no input connected at all)
-* `o` - weak match (quite normal on any input)
+* `.` - no signal (usually when there's silence or no input connected at all)
+* `:` - signal but no match
+* `o` - weak match
 * `O` - strong match, also called a "hit". When a hit happens, AdVent prints hit details and may take some action on a TV
 
 There is no standard way of exiting the application, as it is designed to run forever (this should be somewhat alleviated with issue [#8](https://github.com/denis-stepanov/advent/issues/8)). If you need to exit, press `Ctrl-C`; if that does not work, try harder with `Ctrl-\`.
