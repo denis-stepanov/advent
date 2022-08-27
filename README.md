@@ -9,7 +9,7 @@ Here AdVent is running next to a TV stream in browser, watched by a user using h
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
-AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, the rest of the code is ridiculously small - AdVent core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
+AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, AdVent code is ridiculously small - the core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
 
 AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
 
@@ -80,7 +80,7 @@ From this we can draw some conclusions:
 
 1. for good recognition, having 3 seconds fingerprinted is enough ([Dejavu's own estimate](https://github.com/denis-stepanov/dejavu#2-audio-over-laptop-microphone) is that 3 seconds fingerprinted gives 98% recognition confidence);
 2. every contiguous 1.5 seconds (2 seconds better) shall be covered by at least one recognition attempt. Jingle minimal duration thus should not be inferior to 1.5 seconds;
-3. 10% confidence looks like a good cut-off for a "hit".
+3. 10% confidence looks like a good cut-off for a "hit" (this was later lowered even to 5% as Dejavu recognition is not as as good expected but it does not give false positives even at 5% confidence).
 
 So we can estimate that having three recognition threads running with one second interval over three seconds window (as on figure above) should give good enough coverage. These values have been recorded as default parameters in AdVent source code (there are command line options to alter them if needed). Due to inevitable imperfections of timing, I added one more thread just in case (see more details on this below). This gives four threads in total, actively working on recognition. This means that for AdVent to perform well, it should be run on at least four cores CPU, and on such a system it would create 100% system load (four threads occupying four cores). Most of modern systems would satisfy this requirement, Raspberry Pi included.
 
@@ -104,7 +104,7 @@ Observations:
 
 Because of the above, the need for extra listening thread looks evident now. There are indeed periods of time where all four threads are active.
 
-Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This would need further study (see issue [#26](https://github.com/denis-stepanov/advent/issues/26)).
+Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This has been studied (see issue [#26](https://github.com/denis-stepanov/advent/issues/26)) and multi-threading was found to be not at fault. Maybe fine-tuning of Dejavu could help.
 
 ## Supported Environment
 
@@ -152,12 +152,12 @@ Runnig AdVent is as simple as:
 The output should resemble to this:
 
 ```
-AdVent v1.2.0
+AdVent v1.3.0
 TV control is pulseaudio
 TV starts unmuted
-Recognition interval is 3 s
+Recognition interval is 3 s with confidence of 5%
 Started 4 listening thread(s)
-.oooooooo.ooooooooooooo..oo
+...:o::o::::::o::::::::::o::ooo
 ```
 
 AdVent prints every second a character reflecting recognition progress. Meaning of characters:
@@ -175,6 +175,8 @@ There is no option to select an audio source; AdVent takes a system default. See
 `-n NUM_THREADS` option allows selecting a number of recognition threads to run. The offset between threads will be adjusted automatically. Default is the number of CPU cores available (which on end user computers is very often 4 - Raspberry Pi included). Increasing this number would improve coverage of jingles in the input stream, potentially improving recognition. However, making it significantly higher than the number of CPU cores available would likely not attain the desired result leading to system starvation.
 
 `-i REC_INTERVAL` option allows adjusting the recognition window. The default is 3 seconds, which is more or less typical duration of an ad jingle; it should also work fine for jingles longer that that. Increasing this interval would not give much gain from Dejavu point of view and may even decrease effectiveness of AdVent, as large recognition window would delay launch of recognition attempts in other threads. Decreasing this number should be attempted with care, as below 1.5 seconds Dejavu recognition quickly becomes unreliable, and CPU time spent on recognition would grow significantly.
+
+`-c REC_CONFIDENCE` option allows adjusting recognition confidence for a hit in the range of 0-100%. The default, selected experimentally, is 5%. Increasing this parameter will make AdVent less sensitive but more certain; decreasing it will make AdVent more sensitive but also increase a chance of having false positives.
 
 `-l <level>` option will log recognition process into a file `advent.log`. Supported levels of logging are `none` (default), `events` and `debug`.
 
