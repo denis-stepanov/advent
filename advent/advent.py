@@ -97,10 +97,13 @@ class RecognizerThread(threading.Thread):
                                 else:
                                     logger.info('TV mute failed')
                     else:
-                      print('o', end='', flush=True) # weak match
+                      if best_match["fingerprinted_confidence"] > 0:
+                          print('o', end='', flush=True) # weak match
+                      else:
+                          print(':', end='', flush=True) # no match
                 else:
                    logger.debug(f'Recognition start={start_time}, end={end_time}, 0 match(es)')
-                   print('.', end='', flush=True)   # no match
+                   print('.', end='', flush=True)   # no signal
             else:
                 time.sleep(0.1)
 
