@@ -9,7 +9,7 @@ Here AdVent is running next to a TV stream in browser, watched by a user using h
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
-AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, AdVent code is ridiculously small - the core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
+AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, AdVent code is ridiculously small - the core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions. There is no need to inform AdVent of which exact channel you are watching - it will probe for all known channels simultaneously.
 
 AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
 
@@ -31,7 +31,9 @@ Clearly, the approach of looking for ad jingles has inherent limitations:
 * complex ad breaks (such as lasting for 20 mins and employing multiple jingles in between) would likely not work well (there are means to combat these too);
 * very short jingles (< 1.5s) would have recognition issues (not seen in practice).
 
-However, most TV channels I watch here in France do fall in line. So the mission was, taking into account these external limitations, make the rest working  - and working well. The particular use case is evening movie watching, where ad breaks are sparsed and of simple structure.
+However, most TV channels I watch here in France do fall in line. So the mission was, taking into account these external limitations, make the rest working  - and working well. The particular use case of interest is the evening movie watching, where ad breaks are sparsed and of simple structure.
+
+There is also a corner case if you decide to change channel during the commercial break muted by AdVent. It has no means to detect that the channel has been changed, so you would need to unmute manually, or via some sort of timeout (like in feature [#10](https://github.com/denis-stepanov/advent/issues/10)).
 
 ### Streaming Problem
 
@@ -427,7 +429,7 @@ Note that PulseAudio tries to remember which sources applications use, so if you
 
 ![AdVent as seen in PAVUcontrol](https://user-images.githubusercontent.com/22733222/183268533-bafc2190-bc89-47ee-a4c8-a77a716ef04b.png)
 
-Here, by the way, we can observe [three parallel threads](#streaming-problem) at work.
+Here, by the way, we can observe [three parallel threads](#streaming-problem) at work. The fourth one has a low duty cycle, so it comes and goes, causing some flickering in apps like `pavucontrol`.
 
 ### S/PDIF Digital Input
 
@@ -521,7 +523,7 @@ Note 2: HifiBerry manuals strongly recommend against using PulseAudio in general
 
 a) configure down-sampling on the level of ALSA (something I could not easily make, but should be possible), or
 
-b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear. Jingle fingerprints are taken at 44.1 kHz, so one might expect side effects.
+b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear. Jingle fingerprints are taken at 44.1 kHz, so one might expect side effects. Dejavu has known bugs standing to date when working with sample rates different from 44.1 kHz.
 
 Another advantage of PulseAudio is that it allows access to a sound source from multiple processes. By default, it is usually only one process which can use a sound card. This is certainly true and [documented](https://www.hifiberry.com/docs/software/check-if-the-sound-card-is-in-use/) for HiFiBerry. AdVent runs several threads reading sound input in parallel. While these threads remain all part of the same process, it is unclear if it would still work through ALSA.
 
@@ -619,6 +621,8 @@ In a browser, open address `localhost:8282` (if you run the browser on a differe
 
 ![Harmony API Web](https://user-images.githubusercontent.com/22733222/185488924-ac15fd43-52e3-45aa-bdc9-f301b86b6ec9.png)
 
+_Caveat_: if you are coming out of cold boot like a power cycle, Pi might initialize itself faster than Harmony. In this case the hub would not be listed. The solution is to restart the `harmony-api-server`.
+
 In a shell, run this command to test TV control:
 
 ```
@@ -627,7 +631,9 @@ $ curl -s -S -d on -X POST http://localhost:8282/hubs/harmony/commands/mute
 
 It shoud mute the TV. Run it again to unmute.
 
-Note that AdVent relies on default Hub name which is `Harmony`. If your Hub name is different, the name needs to be corrected in the source code (and in the test command above). It there will be demand, it is possible to make a command line option for this (issue [#17](https://github.com/denis-stepanov/advent/issues/17)).
+_Caveat2_: this simplistic command will try muting all devices known to Harmony. Usually, there's only a TV, so it is not an issue. If you have got other devices hooked to Harmony, you might need to opt for a more precise path. Please open a ticket if you need support for this.
+
+Note that AdVent relies on default Hub name which is `Harmony`. If your Hub name is different, the name needs to be corrected in the source code (and in the test command above). It there would be demand, it is possible to make a command line option for this (issue [#17](https://github.com/denis-stepanov/advent/issues/17)).
 
 ## Privacy Statement (for paranoids)
 
