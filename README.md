@@ -1,5 +1,5 @@
 # AdVent
-This program mutes TV commercials by detecting ad jingles in the input audio stream.
+This program combats TV commercials on the fly by detecting ad jingles in the input audio stream and sending mute orders to a TV.
 
 Watch AdVent in action (make sure to turn the video sound on):
 
@@ -100,7 +100,7 @@ Here a green bar is the jingle; the red line is the time when the first hit was 
 
 Observations:
 
-1. there is a non-negligible "deadband" in Dejavu processing (marked in blue on the graph). For every 3 seconds recognition period, the actual recognition takes anytime between 3.2 and 3.5 seconds (on a 4 x 1200 MHz machine). Apparently, the engine just listens for 3 seconds and then does its jobs in the remaining time. So this deadband should be taken into account in calculations;
+1. there is a non-negligible "deadband" in Dejavu processing (marked with blue "tips" on the graph). For every 3 seconds recognition period, the actual recognition would take anytime between 3.2 and 3.5 seconds (on a 4 x 1200 MHz machine). Apparently, the engine just listens for 3 seconds and then does its jobs in the remaining time. So this deadband should be taken into account in calculations;
 2. threads are respecting the minimal distance of 1 second between each other (mutex is working). Due to this the duty cycle of a thread is not 100% but close to 80%. This is not bad for a default setup, as it keeps machine loaded close to 100% but still leaves some time for OS to do other tasks;
 3. new recognition starts not exactly at 1 second interval, but anytime between 1 and 1.1 seconds (because of `sleep(0.1)` when mutex cannot be taken). This error accumulates with time; but it is not very important for the purpose of the app.
 
@@ -112,28 +112,29 @@ Another observation here is that in spite of good coverage of jingle interval, D
 
 There are many different ways of watching TV these days. Currently supported audio inputs:
 
-* video streaming in browser (via [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) monitor)
-* [S/PDIF](https://en.wikipedia.org/wiki/S/PDIF) digital audio out from a TV-set: optical [TOSLINK](https://en.wikipedia.org/wiki/TOSLINK) or electrical [RCA](https://en.wikipedia.org/wiki/RCA_connector) (RCA untested but should work)
-* (could be implemented if there's interest - see issue [#13](https://github.com/denis-stepanov/advent/issues/13)) microphone
+* microphone (untested but should work, as Dejavu supports it natively). This input has an inherent limitation in the sense that AdVent will mute but never unmute, as it would cut off its own input. So it was never of interest for me, but it could be of interest / acceptable for some uses;
+* video streaming in browser (via [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) monitor). This is a default;
+* [S/PDIF](https://en.wikipedia.org/wiki/S/PDIF) digital audio out from a TV-set: optical [TOSLINK](https://en.wikipedia.org/wiki/TOSLINK) or electrical [RCA](https://en.wikipedia.org/wiki/RCA_connector) (RCA untested but should work).
+
 
 Supported TV controls:
 
-* PulseAudio (when watching TV on Linux)
-* [Logitech Harmony Hub](https://support.myharmony.com/en-es/hub)
-* (could be implemented if there's interest) IrDA TV control (vendor-specific)
+* PulseAudio (when watching TV on Linux). This is a default;
+* [Logitech Harmony Hub](https://support.myharmony.com/en-es/hub);
+* (could be implemented if there's interest) IrDA TV control (vendor-specific).
 
 Supported actions:
 
-* sound on / off
-* (could be implemented if there's interest - see issue [#14](https://github.com/denis-stepanov/advent/issues/14)) sound fade out / in
-* (could be implemented if there's interest - see issue [#15](https://github.com/denis-stepanov/advent/issues/15)) changing a TV channel
+* sound on / off. This is a default;
+* (could be implemented if there's interest - see issue [#14](https://github.com/denis-stepanov/advent/issues/14)) sound fade out / in;
+* (could be implemented if there's interest - see issue [#15](https://github.com/denis-stepanov/advent/issues/15)) changing a TV channel;
 * ...
 
 Supported OS:
 
-* recent Fedora (tested on Fedora 36)
-* Raspbian 10
-* (Windows is not supported but the majority of software is in Python; should work as is, with the exception of TV controls module which would need contributions and testing - see issue [#16](https://github.com/denis-stepanov/advent/issues/16))
+* recent Fedora (tested on Fedora 36). This is a default;
+* Raspbian 10. Actually, it is less laborious to support than Fedora, as many problematic points are either non-existing on Raspbian, or implemented in more user-friendly way;
+* (Windows is not supported but the majority of software is in Python; should work as is, with the exception of TV controls module which would need contributions and testing - see issue [#16](https://github.com/denis-stepanov/advent/issues/16)).
 
 Not all combinations are supported; see below for the details.
 
@@ -382,6 +383,10 @@ $
 The source marked with an asterisk `*` is the default. Omit `grep` to see more details.
 
 Sections below detail supported inputs.
+
+### Capturing from a Microphone
+
+This is usually a system default, so you do not have to do anything.
 
 ### Capturing a TV Web Cast
 
