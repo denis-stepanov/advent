@@ -431,6 +431,8 @@ On laptops and alike, by default, the sound source used is a built-in mike (hidi
 $ pactl set-default-source alsa_output.pci-0000_00_1b.0.analog-stereo.monitor
 ```
 
+Big advantage of a "monitor" is that it samples sound before it goes to a sink. So muting a PulseAudio sink (see [TV Controls with PulseAudio](#tv-web-cast)) would let AdVent continue listening to the cast, [exactly as needed](#how-stuff-works). And, of course, the chain is fully digital, so no sound loss or distortion occurs.
+
 #### Testing
 
 Start your web cast and test recording:
