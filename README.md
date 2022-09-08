@@ -106,13 +106,13 @@ Observations:
 
 Because of the above, the need for extra listening thread looks evident now. There are indeed periods of time where all four threads are active.
 
-Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This has been studied (see issue [#26](https://github.com/denis-stepanov/advent/issues/26)) and multi-threading was found not to be at fault. Maybe fine-tuning of Dejavu could help.
+Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This has been studied (see issue [#26](https://github.com/denis-stepanov/advent/issues/26)) and multi-threading was found not to be at fault. Maybe fine-tuning of Dejavu could help (see issue [#37](https://github.com/denis-stepanov/advent/issues/37)).
 
 ## Supported Environment
 
 There are many different ways of watching TV these days. Currently supported audio inputs:
 
-* microphone (untested but should work, as Dejavu supports it natively). This input has an inherent limitation in the sense that AdVent will mute but never unmute, as it would cut off its own input. So it was never of interest for me, but it could be of interest / acceptable for some uses;
+* microphone;
 * video streaming in browser (via [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) monitor). This is a default;
 * [S/PDIF](https://en.wikipedia.org/wiki/S/PDIF) digital audio out from a TV-set: optical [TOSLINK](https://en.wikipedia.org/wiki/TOSLINK) or electrical [RCA](https://en.wikipedia.org/wiki/RCA_connector) (RCA untested but should work).
 
@@ -386,7 +386,27 @@ Sections below detail supported inputs.
 
 ### Capturing from a Microphone
 
-This is usually a system default, so you do not have to do anything.
+This input has an inherent limitation in the sense that AdVent will mute but never unmute, as by muting it would silence its own input. This renders AdVent semi-functional, but it could be still useful in some scenarios. Another disadvantage of using a microphone is noisy sound decreasing recognition efficiency. On the other side, this input requires no wired connection to a TV-set. Also, on systems equipped with a mike it is usually set as default audio input, so no special setup is required to use it.
+
+#### Testing
+
+Turn on TV and test recording:
+
+```
+$ parecord -v test.wav
+Opening a recording stream with sample specification 's16le 2ch 44100Hz' and channel map 'front-left,front-right'.
+Connection established.
+Stream successfully created.
+Buffer metrics: maxlength=4194304, fragsize=352800
+Using sample spec 's16le 2ch 44100Hz', channel map 'front-left,front-right'.
+Connected to device alsa_input.pci-0000_00_1b.0.analog-stereo (index: 46, suspended: no).
+Time: 5.888 sec; Latency: 1888172 usec.        
+...
+(Ctrl-C)
+$
+```
+
+The resulting file should reproduce TV sound reasonably well. If not, try putting the microphone closer to the source, or use a better quality external microphone instead of a built-in one.
 
 ### Capturing a TV Web Cast
 
