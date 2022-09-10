@@ -21,7 +21,7 @@ from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 VERSION=__version__
 REC_INTERVAL = 3          # (s) - typical duration of an ad jingle
 REC_DEADBAND = 0.4        # (s) - measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
-REC_CONFIDENCE = 5        # (%) - lowest still OK without false positives
+REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
 DEAD_TIME = 30            # (s) - action dead time after previos action taken on TV
 LOG_FILE = 'advent.log'
 
