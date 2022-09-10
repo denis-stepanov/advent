@@ -1,5 +1,5 @@
 # AdVent
-This program mutes TV commercials by detecting ad jingles in the input audio stream.
+This program combats TV commercials on the fly by detecting ad jingles in the input audio stream and sending mute orders to a TV.
 
 Watch AdVent in action (make sure to turn the video sound on):
 
@@ -9,7 +9,7 @@ Here AdVent is running next to a TV stream in browser, watched by a user using h
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
-AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, AdVent code is ridiculously small - the core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
+AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, AdVent code is ridiculously small - the core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions. There is no need to inform AdVent of which exact channel you are watching - it will probe for all known channels simultaneously.
 
 AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
 
@@ -31,7 +31,9 @@ Clearly, the approach of looking for ad jingles has inherent limitations:
 * complex ad breaks (such as lasting for 20 mins and employing multiple jingles in between) would likely not work well (there are means to combat these too);
 * very short jingles (< 1.5s) would have recognition issues (not seen in practice).
 
-However, most TV channels I watch here in France do fall in line. So the mission was, taking into account these external limitations, make the rest working  - and working well. The particular use case is evening movie watching, where ad breaks are sparsed and of simple structure.
+However, most TV channels I watch here in France do fall in line. So the mission was, taking into account these external limitations, make the rest working  - and working well. The particular use case of interest is the evening movie watching, where ad breaks are sparsed and of simple structure.
+
+There is also a corner case if you decide to change channel during the commercial break muted by AdVent. It has no means to detect that the channel has been changed, so you would need to unmute manually, or via some sort of timeout (like in feature [#10](https://github.com/denis-stepanov/advent/issues/10)).
 
 ### Streaming Problem
 
@@ -98,40 +100,41 @@ Here a green bar is the jingle; the red line is the time when the first hit was 
 
 Observations:
 
-1. there is a non-negligible "deadband" in Dejavu processing (marked in blue on the graph). For every 3 seconds recognition period, the actual recognition takes anytime between 3.2 and 3.5 seconds (on a 4 x 1200 MHz machine). Apparently, the engine just listens for 3 seconds and then does its jobs in the remaining time. So this deadband should be taken into account in calculations;
+1. there is a non-negligible "deadband" in Dejavu processing (marked with blue "tips" on the graph). For every 3 seconds recognition period, the actual recognition would take anytime between 3.2 and 3.5 seconds (on a 4 x 1200 MHz machine). Apparently, the engine just listens for 3 seconds and then does its jobs in the remaining time. So this deadband should be taken into account in calculations;
 2. threads are respecting the minimal distance of 1 second between each other (mutex is working). Due to this the duty cycle of a thread is not 100% but close to 80%. This is not bad for a default setup, as it keeps machine loaded close to 100% but still leaves some time for OS to do other tasks;
 3. new recognition starts not exactly at 1 second interval, but anytime between 1 and 1.1 seconds (because of `sleep(0.1)` when mutex cannot be taken). This error accumulates with time; but it is not very important for the purpose of the app.
 
 Because of the above, the need for extra listening thread looks evident now. There are indeed periods of time where all four threads are active.
 
-Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This has been studied (see issue [#26](https://github.com/denis-stepanov/advent/issues/26)) and multi-threading was found not to be at fault. Maybe fine-tuning of Dejavu could help.
+Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This has been studied (see issue [#26](https://github.com/denis-stepanov/advent/issues/26)) and multi-threading was found not to be at fault. Maybe fine-tuning of Dejavu could help (see issue [#37](https://github.com/denis-stepanov/advent/issues/37)).
 
 ## Supported Environment
 
 There are many different ways of watching TV these days. Currently supported audio inputs:
 
-* video streaming in browser (via [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) monitor)
-* [S/PDIF](https://en.wikipedia.org/wiki/S/PDIF) digital audio out from a TV-set: optical [TOSLINK](https://en.wikipedia.org/wiki/TOSLINK) or electrical [RCA](https://en.wikipedia.org/wiki/RCA_connector) (RCA untested but should work)
-* (could be implemented if there's interest - see issue [#13](https://github.com/denis-stepanov/advent/issues/13)) microphone
+* microphone;
+* video streaming in browser (via [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) monitor). This is a default;
+* [S/PDIF](https://en.wikipedia.org/wiki/S/PDIF) digital audio out from a TV-set: optical [TOSLINK](https://en.wikipedia.org/wiki/TOSLINK) or electrical [RCA](https://en.wikipedia.org/wiki/RCA_connector) (RCA untested but should work).
+
 
 Supported TV controls:
 
-* PulseAudio (when watching TV on Linux)
-* [Logitech Harmony Hub](https://support.myharmony.com/en-es/hub)
-* (could be implemented if there's interest) IrDA TV control (vendor-specific)
+* PulseAudio (when watching TV on Linux). This is a default;
+* [Logitech Harmony Hub](https://support.myharmony.com/en-es/hub);
+* (could be implemented if there's interest) IrDA TV control (vendor-specific).
 
 Supported actions:
 
-* sound on / off
-* (could be implemented if there's interest - see issue [#14](https://github.com/denis-stepanov/advent/issues/14)) sound fade out / in
-* (could be implemented if there's interest - see issue [#15](https://github.com/denis-stepanov/advent/issues/15)) changing a TV channel
+* sound on / off. This is a default;
+* (could be implemented if there's interest - see issue [#14](https://github.com/denis-stepanov/advent/issues/14)) sound fade out / in;
+* (could be implemented if there's interest - see issue [#15](https://github.com/denis-stepanov/advent/issues/15)) changing a TV channel;
 * ...
 
 Supported OS:
 
-* recent Fedora (tested on Fedora 36)
-* Raspbian 10
-* (Windows is not supported but the majority of software is in Python; should work as is, with the exception of TV controls module which would need contributions and testing - see issue [#16](https://github.com/denis-stepanov/advent/issues/16))
+* recent Fedora (tested on Fedora 36). This is a default;
+* Raspbian 10. Actually, it is less laborious to support than Fedora, as many problematic points are either non-existing on Raspbian, or implemented in more user-friendly way;
+* (Windows is not supported but the majority of software is in Python; should work as is, with the exception of TV controls module which would need contributions and testing - see issue [#16](https://github.com/denis-stepanov/advent/issues/16)).
 
 Not all combinations are supported; see below for the details.
 
@@ -381,6 +384,30 @@ The source marked with an asterisk `*` is the default. Omit `grep` to see more d
 
 Sections below detail supported inputs.
 
+### Capturing from a Microphone
+
+This input has an inherent limitation in the sense that AdVent will mute but never unmute, as by muting it would silence its own input. This renders AdVent semi-functional, but it could be still useful in some scenarios. Another disadvantage of using a microphone is noisy sound decreasing recognition efficiency. On the other side, this input requires no wired connection to a TV-set. Also, on systems equipped with a mike it is usually set as default audio input, so no special setup is required to use it.
+
+#### Testing
+
+Turn on TV and test recording:
+
+```
+$ parecord -v test.wav
+Opening a recording stream with sample specification 's16le 2ch 44100Hz' and channel map 'front-left,front-right'.
+Connection established.
+Stream successfully created.
+Buffer metrics: maxlength=4194304, fragsize=352800
+Using sample spec 's16le 2ch 44100Hz', channel map 'front-left,front-right'.
+Connected to device alsa_input.pci-0000_00_1b.0.analog-stereo (index: 46, suspended: no).
+Time: 5.888 sec; Latency: 1888172 usec.        
+...
+(Ctrl-C)
+$
+```
+
+The resulting file should reproduce TV sound reasonably well. If not, try putting the microphone closer to the source, or use a better quality external microphone instead of a built-in one.
+
 ### Capturing a TV Web Cast
 
 Instructions below are for Fedora. I do not have an equivalent for Raspbian, because I use Raspberry Pi to capture from a real TV rather than from Web.
@@ -403,6 +430,8 @@ On laptops and alike, by default, the sound source used is a built-in mike (hidi
 ```
 $ pactl set-default-source alsa_output.pci-0000_00_1b.0.analog-stereo.monitor
 ```
+
+Big advantage of a "monitor" is that it samples sound before it goes to a sink. So muting a PulseAudio sink (see [TV Controls with PulseAudio](#tv-web-cast)) would let AdVent continue listening to the cast, [exactly as needed](#how-stuff-works). And, of course, the chain is fully digital, so no sound loss or distortion occurs.
 
 #### Testing
 
@@ -427,7 +456,7 @@ Note that PulseAudio tries to remember which sources applications use, so if you
 
 ![AdVent as seen in PAVUcontrol](https://user-images.githubusercontent.com/22733222/183268533-bafc2190-bc89-47ee-a4c8-a77a716ef04b.png)
 
-Here, by the way, we can observe [three parallel threads](#streaming-problem) at work.
+Here, by the way, we can observe [three parallel threads](#streaming-problem) at work. The fourth one has a low duty cycle, so it comes and goes, causing some flickering in apps like `pavucontrol`.
 
 ### S/PDIF Digital Input
 
@@ -521,7 +550,7 @@ Note 2: HifiBerry manuals strongly recommend against using PulseAudio in general
 
 a) configure down-sampling on the level of ALSA (something I could not easily make, but should be possible), or
 
-b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear. Jingle fingerprints are taken at 44.1 kHz, so one might expect side effects.
+b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but the impact on recognition efficiency is unclear. Jingle fingerprints are taken at 44.1 kHz, so one might expect side effects. Dejavu has known bugs standing to date when working with sample rates different from 44.1 kHz.
 
 Another advantage of PulseAudio is that it allows access to a sound source from multiple processes. By default, it is usually only one process which can use a sound card. This is certainly true and [documented](https://www.hifiberry.com/docs/software/check-if-the-sound-card-is-in-use/) for HiFiBerry. AdVent runs several threads reading sound input in parallel. While these threads remain all part of the same process, it is unclear if it would still work through ALSA.
 
@@ -619,6 +648,8 @@ In a browser, open address `localhost:8282` (if you run the browser on a differe
 
 ![Harmony API Web](https://user-images.githubusercontent.com/22733222/185488924-ac15fd43-52e3-45aa-bdc9-f301b86b6ec9.png)
 
+_Caveat_: if you are coming out of cold boot like a power cycle, Pi might initialize itself faster than Harmony. In this case the hub would not be listed. The solution is to restart the `harmony-api-server`.
+
 In a shell, run this command to test TV control:
 
 ```
@@ -627,7 +658,9 @@ $ curl -s -S -d on -X POST http://localhost:8282/hubs/harmony/commands/mute
 
 It shoud mute the TV. Run it again to unmute.
 
-Note that AdVent relies on default Hub name which is `Harmony`. If your Hub name is different, the name needs to be corrected in the source code (and in the test command above). It there will be demand, it is possible to make a command line option for this (issue [#17](https://github.com/denis-stepanov/advent/issues/17)).
+_Caveat2_: this simplistic command will try muting all devices known to Harmony. Usually, there's only a TV, so it is not an issue. If you have got other devices hooked to Harmony, you might need to opt for a more precise path. Please open a ticket if you need support for this.
+
+Note that AdVent relies on default Hub name which is `Harmony`. If your Hub name is different, the name needs to be corrected in the source code (and in the test command above). It there would be demand, it is possible to make a command line option for this (issue [#17](https://github.com/denis-stepanov/advent/issues/17)).
 
 ## Privacy Statement (for paranoids)
 
