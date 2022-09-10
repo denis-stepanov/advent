@@ -23,6 +23,7 @@ REC_INTERVAL = 3          # (s) - typical duration of an ad jingle
 REC_DEADBAND = 0.4        # (s) - Dejavu processing time for a record of 3s. measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
 REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
 DEAD_TIME = 30            # (s) - action dead time after previos action taken on TV
+MUTE_TIMEOUT = 600        # (s) - if TV is muted, unmute automatically after this time
 LOG_FILE = 'advent.log'
 
 # Globals
@@ -114,6 +115,7 @@ def main():
     global REC_CONFIDENCE
     global REC_OFFSET
     global REC_OFFSET_TD
+    global MUTE_TIMEOUT
 
     ## Command-line parser
     parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
@@ -123,6 +125,7 @@ def main():
     parser.add_argument('-n', '--num_threads', help='run N recognition threads (default: = of CPU cores available)', type=int)
     parser.add_argument('-i', '--rec_interval', help='audio recognition interval (s) (default: 3)', type=float)
     parser.add_argument('-c', '--rec_confidence', help='audio recognition confidence (%%) (default: 5)', type=int)
+    parser.add_argument('-m', '--mute_timeout', help='unmute automatically after timeout (s) (default: 600; use 0 to disable)', type=int)
     parser.add_argument('-l', '--log', help='log events into a file (default: none)', choices=['none', 'events', 'debug'], default='none')
     args = parser.parse_args()
 
@@ -146,6 +149,12 @@ def main():
         logger.debug(f'Dejavu config {dejavu_cnf.name} loaded')
 
         # TV controls
+        if args.mute_timeout != None:
+            if args.mute_timeout < 0:
+                logger.error(f'Error: Invalid mute timeout: {args.mute_timeout}; ignoring')
+            else:
+                MUTE_TIMEOUT = args.mute_timeout
+
         if args.tv_control == 'nil':
             tvc = TVControl()
         elif args.tv_control == 'harmonyhub':
@@ -154,9 +163,15 @@ def main():
             tvc = TVControlPulseAudio()
         logger.info(f'TV control is {args.tv_control}')
         if tvc.isMuted():
-            logger.info('TV starts muted')
+            if MUTE_TIMEOUT == 0:
+                logger.info('TV starts muted')
+            else:
+                logger.info(f'TV starts muted; mute timeout is {MUTE_TIMEOUT} s')
         else:
-            logger.info('TV starts unmuted')
+            if MUTE_TIMEOUT == 0:
+                logger.info('TV starts unmuted')
+            else:
+                logger.info(f'TV starts unmuted; mute timeout is {MUTE_TIMEOUT} s')
 
         # Recognition settings
         if args.rec_interval != None:
