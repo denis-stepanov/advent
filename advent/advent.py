@@ -20,8 +20,8 @@ from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 # Settings
 VERSION=__version__
 REC_INTERVAL = 3          # (s) - typical duration of an ad jingle
-REC_DEADBAND = 0.4        # (s) - measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
-REC_CONFIDENCE = 5        # (%) - lowest still OK without false positives
+REC_DEADBAND = 0.4        # (s) - Dejavu processing time for a record of 3s. measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
+REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
 DEAD_TIME = 30            # (s) - action dead time after previos action taken on TV
 LOG_FILE = 'advent.log'
 
@@ -78,7 +78,7 @@ class RecognizerThread(threading.Thread):
                 end_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
                 if len(matches):
                     best_match = matches[0]
-                    logger.debug(f'Recognition start={start_time}, end={end_time}, {len(matches)} match(es), {best_match["song_name"].decode("utf-8")} best, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
+                    logger.debug(f'Recognition start={start_time}, end={end_time}, match {best_match["song_name"].decode("utf-8")}, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
                     if best_match["fingerprinted_confidence"] >= REC_CONFIDENCE / 100:
                         print('O', end='', flush=True)     # strong match
                         if ok_to_mute():
@@ -102,7 +102,7 @@ class RecognizerThread(threading.Thread):
                       else:
                           print(':', end='', flush=True) # no match
                 else:
-                   logger.debug(f'Recognition start={start_time}, end={end_time}, 0 match(es)')
+                   logger.debug(f'Recognition start={start_time}, end={end_time}, no matches')
                    print('.', end='', flush=True)   # no signal
             else:
                 time.sleep(0.1)
