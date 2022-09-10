@@ -22,7 +22,7 @@ VERSION=__version__
 REC_INTERVAL = 3          # (s) - typical duration of an ad jingle
 REC_DEADBAND = 0.4        # (s) - Dejavu processing time for a record of 3s. measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
 REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
-DEAD_TIME = 30            # (s) - action dead time after previos action taken on TV
+TV_DEAD_TIME = 30         # (s) - action dead time after previous action taken on TV
 MUTE_TIMEOUT = 600        # (s) - if TV is muted, unmute automatically after this time
 LOG_FILE = 'advent.log'
 
@@ -31,11 +31,11 @@ DJV_CONFIG = None
 NUM_THREADS = os.cpu_count()
 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
-DEAD_TIME_TD = timedelta(seconds=DEAD_TIME)
+TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
 detection_lock = threading.Lock()
 mute_lock = threading.Lock()
 last_detection_time = datetime.now()
-last_mute_time = datetime.now() - timedelta(seconds=DEAD_TIME)
+last_mute_time = datetime.now() - timedelta(seconds=TV_DEAD_TIME)
 logger = logging.getLogger('advent')
 
 # Run next detection no earlier that REC_OFFSET seconds
@@ -50,13 +50,13 @@ def ok_to_detect():
     detection_lock.release()
     return ok
 
-# Disable actions for DEAD_TIME seconds
+# Disable TV actions for TV_DEAD_TIME seconds
 def ok_to_mute():
     global last_mute_time
     curr_time = datetime.now()
     ok = False
     mute_lock.acquire()
-    if curr_time - last_mute_time >= DEAD_TIME_TD:
+    if curr_time - last_mute_time >= TV_DEAD_TIME_TD:
         last_mute_time = curr_time
         ok = True
     mute_lock.release()
@@ -152,6 +152,9 @@ def main():
         if args.mute_timeout != None:
             if args.mute_timeout < 0:
                 logger.error(f'Error: Invalid mute timeout: {args.mute_timeout}; ignoring')
+            elif args.mute_timeout > 0 and args.mute_timeout < TV_DEAD_TIME:
+                logger.warning(f'Warning: mute timeout cannot be less than TV action dead time; setting to {TV_DEAD_TIME} s')
+                MUTE_TIMEOUT = TV_DEAD_TIME
             else:
                 MUTE_TIMEOUT = args.mute_timeout
 
