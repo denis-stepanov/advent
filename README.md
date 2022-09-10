@@ -350,10 +350,10 @@ $ source advent-pyenv/bin/activate
 
 ### Step 5: Install Dejavu and AdVent
 
-[My clone of Dejavu](https://github.com/denis-stepanov/dejavu) includes several non-functional adjustments allowing better co-habitation with AdVent, so I recommend using it instead of the upstream copy:
+[My clone of Dejavu](https://github.com/denis-stepanov/dejavu) includes several non-functional adjustments allowing better co-habitation with AdVent, so I recommend using it instead of Dejavu upstream:
 
 ```
-(advent-pyenv) $ pip install https://github.com/denis-stepanov/dejavu/zipball/tags/0.1.3-ds1.2.0   # or any latest tag
+(advent-pyenv) $ pip install https://github.com/denis-stepanov/dejavu/zipball/tags/0.1.3-ds1.3.0   # or any latest tag
 (advent-pyenv) $ pip install https://github.com/denis-stepanov/advent/zipball/main  # or any stable tag
 ```
 
