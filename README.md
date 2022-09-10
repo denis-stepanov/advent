@@ -29,7 +29,7 @@ Clearly, the approach of looking for ad jingles has inherent limitations:
 
 * TV channels not using entry / exit jingles would not work (I do not have these in my reach);
 * complex ad breaks (such as lasting for 20 mins and employing multiple jingles in between) would likely not work well (there are means to combat these too);
-* very short jingles (< 1.5s) would have recognition issues (not seen in practice).
+* very short jingles (< 1.5s) might have recognition issues (not seen in practice).
 
 However, most TV channels I watch here in France do fall in line. So the mission was, taking into account these external limitations, make the rest working  - and working well. The particular use case of interest is the evening movie watching, where ad breaks are sparsed and of simple structure.
 
@@ -41,7 +41,7 @@ The biggest problem with Dejavu is that it does not support continuous recogniti
 
 ![Streaming Implementation](https://user-images.githubusercontent.com/22733222/181107790-0cb879a7-e7df-411c-b211-03a4ae8b40ea.png)
 
-Question is how many threads are needed. To understand this better I took a random three seconds jingle and tested its recognition once being split in two parts. Results:
+Question is how many threads would be needed. To understand this better I took a random three seconds jingle and tested its recognition once being split in two parts. Results:
 
 <table>
 <tr>
@@ -82,17 +82,17 @@ From this we can draw some conclusions:
 
 1. for good recognition, having 3 seconds fingerprinted is enough ([Dejavu's own estimate](https://github.com/denis-stepanov/dejavu#2-audio-over-laptop-microphone) is that 3 seconds fingerprinted gives 98% recognition confidence);
 2. every contiguous 1.5 seconds (2 seconds better) shall be covered by at least one recognition attempt. Jingle minimal duration thus should not be inferior to 1.5 seconds;
-3. 10% confidence looks like a good cut-off for a "hit" (this was later lowered even to 5% as Dejavu recognition is not as as good expected but it does not give false positives even at 5% confidence).
+3. 10% confidence looks like a good cut-off for a "hit".
 
 So we can estimate that having three recognition threads running with one second interval over three seconds window (as on figure above) should give good enough coverage. These values have been recorded as default parameters in AdVent source code (there are command line options to alter them if needed). Due to inevitable imperfections of timing, I added one more thread just in case (see more details on this below). This gives four threads in total, actively working on recognition. This means that for AdVent to perform well, it should be run on at least four cores CPU, and on such a system it would create 100% system load (four threads occupying four cores). Most of modern systems would satisfy this requirement, Raspberry Pi included.
 
-Because recognition process is not deterministic, threads originally spaced in time might drift and get closer to each other. This would diminish coverage and decrease effectiveness of recognition. To avoid this effect, a mutex is used which would prevent any recognition operation firing too close to another one from a parallel thread.
+Because recognition process is not deterministic, threads originally spaced in time might drift and come closer to each other. This would diminish coverage and decrease effectiveness of recognition. To avoid this effect, a mutex is used which would prevent any recognition operation firing too close to another one from a parallel thread.
 
 Another side effect from threading is that two closely running threads both yielding a hit can try flipping TV, which would cause problems at TV controls unit, as well as unpleasant user experience. To prevent this, a dead time is used (30 seconds by default), during which all actions on TV are disabled.
 
 Finally, an implicit requirement coming from threading approach is that hardware audio source shall support concurrent use from threads. This is not granted in general case (see [below](#testing)).
 
-To confirm the number of threads needed, I undertook a specific test profiling recognition process of a jingle of 3.2 seconds long. Dejavu listening interval was 3 seconds, thread spacing was 1 second, and recognition confidence was 10%. The results are shown below:
+Once the threading engine was ready, in order to confirm the number of threads needed, I undertook a specific test profiling recognition process of a jingle of 3.2 seconds long. Dejavu listening interval was 3 seconds, thread spacing was 1 second, and recognition confidence was 10%. The results are shown below:
 
 ![AdVent running 4 threads](https://user-images.githubusercontent.com/22733222/185672902-cde37f43-4aa4-4b34-8867-519ab6c3929d.png)
 
@@ -100,13 +100,42 @@ Here a green bar is the jingle; the red line is the time when the first hit was 
 
 Observations:
 
-1. there is a non-negligible "deadband" in Dejavu processing (marked with blue "tips" on the graph). For every 3 seconds recognition period, the actual recognition would take anytime between 3.2 and 3.5 seconds (on a 4 x 1200 MHz machine). Apparently, the engine just listens for 3 seconds and then does its jobs in the remaining time. So this deadband should be taken into account in calculations;
+1. there is a non-negligible "deadband" in Dejavu processing (marked with blue "tips" on the graph). For every 3 seconds recognition period, the actual recognition would take anytime between 3.2 and 3.5 seconds (on a 4 x 1200 MHz machine). Apparently, the engine just listens for 3 seconds and then does its jobs in the remaining time. So this deadband (currently recorded as a 0.4 seconds constant in the code - see issue [#24](https://github.com/denis-stepanov/advent/issues/24)) should be taken into account in calculations;
 2. threads are respecting the minimal distance of 1 second between each other (mutex is working). Due to this the duty cycle of a thread is not 100% but close to 80%. This is not bad for a default setup, as it keeps machine loaded close to 100% but still leaves some time for OS to do other tasks;
 3. new recognition starts not exactly at 1 second interval, but anytime between 1 and 1.1 seconds (because of `sleep(0.1)` when mutex cannot be taken). This error accumulates with time; but it is not very important for the purpose of the app.
 
 Because of the above, the need for extra listening thread looks evident now. There are indeed periods of time where all four threads are active.
 
-Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result is not as good as expected. This has been studied (see issue [#26](https://github.com/denis-stepanov/advent/issues/26)) and multi-threading was found not to be at fault. Maybe fine-tuning of Dejavu could help (see issue [#37](https://github.com/denis-stepanov/advent/issues/37)).
+Another observation here is that in spite of good coverage of jingle interval, Dejavu recognition result turned out not to be as good as expected. My first thought was that Dejavu input might suffer from distortions due to concurrent access to the audio source. This has been studied in detail and multi-threading was found not to be at fault. So, maybe it was a good time to take a closer look at Dejavu itself.
+
+### Dejavu Tuning
+
+Dejavu has a configuration file `config/settings.py` which includes a few parameters to play with. They are well documented in the file, but still, changing them requires some knowledge of Dejavu internal process. Intuitively, if we want to improve recognition quality, we need to increase fingerprinting density (number of fingerprints per second of a track). And because we are working with very short tracks, the number must be significant. The density was measured on a sample track an was found to be about 85 fingerprints per second. So the parameters were adjusted as follows:
+
+<pre>
+CONNECTIVITY_MASK = 2
+DEFAULT_FS = 44100
+<b>DEFAULT_WINDOW_SIZE = 1024      # was 4096</b>
+<b>DEFAULT_OVERLAP_RATIO = 0.75    # was 0.5</b>
+<b>DEFAULT_FAN_VALUE = 15          # was 5</b>
+DEFAULT_AMP_MIN = 10
+PEAK_NEIGHBORHOOD_SIZE = 10
+MIN_HASH_TIME_DELTA = 0
+MAX_HASH_TIME_DELTA = 200
+PEAK_SORT = True
+FINGERPRINT_REDUCTION = 20
+<b>TOPN = 1                        # was 2</b>
+</pre>
+
+`WINDOW_SIZE` is a sort of a "bucket" for frequencies in Fourier transform; making it smaller allows finer granularity when telling apart different frequences. Here we make the window four time smaller. Increasing `OVERLAP_RATIO` will take finer slices in time (we are interested in this) and, hence, return finer offsets (this bit is not interesting - AdVent does not use offset information). Here we raise overlap from 50% to 75%. Finally, `FAN_VALUE` reflects a space boundary for fingerprint neighborhood; increasing it allows for more potential combinations and, hence, more fingerprints. Here, we increase the distance by a factor of three. Applying all these settings together results in 485 fingerprints per seconds, i.e. about a factor five increase in density.
+
+Now, does this improve efficiency? I made a small synthetic test by playing a jingle in the loop with pauses not aligned to 0.1 second (this is to make sure that threads do not run fully synchronously with playback). With confidence level of 5% the difference between old and new settings is not very visible, as both demonstrate close to 100% success in matching. However, things change when we request matching confidence of, say, 50%. In this case the old set gives only 45% success rate, while the new set gives 85% success rate - almost twofold difference.
+
+`TOPN` is not related to fingerprinting; it defines how many nearest matches will be returned. This is two by default, but because AdVent only uses one, it makes sense to limit it on Dejavu level and save a bit of CPU cycles.
+
+An obvious disadvantage of having more fingerprints is that database size will grow accordingly (in this case, by a factor of five), and the matching time ("Dejavu deadband") might increase. I tested it and did not observe a noticeable change (it remains in the order of 0.4 seconds for a three seconds track). Machine load was observed to be slightly higher, but not to the extent that could be realiably measured.
+
+Note that changing Dejavu parameters has impact on fingerprint database. It is thus better to fix and not to change them in the process, or else the entire set of jingles might need re-processing. If you plan to play with these parameters, make sure to keep around copies of your original audio files.
 
 ## Supported Environment
 
