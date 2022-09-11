@@ -32,11 +32,15 @@ NUM_THREADS = os.cpu_count()
 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
 TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
+MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 detection_lock = threading.Lock()
-mute_lock = threading.Lock()
+action_lock = threading.Lock()
 last_detection_time = datetime.now()
-last_mute_time = datetime.now() - timedelta(seconds=TV_DEAD_TIME)
+last_action_time = datetime.now() - timedelta(seconds=TV_DEAD_TIME)
 logger = logging.getLogger('advent')
+
+# Note: use of mutexes below is not fully canonical, as only permission to act are protected, but not the actions themselves
+# This does not seem to pose particular problem, but should be probably refactored in future
 
 # Run next detection no earlier that REC_OFFSET seconds
 def ok_to_detect():
@@ -51,15 +55,15 @@ def ok_to_detect():
     return ok
 
 # Disable TV actions for TV_DEAD_TIME seconds
-def ok_to_mute():
-    global last_mute_time
+def ok_to_act():
+    global last_action_time
     curr_time = datetime.now()
     ok = False
-    mute_lock.acquire()
-    if curr_time - last_mute_time >= TV_DEAD_TIME_TD:
-        last_mute_time = curr_time
+    action_lock.acquire()
+    if curr_time - last_action_time >= TV_DEAD_TIME_TD:
+        last_action_time = curr_time
         ok = True
-    mute_lock.release()
+    action_lock.release()
     return ok
 
 # Recognizer
@@ -82,7 +86,7 @@ class RecognizerThread(threading.Thread):
                     logger.debug(f'Recognition start={start_time}, end={end_time}, match {best_match["song_name"].decode("utf-8")}, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
                     if best_match["fingerprinted_confidence"] >= REC_CONFIDENCE / 100:
                         print('O', end='', flush=True)     # strong match
-                        if ok_to_mute():
+                        if ok_to_act():
                             print('')
                             logger.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
                             flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
@@ -116,6 +120,8 @@ def main():
     global REC_OFFSET
     global REC_OFFSET_TD
     global MUTE_TIMEOUT
+    global MUTE_TIMEOUT_TD
+    global last_action_time
 
     ## Command-line parser
     parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
@@ -155,8 +161,10 @@ def main():
             elif args.mute_timeout > 0 and args.mute_timeout < TV_DEAD_TIME:
                 logger.warning(f'Warning: mute timeout cannot be less than TV action dead time; setting to {TV_DEAD_TIME} s')
                 MUTE_TIMEOUT = TV_DEAD_TIME
+                MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
             else:
                 MUTE_TIMEOUT = args.mute_timeout
+                MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 
         if args.tv_control == 'nil':
             tvc = TVControl()
@@ -213,6 +221,17 @@ def main():
             thread.start()
         logger.info(f'Started {NUM_THREADS} listening thread(s)')
         logger.debug(f'Thread offset is {REC_OFFSET} s')
+
+        # If auto-unmute is activated, monitor actions
+        if MUTE_TIMEOUT != 0:
+            while True:
+                if tvc.isMuted() and datetime.now() - last_action_time >= MUTE_TIMEOUT_TD and ok_to_act():
+                    if tvc.toggleMute() = False:
+                        logger.info('TV unmuted due to timeout')
+                    else:
+                        logger.info('TV unmute on timeout failed')
+                time.sleep(1)
+
         return 0
 
     return 1
