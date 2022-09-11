@@ -23,7 +23,7 @@ REC_INTERVAL = 3          # (s) - typical duration of an ad jingle
 REC_DEADBAND = 0.4        # (s) - Dejavu processing time for a record of 3s. measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
 REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
 TV_DEAD_TIME = 30         # (s) - action dead time after previous action taken on TV
-MUTE_TIMEOUT = 600        # (s) - if TV is muted, unmute automatically after this time
+MUTE_TIMEOUT = 600        # (s) - if TV is muted, unmute automatically after this time. Must be >= TV_DEAD_TIME
 LOG_FILE = 'advent.log'
 
 # Globals
@@ -231,7 +231,6 @@ def main():
                         logger.info('TV unmuted due to timeout')
                     else:
                         logger.info('TV unmute on timeout failed')
-                    print('')
                 time.sleep(1)
 
         return 0
