@@ -226,10 +226,12 @@ def main():
         if MUTE_TIMEOUT != 0:
             while True:
                 if tvc.isMuted() and datetime.now() - last_action_time >= MUTE_TIMEOUT_TD and ok_to_act():
-                    if tvc.toggleMute() = False:
+                    print('')
+                    if tvc.toggleMute() == False:
                         logger.info('TV unmuted due to timeout')
                     else:
                         logger.info('TV unmute on timeout failed')
+                    print('')
                 time.sleep(1)
 
         return 0
