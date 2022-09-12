@@ -625,6 +625,8 @@ I have been using this device for TV control from a smartphone since long time. 
 
 ![Logitech Harmony Hub](https://user-images.githubusercontent.com/22733222/180626764-788fca83-ede6-46e2-9b7c-7db087c13a4b.jpg)
 
+Unfortunately, since the underlying mechanism is to send commands over IrDA (pretty much like a regular TV remote), it can offer no insight as to the current status of TV. So AdVent will assume that TV runs unmuted on startup (which should be fine in most cases) and will act on the basis of this information.
+
 #### Harmony Setup
 
 The local API is not enabled by default; you need to activate it in Harmony application as follows: `Menu` > `Harmony Setup` > `Add/Edit Devices & Activities` > `Hub` > `Enable XMPP`.
