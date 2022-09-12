@@ -22,7 +22,8 @@ VERSION=__version__
 REC_INTERVAL = 3          # (s) - typical duration of an ad jingle
 REC_DEADBAND = 0.4        # (s) - Dejavu processing time for a record of 3s. measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
 REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
-DEAD_TIME = 30            # (s) - action dead time after previos action taken on TV
+TV_DEAD_TIME = 30         # (s) - action dead time after previous action taken on TV
+MUTE_TIMEOUT = 600        # (s) - if TV is muted, unmute automatically after this time. Must be >= TV_DEAD_TIME
 LOG_FILE = 'advent.log'
 
 # Globals
@@ -30,12 +31,16 @@ DJV_CONFIG = None
 NUM_THREADS = os.cpu_count()
 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
-DEAD_TIME_TD = timedelta(seconds=DEAD_TIME)
+TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
+MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 detection_lock = threading.Lock()
-mute_lock = threading.Lock()
+action_lock = threading.Lock()
 last_detection_time = datetime.now()
-last_mute_time = datetime.now() - timedelta(seconds=DEAD_TIME)
+last_action_time = datetime.now() - timedelta(seconds=TV_DEAD_TIME)
 logger = logging.getLogger('advent')
+
+# Note: use of mutexes below is not fully canonical, as only permission to act are protected, but not the actions themselves
+# This does not seem to pose particular problem, but should be probably refactored in future
 
 # Run next detection no earlier that REC_OFFSET seconds
 def ok_to_detect():
@@ -49,16 +54,16 @@ def ok_to_detect():
     detection_lock.release()
     return ok
 
-# Disable actions for DEAD_TIME seconds
-def ok_to_mute():
-    global last_mute_time
+# Disable TV actions for TV_DEAD_TIME seconds
+def ok_to_act():
+    global last_action_time
     curr_time = datetime.now()
     ok = False
-    mute_lock.acquire()
-    if curr_time - last_mute_time >= DEAD_TIME_TD:
-        last_mute_time = curr_time
+    action_lock.acquire()
+    if curr_time - last_action_time >= TV_DEAD_TIME_TD:
+        last_action_time = curr_time
         ok = True
-    mute_lock.release()
+    action_lock.release()
     return ok
 
 # Recognizer
@@ -81,7 +86,7 @@ class RecognizerThread(threading.Thread):
                     logger.debug(f'Recognition start={start_time}, end={end_time}, match {best_match["song_name"].decode("utf-8")}, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
                     if best_match["fingerprinted_confidence"] >= REC_CONFIDENCE / 100:
                         print('O', end='', flush=True)     # strong match
-                        if ok_to_mute():
+                        if ok_to_act():
                             print('')
                             logger.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
                             flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
@@ -114,6 +119,9 @@ def main():
     global REC_CONFIDENCE
     global REC_OFFSET
     global REC_OFFSET_TD
+    global MUTE_TIMEOUT
+    global MUTE_TIMEOUT_TD
+    global last_action_time
 
     ## Command-line parser
     parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
@@ -123,6 +131,7 @@ def main():
     parser.add_argument('-n', '--num_threads', help='run N recognition threads (default: = of CPU cores available)', type=int)
     parser.add_argument('-i', '--rec_interval', help='audio recognition interval (s) (default: 3)', type=float)
     parser.add_argument('-c', '--rec_confidence', help='audio recognition confidence (%%) (default: 5)', type=int)
+    parser.add_argument('-m', '--mute_timeout', help='unmute automatically after timeout (s) (default: 600; use 0 to disable)', type=int)
     parser.add_argument('-l', '--log', help='log events into a file (default: none)', choices=['none', 'events', 'debug'], default='none')
     args = parser.parse_args()
 
@@ -146,6 +155,17 @@ def main():
         logger.debug(f'Dejavu config {dejavu_cnf.name} loaded')
 
         # TV controls
+        if args.mute_timeout != None:
+            if args.mute_timeout < 0:
+                logger.error(f'Error: Invalid mute timeout: {args.mute_timeout}; ignoring')
+            elif args.mute_timeout > 0 and args.mute_timeout < TV_DEAD_TIME:
+                logger.warning(f'Warning: mute timeout cannot be less than TV action dead time; setting to {TV_DEAD_TIME} s')
+                MUTE_TIMEOUT = TV_DEAD_TIME
+                MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
+            else:
+                MUTE_TIMEOUT = args.mute_timeout
+                MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
+
         if args.tv_control == 'nil':
             tvc = TVControl()
         elif args.tv_control == 'harmonyhub':
@@ -154,9 +174,15 @@ def main():
             tvc = TVControlPulseAudio()
         logger.info(f'TV control is {args.tv_control}')
         if tvc.isMuted():
-            logger.info('TV starts muted')
+            if MUTE_TIMEOUT == 0:
+                logger.info('TV starts muted')
+            else:
+                logger.info(f'TV starts muted; mute timeout is {MUTE_TIMEOUT} s')
         else:
-            logger.info('TV starts unmuted')
+            if MUTE_TIMEOUT == 0:
+                logger.info('TV starts unmuted')
+            else:
+                logger.info(f'TV starts unmuted; mute timeout is {MUTE_TIMEOUT} s')
 
         # Recognition settings
         if args.rec_interval != None:
@@ -195,6 +221,18 @@ def main():
             thread.start()
         logger.info(f'Started {NUM_THREADS} listening thread(s)')
         logger.debug(f'Thread offset is {REC_OFFSET} s')
+
+        # If auto-unmute is activated, monitor actions
+        if MUTE_TIMEOUT != 0:
+            while True:
+                if tvc.isMuted() and datetime.now() - last_action_time >= MUTE_TIMEOUT_TD and ok_to_act():
+                    print('')
+                    if tvc.toggleMute() == False:
+                        logger.info('TV unmuted due to timeout')
+                    else:
+                        logger.info('TV unmute on timeout failed')
+                time.sleep(1)
+
         return 0
 
     return 1

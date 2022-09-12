@@ -184,10 +184,10 @@ Runnig AdVent is as simple as:
 The output should resemble to this:
 
 ```
-AdVent v1.3.0
+AdVent v1.4.0
 TV control is pulseaudio
-TV starts unmuted
-Recognition interval is 3 s with confidence of 5%
+TV starts unmuted; mute timeout is 600 s
+Recognition interval is 3 s with confidence of 10%
 Started 4 listening thread(s)
 ...:o::o::::::o::::::::::o::ooo
 ```
@@ -199,7 +199,7 @@ AdVent prints every second a character reflecting recognition progress. Meaning 
 * `o` - weak match
 * `O` - strong match, also called a "hit". When a hit happens, AdVent prints hit details and may take some action on a TV
 
-There is no standard way of exiting the application, as it is designed to run forever (this should be somewhat alleviated with issue [#8](https://github.com/denis-stepanov/advent/issues/8)). If you need to exit, press `Ctrl-C`; if that does not work, try harder with `Ctrl-\`.
+There is no standard way of exiting the application, as it is designed to run forever (this should be somewhat alleviated with issue [#8](https://github.com/denis-stepanov/advent/issues/8)). If you need to exit, press `Ctrl-C` twice; if that does not work, try harder with `Ctrl-\`.
 
 The default TV control is `pulseaudio`; you can alter this with `-t` option; e.g. `-t harmonyhub` will select HarmonyHub control instead. `-t nil` will emulate TV control, i.e., make no real action. This is useful during [jingle fingerprinting process](https://github.com/denis-stepanov/advent-db#step-2-single-out-a-jingle-of-interest) and when testing AdVent itself.
 
@@ -207,9 +207,11 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 `-n NUM_THREADS` option allows selecting a number of recognition threads to run. The offset between threads will be adjusted automatically. Default is the number of CPU cores available (which on end user computers - Raspberry Pi included - is very often 4). Increasing this number would improve coverage of jingles in the input stream, potentially improving recognition. However, making it significantly higher than the number of CPU cores available would likely not attain the desired result because of system starvation. Decreasing this number will decrease the system load but also decrease jingle coverage, increasing a chance to miss one. `-n 1` will result in single-thread execution, which would result in small fractions of input not submitted to recognition due to inevitable Dejavu deadband. 
 
-`-i REC_INTERVAL` option allows adjusting the recognition window. It is recommended to keep it close to a typical duration of jingles of the TV channels of interest. The default is 3 seconds, which is more or less common duration; it should also work fairly well for jingles longer that that. Increasing this interval would increase Dejavu effectiveness (because it listens for longer) in expense of decreased effectiveness of AdVent (because threads would have a lower duty cycle), and vice versa. So the change would likely not have much impact, except for some specific cases, like working with very short or very long jingles. Going significantly above 5 seconds would likely diminish the overall efficiency, as majority of jingles are less than 5 seconds long. Going below 2 seconds runs at risk of breaking down Dejavu recognition process and generating many false positives or false negatives.
+`-i REC_INTERVAL` option allows adjusting the recognition window, in seconds. It is recommended to keep it close to a typical duration of jingles of the TV channels of interest. The default is 3 seconds, which is more or less common duration; it should also work fairly well for jingles longer that that. Increasing this interval would increase Dejavu effectiveness (because it listens for longer) in expense of decreased effectiveness of AdVent (because threads would have a lower duty cycle), and vice versa. So the change would likely not have much impact, except for some specific cases, like working with very short or very long jingles. Going significantly above 5 seconds would likely diminish the overall efficiency, as majority of jingles are less than 5 seconds long. Going below 2 seconds runs at risk of breaking down Dejavu recognition process and generating many false positives or false negatives.
 
 `-c REC_CONFIDENCE` option allows adjusting recognition confidence for a hit in the range of 0-100%. The default, selected experimentally, is 10%. Increasing this parameter will make AdVent less sensitive but more certain; decreasing it will make AdVent more sensitive but also increase a chance of having false positives. Selecting confidence of 0% would mean that anything non-silence will be taken as a hit.
+
+`-m MUTE_TIMEOUT` option allows adjusting auto-unmute timeout, in seconds. Auto-unmute is active by default, and the default is 10 minutes (600 seconds). The timeout cannot be less than TV actuation dead time, currently set to 30 seconds. The interest of this feature is when AdVent for some reason does not detect an exit jingle and does not unmute on time, to be able to resume automatically normal TV watching at least few minutes later. It could also be of use when a microphone input is used, which by design can never unmute. If you want to disable auto-unmute altogether, pass `0` timeout.
 
 `-l LOG_LEVEL` option will log recognition process into a file `advent.log`. Supported levels of logging are `none` (default), `events` and `debug`.
 
