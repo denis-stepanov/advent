@@ -13,7 +13,7 @@ class TVControl:
 
     def toggleMute(self):
         self.muted = not self.muted
-        return self.muted
+        return True
 
     def lowVolume(self)
         return self.current_volume == self.nominal_volume

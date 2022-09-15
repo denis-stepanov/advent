@@ -13,7 +13,7 @@ class TVControlHarmonyHub(TVControl):
     def toggleMute(self):
         try:
             requests.post(self.api_server, data = self.mute_command)
-            super().toggleMute()
+            return super().toggleMute()
         except requests.exceptions.RequestException as e:
             print(e)
-        return self.isMuted()
+        return False
