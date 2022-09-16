@@ -99,7 +99,7 @@ class RecognizerThread(threading.Thread):
 
     def __init__(self, tv):
         threading.Thread.__init__(self)
-        self.tvc = tv
+        self.tv = tv
         self.djv = Dejavu(DJV_CONFIG)
 
     def run(self):
@@ -122,16 +122,16 @@ class RecognizerThread(threading.Thread):
                             ad_end = bool(flags & 0b0010)
                             ad_unknown = not(ad_start or ad_end)  # in absence of all flags behave as if all have been set (see issue #40)
 
-                            if tv.isInAction():
+                            if self.tv.isInAction():
                                 if ad_unknown or ad_end:
-                                    if tv.stopAction():
-                                        logger.info('TV volume restored' if tv.getAction() == 'lower_volume' else 'TV unmuted')
+                                    if self.tv.stopAction():
+                                        logger.info('TV volume restored' if self.tv.getAction() == 'lower_volume' else 'TV unmuted')
                                     else:
                                         logger.warning('Warning: TV action failed')
                             else:
                                 if ad_unknown or ad_start:
-                                    if tv.startAction():
-                                        logger.info('TV volume lowered' if tv.getAction() == 'lower_volume' else 'TV muted')
+                                    if self.tv.startAction():
+                                        logger.info('TV volume lowered' if self.tv.getAction() == 'lower_volume' else 'TV muted')
                                     else:
                                         logger.warning('Warning: TV action failed')
                     else:
