@@ -79,18 +79,18 @@ class TV:
 
     def setAction(self, action):
         self.action = action
-        self.in_action = tvc.lowVolume() if self.action == 'lower_volume' else tvc.isMuted()
+        self.in_action = self.tvc.lowVolume() if self.action == 'lower_volume' else self.tvc.isMuted()
 
     def isInAction(self):
         return self.in_action
 
     def startAction(self):
         # FIXME parameter
-        self.in_action = tvc.lowerVolume('50%') if self.action == 'lower_volume' else tvc.toggleMute()
+        self.in_action = self.tvc.lowerVolume('50%') if self.action == 'lower_volume' else self.tvc.toggleMute()
         return self.in_action
 
     def stopAction(self):
-        self.in_action = not(tvc.restoreVolume() if self.action == 'lower_volume' else tvc.toggleMute())
+        self.in_action = not(self.tvc.restoreVolume() if self.action == 'lower_volume' else self.tvc.toggleMute())
         return not(self.in_action)
 
 
@@ -208,7 +208,7 @@ def main():
                 MUTE_TIMEOUT = args.mute_timeout
                 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 
-        logger.info(f'TV control is {args.tv_control} with action \'{args.action}\'' + (MUTE_TIMEOUT == 0) or f' for {MUTE_TIMEOUT} s max')
+        logger.info(f'TV control is {args.tv_control} with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else ''))
         if tv.isInAction():
             logger.warning(f'Warning: TV starts with action in progress: \'{args.action}\'')
 
