@@ -70,9 +70,10 @@ def ok_to_act():
 # Generic TV
 class TV:
 
-    def __init__(self, tvc = TVControl(), action = 'mute'):
+    def __init__(self, tvc = TVControl(), action = 'mute', volume = ''):
         self.tvc = tvc
         self.setAction(action)
+        self.volume = volume
 
     def getAction(self):
         return self.action
@@ -85,8 +86,13 @@ class TV:
         return self.in_action
 
     def startAction(self):
-        # FIXME parameter
-        self.in_action = self.tvc.lowerVolume('50%') if self.action == 'lower_volume' else self.tvc.toggleMute()
+        if self.action == 'lower_volume':
+            if self.volume:
+                self.in_action = self.tvc.lowerVolume(self.volume)
+            else:
+                self.in_action = self.tvc.lowerVolume()    # use device default
+        else:
+            self.in_action = self.tvc.toggleMute()
         return self.in_action
 
     def stopAction(self):
@@ -162,6 +168,7 @@ def main():
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
     parser.add_argument('-a', '--action', help='action on hit (default: mute)', choices=['mute', 'lower_volume'], default='mute')
+    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub: -4)', type=str)
     parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: = of CPU cores available, {NUM_THREADS})', type=int)
     parser.add_argument('-i', '--rec_interval', help=f'audio recognition interval (s) (default: {REC_INTERVAL})', type=float)
     parser.add_argument('-c', '--rec_confidence', help=f'audio recognition confidence (%%) (default: {REC_CONFIDENCE})', type=int)
@@ -195,7 +202,7 @@ def main():
             tvc = TVControlHarmonyHub()
         else:
             tvc = TVControl()
-        tv = TV(tvc, args.action)
+        tv = TV(tvc, args.action, args.volume if args.volume != None else '')
 
         if args.mute_timeout != None:
             if args.mute_timeout < 0:
