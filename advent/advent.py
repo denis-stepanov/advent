@@ -85,7 +85,7 @@ class TV:
         return self.in_action
 
     def startAction(self):
-        // FIXME parameter
+        # FIXME parameter
         self.in_action = tvc.lowerVolume('50%') if self.action == 'lower_volume' else tvc.toggleMute()
         return self.in_action
 
@@ -209,7 +209,7 @@ def main():
                 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 
         logger.info(f'TV control is {args.tv_control} with action \'{args.action}\'' + (MUTE_TIMEOUT == 0) or f' for {MUTE_TIMEOUT} s max')
-        if tv.isInAction()
+        if tv.isInAction():
             logger.warning(f'Warning: TV starts with action in progress: \'{args.action}\'')
 
         # Recognition settings
@@ -257,7 +257,7 @@ def main():
                     print('')
                     if tv.stopAction():
                         logger.info('TV action ended due to timeout')
-                    else
+                    else:
                         logger.warning('TV action rollback on timeout failed')
                 time.sleep(1)
 
