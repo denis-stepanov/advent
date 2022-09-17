@@ -155,7 +155,7 @@ Supported TV controls:
 Supported actions:
 
 * sound on / off. This is a default;
-* (could be implemented if there's interest - see issue [#14](https://github.com/denis-stepanov/advent/issues/14)) sound fade out / in;
+* volume lowering;
 * (could be implemented if there's interest - see issue [#15](https://github.com/denis-stepanov/advent/issues/15)) changing a TV channel;
 * ...
 
@@ -185,8 +185,7 @@ The output should resemble to this:
 
 ```
 AdVent v1.4.0
-TV control is pulseaudio
-TV starts unmuted; mute timeout is 600 s
+TV control is pulseaudio with action 'mute' for 600 s max
 Recognition interval is 3 s with confidence of 10%
 Started 4 listening thread(s)
 ...:o::o::::::o::::::::::o::ooo
@@ -201,9 +200,19 @@ AdVent prints every second a character reflecting recognition progress. Meaning 
 
 There is no standard way of exiting the application, as it is designed to run forever (this should be somewhat alleviated with issue [#8](https://github.com/denis-stepanov/advent/issues/8)). If you need to exit, press `Ctrl-C` twice; if that does not work, try harder with `Ctrl-\`.
 
-The default TV control is `pulseaudio`; you can alter this with `-t` option; e.g. `-t harmonyhub` will select HarmonyHub control instead. `-t nil` will emulate TV control, i.e., make no real action. This is useful during [jingle fingerprinting process](https://github.com/denis-stepanov/advent-db#step-2-single-out-a-jingle-of-interest) and when testing AdVent itself.
-
 There is no option to select an audio source; AdVent takes a system default. See more details on audio inputs in a [dedicated section](#audio-inputs).
+
+#### TV Control Options
+
+`-t TV_CONTROL` option allows selecting a TV controller. The default is `pulseaudio`; other options are `harmonyhub` for HarmonyHub, `nil` for TV control emulation (i.e., no real action). Emulation mode is useful during [jingle fingerprinting process](https://github.com/denis-stepanov/advent-db#step-2-single-out-a-jingle-of-interest) and when testing AdVent itself.
+
+`-a ACTION` option allow selecting a desired action between `mute` (default) and `lower_volume`.
+
+`-V VOLUME` option allows specifying a target value for volume lowering when this action is selected via `-a`. The meaning of the volume specifier `VOLUME` is TV control-specific and is passed directly to a TV controller. In the case of PulseAudio there are many options available, like setting a fixed fraction (`30%`), lowering by a fixed fraction (`-20%`) or a choice of absolute units or decibels. See `man pactl` for more information. The default for PulseAudio is setting the volume to a half, i.e., to `50%`. In the case of HarmonyHub, one can only specify a relative change, like `-2`, where the number corresponds to a number of key presses of the `Volume Down` button on a TV remote. The default for HarmonyHub is `-4`. If you are a fan of commercials, you can specify a positive value ;-).
+
+`-m MUTE_TIMEOUT` option allows adjusting auto-unmute (or any other action selected) timeout, in seconds. Auto-unmute is active by default, and the default is 10 minutes (600 seconds). The timeout cannot be less than TV actuation dead time, currently set to 30 seconds. The interest of this feature is when AdVent for some reason does not detect an exit jingle and does not unmute on time, to be able to resume automatically normal TV watching at least few minutes later. It could also be of use when a microphone input is used, which by design can never unmute. If you want to disable auto-unmute altogether, pass `0` timeout.
+
+#### Recognition Tuning Options
 
 `-n NUM_THREADS` option allows selecting a number of recognition threads to run. The offset between threads will be adjusted automatically. Default is the number of CPU cores available (which on end user computers - Raspberry Pi included - is very often 4). Increasing this number would improve coverage of jingles in the input stream, potentially improving recognition. However, making it significantly higher than the number of CPU cores available would likely not attain the desired result because of system starvation. Decreasing this number will decrease the system load but also decrease jingle coverage, increasing a chance to miss one. `-n 1` will result in single-thread execution, which would result in small fractions of input not submitted to recognition due to inevitable Dejavu deadband. 
 
@@ -211,7 +220,7 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 `-c REC_CONFIDENCE` option allows adjusting recognition confidence for a hit in the range of 0-100%. The default, selected experimentally, is 10%. Increasing this parameter will make AdVent less sensitive but more certain; decreasing it will make AdVent more sensitive but also increase a chance of having false positives. Selecting confidence of 0% would mean that anything non-silence will be taken as a hit.
 
-`-m MUTE_TIMEOUT` option allows adjusting auto-unmute timeout, in seconds. Auto-unmute is active by default, and the default is 10 minutes (600 seconds). The timeout cannot be less than TV actuation dead time, currently set to 30 seconds. The interest of this feature is when AdVent for some reason does not detect an exit jingle and does not unmute on time, to be able to resume automatically normal TV watching at least few minutes later. It could also be of use when a microphone input is used, which by design can never unmute. If you want to disable auto-unmute altogether, pass `0` timeout.
+#### Miscellaneous Options
 
 `-l LOG_LEVEL` option will log recognition process into a file `advent.log`. Supported levels of logging are `none` (default), `events` and `debug`.
 
