@@ -2,6 +2,7 @@
 
 from tv_control.TVControl import TVControl
 import requests
+import time
 
 class TVControlHarmonyHub(TVControl):
 
@@ -31,6 +32,7 @@ class TVControlHarmonyHub(TVControl):
         try:
             for i in range(vol if vol >= 0 else -vol):
                 requests.post(self.api_server + command, data = self.command_data)
+                time.sleep(0.25)
             return super().lowerVolume(new_volume)
         except requests.exceptions.RequestException as e:
             print(e)
@@ -42,6 +44,7 @@ class TVControlHarmonyHub(TVControl):
         try:
             for i in range(vol if vol >= 0 else -vol):
                 requests.post(self.api_server + command, data = self.command_data)
+                time.sleep(0.25)
             return super().restoreVolume()
         except requests.exceptions.RequestException as e:
             print(e)
