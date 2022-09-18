@@ -16,7 +16,7 @@ class TVControl:
         return True
 
     def lowVolume(self):
-        return self.current_volume == self.nominal_volume
+        return self.current_volume != self.nominal_volume
 
     def lowerVolume(self, new_volume = '50%'):
         self.current_volume = new_volume
