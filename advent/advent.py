@@ -168,7 +168,7 @@ def main():
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
     parser.add_argument('-a', '--action', help='action on hit (default: mute)', choices=['mute', 'lower_volume'], default='mute')
-    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub: -4)', type=str)
+    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub: -5)', type=str)
     parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: = of CPU cores available, {NUM_THREADS})', type=int)
     parser.add_argument('-i', '--rec_interval', help=f'audio recognition interval (s) (default: {REC_INTERVAL})', type=float)
     parser.add_argument('-c', '--rec_confidence', help=f'audio recognition confidence (%%) (default: {REC_CONFIDENCE})', type=int)

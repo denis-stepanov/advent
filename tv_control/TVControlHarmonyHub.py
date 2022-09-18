@@ -8,8 +8,8 @@ class TVControlHarmonyHub(TVControl):
 
     def __init__(self):
         super().__init__()
-        self.nominal_volume = "+4"
-        self.current_volume = "+4"
+        self.nominal_volume = "+5"
+        self.current_volume = self.nominal_volume
         self.api_server = "http://localhost:8282/hubs/harmony/commands/"
         self.command_data = {'on': 'on'}
 
@@ -21,7 +21,7 @@ class TVControlHarmonyHub(TVControl):
             print(e)
         return False
 
-    def lowerVolume(self, new_volume = '-4'):
+    def lowerVolume(self, new_volume = '-5'):
         try:
             vol = int(new_volume)
         except ValueError:
