@@ -237,6 +237,7 @@ The tool allows for the following operations on jingles (aka "tracks"):
 - `import` - import tracks from files to database
 - `delete` - delete tracks from database
 - (planned - issue [#3](https://github.com/denis-stepanov/advent/issues/3)) `rename` - rename tracks in the database
+- (planned - issue [#42](https://github.com/denis-stepanov/advent/issues/42)) `vacuum` - vacuum database (improves performance)
 
 Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; other commands operate on track names (without file extension). When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
 
@@ -259,6 +260,20 @@ Examples of use:
 ```
 
 Refer to `db-djv-pg -h` for exact synopsis.
+
+#### Database Vacuuming
+
+Even a modest database of a few dozens of tracks could have hundreds of thousands of fingerprints. AdVent puts a stress on the database by constantly querying it from multiple threads. It is thus important to keep the database clean of old transactions and with indexes optimized. In PostgreSQL this is achieved with the help of a `VACUUM` command. It is recommended to run it from time to time, and especially after database update is done. Use this command:
+
+```
+$ psql -h localhost -U advent advent -c "VACUUM"
+Password for user advent: (enter "advent")
+...
+WARNING:  skipping "pg_database" --- only superuser can vacuum it
+...
+VACUUM
+$
+```
 
 ## Installation
 
@@ -601,13 +616,21 @@ As mentioned above, AdVent is a CPU-intensive application. This directly transla
 ```
 $ vcgencmd measure_temp
 temp=52.1'C
+$ vcgencmd get_throttled
+throttled=0x0
 $ 
 ```
 
-Be sure to observe temperature of your setup. In my case it rises from 50 to 60℃ when AdVent is running. Anything between 70 and 80℃ is a danger zone. Consider the following tips:
+Be sure to observe temperature of your setup. In my case it rises from 50 to 60℃ when AdVent is running. Anything between 70 and 80℃ is a danger zone. If `throttled` reads non-zero, it means you are hitting (or were hitting some time since boot) system limits, so the system fights overheating by decreasing CPU frequency. This, in turn, would decrease already capped AdVent performance. If this happens, it is better to tune AdVent to avoid going into overheating. Consider the following tips:
+
+* delete from the database TV channels which you are not expected to watch (see [database update instructions](https://github.com/denis-stepanov/advent-db#database-population-or-update-for-regular-users));
+* vacuum the database regularly (see [database vacuuming](#database-vacuuming));
+* reduce the number of threads (`-n` option to AdVent, see [recognition tuning](#recognition-tuning-options)).
+
+Consider also tuning the hardware:
 
 * make sure you have a good power supply (at least 3 A for Pi 4B; 3.5 A recommended);
-* use heat sinks for principal chips (sold separately). I do have some; they are really helpful;
+* use heat sinks for principal chips (sold separately). I do have some; they are really helpful. If you haven't got heat sinks, at least position Pi vertically on a side with a 1-2 cm air gap at the bottom, so that convection could provide for some air flow;
 * if you put the entire device in a case, foresee active cooling (a fan).
 
 ![Raspberry Pi with Heat Sinks](https://user-images.githubusercontent.com/22733222/183757743-6d48f5ed-6b26-4fee-bde2-2d72fb8c3cfa.png)
