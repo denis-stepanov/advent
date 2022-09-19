@@ -66,12 +66,46 @@ def ok_to_act():
     action_lock.release()
     return ok
 
+
+# Generic TV
+class TV:
+
+    def __init__(self, tvc = TVControl(), action = 'mute', volume = ''):
+        self.tvc = tvc
+        self.setAction(action)
+        self.volume = volume
+
+    def getAction(self):
+        return self.action
+
+    def setAction(self, action):
+        self.action = action
+        self.in_action = self.tvc.lowVolume() if self.action == 'lower_volume' else self.tvc.isMuted()
+
+    def isInAction(self):
+        return self.in_action
+
+    def startAction(self):
+        if self.action == 'lower_volume':
+            if self.volume:
+                self.in_action = self.tvc.lowerVolume(self.volume)
+            else:
+                self.in_action = self.tvc.lowerVolume()    # use device default
+        else:
+            self.in_action = self.tvc.toggleMute()
+        return self.in_action
+
+    def stopAction(self):
+        self.in_action = not(self.tvc.restoreVolume() if self.action == 'lower_volume' else self.tvc.toggleMute())
+        return not(self.in_action)
+
+
 # Recognizer
 class RecognizerThread(threading.Thread):
 
-    def __init__(self, tvc):
+    def __init__(self, tv):
         threading.Thread.__init__(self)
-        self.tvc = tvc
+        self.tv = tv
         self.djv = Dejavu(DJV_CONFIG)
 
     def run(self):
@@ -90,17 +124,22 @@ class RecognizerThread(threading.Thread):
                             print('')
                             logger.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
                             flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
-                            ad_start = flags & 0b0001
-                            ad_end = flags & 0b0010
-                            tv_muted = self.tvc.isMuted()
-                            if not (ad_start or ad_end) or tv_muted and ad_end or not tv_muted and ad_start:
-                                if self.tvc.toggleMute() != tv_muted:
-                                    if tv_muted:
-                                        logger.info('TV unmuted')
+                            ad_start = bool(flags & 0b0001)
+                            ad_end = bool(flags & 0b0010)
+                            ad_unknown = not(ad_start or ad_end)  # in absence of all flags behave as if all have been set (see issue #40)
+
+                            if self.tv.isInAction():
+                                if ad_unknown or ad_end:
+                                    if self.tv.stopAction():
+                                        logger.info('TV volume restored' if self.tv.getAction() == 'lower_volume' else 'TV unmuted')
                                     else:
-                                        logger.info('TV muted')
-                                else:
-                                    logger.info('TV mute failed')
+                                        logger.warning('Warning: TV action failed')
+                            else:
+                                if ad_unknown or ad_start:
+                                    if self.tv.startAction():
+                                        logger.info('TV volume lowered' if self.tv.getAction() == 'lower_volume' else 'TV muted')
+                                    else:
+                                        logger.warning('Warning: TV action failed')
                     else:
                       if best_match["fingerprinted_confidence"] > 0:
                           print('o', end='', flush=True) # weak match
@@ -128,10 +167,12 @@ def main():
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
+    parser.add_argument('-a', '--action', help='action on hit (default: mute)', choices=['mute', 'lower_volume'], default='mute')
+    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub: -5)', type=str)
     parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: = of CPU cores available, {NUM_THREADS})', type=int)
     parser.add_argument('-i', '--rec_interval', help=f'audio recognition interval (s) (default: {REC_INTERVAL})', type=float)
     parser.add_argument('-c', '--rec_confidence', help=f'audio recognition confidence (%%) (default: {REC_CONFIDENCE})', type=int)
-    parser.add_argument('-m', '--mute_timeout', help=f'unmute automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
+    parser.add_argument('-m', '--mute_timeout', help=f'undo hit action automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
     parser.add_argument('-l', '--log', help='log events into a file (default: none)', choices=['none', 'events', 'debug'], default='none')
     args = parser.parse_args()
 
@@ -155,39 +196,33 @@ def main():
         logger.debug(f'Dejavu config {dejavu_cnf.name} loaded')
 
         # TV controls
+        if args.tv_control == 'pulseaudio':
+            tvc = TVControlPulseAudio()
+        elif args.tv_control == 'harmonyhub':
+            tvc = TVControlHarmonyHub()
+        else:
+            tvc = TVControl()
+        tv = TV(tvc, args.action, args.volume if args.volume != None else '')
+
         if args.mute_timeout != None:
             if args.mute_timeout < 0:
-                logger.error(f'Error: Invalid mute timeout: {args.mute_timeout}; ignoring')
+                logger.error(f'Error: invalid timeout for action: {args.mute_timeout}; ignoring')
             elif args.mute_timeout > 0 and args.mute_timeout < TV_DEAD_TIME:
-                logger.warning(f'Warning: mute timeout cannot be less than TV action dead time; setting to {TV_DEAD_TIME} s')
+                logger.warning(f'Warning: action timeout cannot be less than TV action dead time; setting to {TV_DEAD_TIME} s')
                 MUTE_TIMEOUT = TV_DEAD_TIME
                 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
             else:
                 MUTE_TIMEOUT = args.mute_timeout
                 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 
-        if args.tv_control == 'nil':
-            tvc = TVControl()
-        elif args.tv_control == 'harmonyhub':
-            tvc = TVControlHarmonyHub()
-        else:
-            tvc = TVControlPulseAudio()
-        logger.info(f'TV control is {args.tv_control}')
-        if tvc.isMuted():
-            if MUTE_TIMEOUT == 0:
-                logger.info('TV starts muted')
-            else:
-                logger.info(f'TV starts muted; mute timeout is {MUTE_TIMEOUT} s')
-        else:
-            if MUTE_TIMEOUT == 0:
-                logger.info('TV starts unmuted')
-            else:
-                logger.info(f'TV starts unmuted; mute timeout is {MUTE_TIMEOUT} s')
+        logger.info(f'TV control is {args.tv_control} with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else ''))
+        if tv.isInAction():
+            logger.warning(f'Warning: TV starts with action in progress: \'{args.action}\'')
 
         # Recognition settings
         if args.rec_interval != None:
             if args.rec_interval <= 0:
-                logger.error(f'Error: Invalid recognition interval: {args.rec_interval}; ignoring')
+                logger.error(f'Error: invalid recognition interval: {args.rec_interval}; ignoring')
             else:
                 if args.rec_interval < 1.5:
                     logger.warning(f'Warning: recognition interval of {args.rec_interval} s is not reliable')
@@ -197,7 +232,7 @@ def main():
 
         if args.rec_confidence != None:
             if args.rec_confidence < 0 or args.rec_confidence > 100:
-                logger.error(f'Error: Invalid recognition confidence: {args.rec_confidence}; ignoring')
+                logger.error(f'Error: invalid recognition confidence: {args.rec_confidence}; ignoring')
             else:
                 if args.rec_confidence < 3:
                     logger.warning(f'Warning: recognition confidence of {args.rec_confidence}% is not reliable')
@@ -207,30 +242,30 @@ def main():
         # Thread control
         if args.num_threads != None:
             if args.num_threads < 1:
-                logger.error(f'Error: Invalid number of threads: {args.num_threads}; ignoring')
+                logger.error(f'Error: invalid number of threads: {args.num_threads}; ignoring')
             else:
                 if args.num_threads > 2 * os.cpu_count():
-                    logger.warning(f'Warning: Too high number of threads requested: {args.num_threads}; risk of system saturation')
+                    logger.warning(f'Warning: too high number of threads requested: {args.num_threads}; risk of system saturation')
                 NUM_THREADS = args.num_threads
                 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
                 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
 
         # Launch threads
         for n in range(0, NUM_THREADS):
-            thread = RecognizerThread(tvc)
+            thread = RecognizerThread(tv)
             thread.start()
         logger.info(f'Started {NUM_THREADS} listening thread(s)')
         logger.debug(f'Thread offset is {REC_OFFSET} s')
 
-        # If auto-unmute is activated, monitor actions
+        # If action timeout is activated, monitor actions
         if MUTE_TIMEOUT != 0:
             while True:
-                if tvc.isMuted() and datetime.now() - last_action_time >= MUTE_TIMEOUT_TD and ok_to_act():
+                if tv.isInAction() and datetime.now() - last_action_time >= MUTE_TIMEOUT_TD and ok_to_act():
                     print('')
-                    if tvc.toggleMute() == False:
-                        logger.info('TV unmuted due to timeout')
+                    if tv.stopAction():
+                        logger.info('TV action ended due to timeout')
                     else:
-                        logger.info('TV unmute on timeout failed')
+                        logger.warning('TV action rollback on timeout failed')
                 time.sleep(1)
 
         return 0
