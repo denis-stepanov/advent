@@ -535,6 +535,8 @@ In the case of Sony BRAVIA, adjusting the format can be done in `Digital Setup` 
 
 ![Forcing PCM on TV](https://user-images.githubusercontent.com/22733222/182959454-7439e1f9-4df9-4bfd-aab7-4032192ca357.jpg)
 
+Another particularity of this sound card is that it requires a carrier signal (red light in the optical cable) at all times to function. In absence of the signal, e.g., when the TV is off, [it would just block itself](https://www.hifiberry.com/docs/hardware/comparison-of-hifiberry-cards-for-audio-recording/) and the application using it. For a user it would look like AdVent would stop printing progress characters, while consuming all CPU available. TV-sets often offer a choice of how turning off should be managed: a hot standby or an "eco" power down. In standby mode the optical output usually remains powered. If you plan running AdVent continuously, give preference to this mode.
+
 #### Raspberry Pi Setup
 
 Edit `/boot/config.txt` to enable HiFiBerry and disable all other sound devices:
@@ -609,7 +611,7 @@ b) hack Dejavu to consume 48 kHz directly. I actually tested that it works, but 
 
 Another advantage of PulseAudio is that it allows access to a sound source from multiple processes. By default, it is usually only one process which can use a sound card. This is certainly true and [documented](https://www.hifiberry.com/docs/software/check-if-the-sound-card-is-in-use/) for HiFiBerry. AdVent runs several threads reading sound input in parallel. While these threads remain all part of the same process, it is unclear if it would still work through ALSA.
 
-#### Other Raspberry Pi Considerations
+#### Raspberry Pi Temperature Control
 
 As mentioned above, AdVent is a CPU-intensive application. This directly translates to increase of the Pi CPU temperature. Adding a sound card shield on top does not help with ventilation either. You can check CPU temperature as follows:
 
@@ -621,7 +623,7 @@ throttled=0x0
 $ 
 ```
 
-Be sure to observe temperature of your setup. In my case it rises from 50 to 60℃ when AdVent is running. Anything between 70 and 80℃ is a danger zone. If `throttled` reads non-zero, it means you are hitting (or were hitting some time since boot) system limits, so the system fights overheating by decreasing CPU frequency. This, in turn, would decrease already capped AdVent performance. If this happens, it is better to tune AdVent to avoid going into overheating. Consider the following tips:
+Be sure to observe the temperature of your setup. In my case it rises from 50 to 60℃ when AdVent is running. Anything between 70 and 80℃ is a danger zone. If `throttled` reads non-zero, it means you are hitting (or were hitting some time since boot) system limits, so the system fights overheating by decreasing CPU frequency. This, in turn, would decrease already capped AdVent performance. If this happens, it is better to tune AdVent to avoid going into overheating. Consider the following tips:
 
 * delete from the database TV channels which you are not expected to watch (see [database update instructions](https://github.com/denis-stepanov/advent-db#database-population-or-update-for-regular-users));
 * vacuum the database regularly (see [database vacuuming](#database-vacuuming));
