@@ -224,6 +224,26 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 `-l LOG_LEVEL` option will log recognition process into a file `advent.log`. Supported levels of logging are `none` (default), `events` and `debug`.
 
+Debug log is useful to understand why AdVent reacted (or not). The log might look something like this:
+
+```
+2022-09-23 23:21:49,655 MainThread INFO: AdVent v1.4.0
+2022-09-23 23:21:49,661 MainThread DEBUG: Dejavu config /home/ds/src/advent/advent-pyenv/lib/python3.7/site-packages/dejavu_py/dejavu.cnf loaded
+2022-09-23 23:21:49,662 MainThread INFO: TV control is harmonyhub with action 'mute' for 600 s max
+2022-09-23 23:21:49,662 MainThread INFO: Recognition interval is 3 s with confidence of 10%
+2022-09-23 23:21:50,016 MainThread INFO: Started 4 listening thread(s)
+2022-09-23 23:21:50,017 MainThread DEBUG: Thread offset is 0.85 s
+2022-09-23 23:21:55,117 Thread-4 DEBUG: Recognition start=23:21:50,517, end=23:21:55,117, match FR_TF1_220304_LESENFOIRES6_2, 0% confidence
+2022-09-23 23:21:55,624 Thread-1 DEBUG: Recognition start=23:21:51,387, end=23:21:55,624, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
+2022-09-23 23:21:56,474 Thread-3 DEBUG: Recognition start=23:21:52,244, end=23:21:56,474, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
+2022-09-23 23:21:57,289 Thread-2 DEBUG: Recognition start=23:21:53,172, end=23:21:57,289, match FR_TF1_220304_LESENFOIRES10_1, 0% confidence
+2022-09-23 23:21:59,256 Thread-4 DEBUG: Recognition start=23:21:55,118, end=23:21:59,256, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
+2022-09-23 23:22:00,011 Thread-1 DEBUG: Recognition start=23:21:56,040, end=23:22:00,011, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
+2022-09-23 23:22:01,033 Thread-3 DEBUG: Recognition start=23:21:56,986, end=23:22:01,033, match FR_TFX_220906_SHERLOCKHOLMES2_3, 0% confidence
+2022-09-23 23:22:01,931 Thread-2 DEBUG: Recognition start=23:21:57,892, end=23:22:01,931, match FR_TF1_220219_THEVOICE7_1, 0% confidence
+...
+```
+
 Refer to `advent -h` for full synopsys.
 
 ### Database Service Tool (db-djv-pg)
