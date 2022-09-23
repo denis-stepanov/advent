@@ -33,7 +33,7 @@ REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
 TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
-logger = logging.getLogger('advent')
+LOGGER = logging.getLogger('advent')
 
 # Generic TV
 class TV:
@@ -123,12 +123,12 @@ class RecognizerThread(threading.Thread):
                 end_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
                 if len(matches):
                     best_match = matches[0]
-                    logger.debug(f'Recognition start={start_time}, end={end_time}, match {best_match["song_name"].decode("utf-8")}, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
+                    LOGGER.debug(f'Recognition start={start_time}, end={end_time}, match {best_match["song_name"].decode("utf-8")}, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
                     if best_match["fingerprinted_confidence"] >= REC_CONFIDENCE / 100:
                         print('O', end='', flush=True)     # strong match
                         if self.tv.OKToAct():
                             print('')
-                            logger.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
+                            LOGGER.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
                             flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
                             ad_start = bool(flags & 0b0001)
                             ad_end = bool(flags & 0b0010)
@@ -136,22 +136,22 @@ class RecognizerThread(threading.Thread):
                             if self.tv.isInAction():
                                 if ad_end:
                                     if self.tv.stopAction():
-                                        logger.info('TV volume restored' if self.tv.getAction() == 'lower_volume' else 'TV unmuted')
+                                        LOGGER.info('TV volume restored' if self.tv.getAction() == 'lower_volume' else 'TV unmuted')
                                     else:
-                                        logger.warning('Warning: TV action failed')
+                                        LOGGER.warning('Warning: TV action failed')
                             else:
                                 if ad_start:
                                     if self.tv.startAction():
-                                        logger.info('TV volume lowered' if self.tv.getAction() == 'lower_volume' else 'TV muted')
+                                        LOGGER.info('TV volume lowered' if self.tv.getAction() == 'lower_volume' else 'TV muted')
                                     else:
-                                        logger.warning('Warning: TV action failed')
+                                        LOGGER.warning('Warning: TV action failed')
                     else:
                       if best_match["fingerprinted_confidence"] > 0:
                           print('o', end='', flush=True) # weak match
                       else:
                           print(':', end='', flush=True) # no match
                 else:
-                   logger.debug(f'Recognition start={start_time}, end={end_time}, no matches')
+                   LOGGER.debug(f'Recognition start={start_time}, end={end_time}, no matches')
                    print('.', end='', flush=True)   # no signal
             else:
                 time.sleep(0.1)
@@ -181,23 +181,23 @@ def main():
     args = parser.parse_args()
 
     # Logging
-    logger.setLevel(logging.INFO)
+    LOGGER.setLevel(logging.INFO)
     lsh = logging.StreamHandler()
     lsh.setLevel(logging.INFO)
-    logger.addHandler(lsh)
+    LOGGER.addHandler(lsh)
     if args.log != 'none':
         if args.log == 'debug':
-            logger.setLevel(logging.DEBUG)
+            LOGGER.setLevel(logging.DEBUG)
         lf = logging.Formatter('%(asctime)s %(threadName)s %(levelname)s: %(message)s')
         lfh = logging.FileHandler(LOG_FILE)
         lfh.setFormatter(lf)
-        logger.addHandler(lfh)
-    logger.info(f'AdVent v{VERSION}')
+        LOGGER.addHandler(lfh)
+    LOGGER.info(f'AdVent v{VERSION}')
 
     # Dejavu config
     with open(resource_filename(Requirement.parse("PyDejavu"),"dejavu_py/dejavu.cnf")) as dejavu_cnf:
         DJV_CONFIG = json.load(dejavu_cnf)
-        logger.debug(f'Dejavu config {dejavu_cnf.name} loaded')
+        LOGGER.debug(f'Dejavu config {dejavu_cnf.name} loaded')
 
         # TV controls
         if args.tv_control == 'pulseaudio':
@@ -210,46 +210,46 @@ def main():
 
         if args.mute_timeout != None:
             if args.mute_timeout < 0:
-                logger.error(f'Error: invalid timeout for action: {args.mute_timeout}; ignoring')
+                LOGGER.error(f'Error: invalid timeout for action: {args.mute_timeout}; ignoring')
             elif args.mute_timeout > 0 and args.mute_timeout < TV_DEAD_TIME:
-                logger.warning(f'Warning: action timeout cannot be less than TV action dead time; setting to {TV_DEAD_TIME} s')
+                LOGGER.warning(f'Warning: action timeout cannot be less than TV action dead time; setting to {TV_DEAD_TIME} s')
                 MUTE_TIMEOUT = TV_DEAD_TIME
                 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
             else:
                 MUTE_TIMEOUT = args.mute_timeout
                 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 
-        logger.info(f'TV control is {args.tv_control} with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else ''))
+        LOGGER.info(f'TV control is {args.tv_control} with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else ''))
         if tv.isInAction():
-            logger.warning(f'Warning: TV starts with action in progress: \'{args.action}\'')
+            LOGGER.warning(f'Warning: TV starts with action in progress: \'{args.action}\'')
 
         # Recognition settings
         if args.rec_interval != None:
             if args.rec_interval <= 0:
-                logger.error(f'Error: invalid recognition interval: {args.rec_interval}; ignoring')
+                LOGGER.error(f'Error: invalid recognition interval: {args.rec_interval}; ignoring')
             else:
                 if args.rec_interval < 1.5:
-                    logger.warning(f'Warning: recognition interval of {args.rec_interval} s is not reliable')
+                    LOGGER.warning(f'Warning: recognition interval of {args.rec_interval} s is not reliable')
                 REC_INTERVAL = args.rec_interval
                 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
                 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
 
         if args.rec_confidence != None:
             if args.rec_confidence < 0 or args.rec_confidence > 100:
-                logger.error(f'Error: invalid recognition confidence: {args.rec_confidence}; ignoring')
+                LOGGER.error(f'Error: invalid recognition confidence: {args.rec_confidence}; ignoring')
             else:
                 if args.rec_confidence < 3:
-                    logger.warning(f'Warning: recognition confidence of {args.rec_confidence}% is not reliable')
+                    LOGGER.warning(f'Warning: recognition confidence of {args.rec_confidence}% is not reliable')
                 REC_CONFIDENCE = args.rec_confidence
-        logger.info(f'Recognition interval is {REC_INTERVAL} s with confidence of {REC_CONFIDENCE}%')
+        LOGGER.info(f'Recognition interval is {REC_INTERVAL} s with confidence of {REC_CONFIDENCE}%')
 
         # Thread control
         if args.num_threads != None:
             if args.num_threads < 1:
-                logger.error(f'Error: invalid number of threads: {args.num_threads}; ignoring')
+                LOGGER.error(f'Error: invalid number of threads: {args.num_threads}; ignoring')
             else:
                 if args.num_threads > 2 * os.cpu_count():
-                    logger.warning(f'Warning: too high number of threads requested: {args.num_threads}; risk of system saturation')
+                    LOGGER.warning(f'Warning: too high number of threads requested: {args.num_threads}; risk of system saturation')
                 NUM_THREADS = args.num_threads
                 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
                 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
@@ -258,8 +258,8 @@ def main():
         for n in range(0, NUM_THREADS):
             thread = RecognizerThread(tv)
             thread.start()
-        logger.info(f'Started {NUM_THREADS} listening thread(s)')
-        logger.debug(f'Thread offset is {REC_OFFSET} s')
+        LOGGER.info(f'Started {NUM_THREADS} listening thread(s)')
+        LOGGER.debug(f'Thread offset is {REC_OFFSET} s')
 
         # If action timeout is activated, monitor actions
         if MUTE_TIMEOUT != 0:
@@ -267,9 +267,9 @@ def main():
                 if tv.isInAction() and tv.getTimeSinceLastAction() >= MUTE_TIMEOUT_TD and tv.OKToAct():
                     print('')
                     if tv.stopAction():
-                        logger.info('TV action ended due to timeout')
+                        LOGGER.info('TV action ended due to timeout')
                     else:
-                        logger.warning('TV action rollback on timeout failed')
+                        LOGGER.warning('TV action rollback on timeout failed')
                 time.sleep(1)
 
         return 0
