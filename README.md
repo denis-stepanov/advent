@@ -139,7 +139,7 @@ Note that changing Dejavu parameters has impact on fingerprint database. It is t
 
 ### AdVent Tuning
 
-AdVent has got its own parameters, which could affect the result success rate of recognition (`S`):
+AdVent has got its own parameters, which could affect the result success rate of recognition `S`:
 
 * `n` - number of listening threads
 * `i` - listening interval (s)
@@ -149,7 +149,7 @@ Quite obviously, success rate `S` should be proportional to the listening interv
 
 ![Success-rate-formula](https://user-images.githubusercontent.com/22733222/194731967-332eeb7c-600a-4b64-81c6-947993504a29.png)
 
-Curiously, the length of a listened track does not seem to be part of the equation. This is likely related to the fact on how recognition confidence is calculated by Dejavu. Fingerprinted confidence equals to the number of unique hashes matched related to the total number of hashes for a given track. And the latter is generally proportional to the length of the track. So it is somewhat taken into account. Note that it means that in order to ensure 100% recognition confidence, one has to submit the *entire* track for recognition.
+Curiously, the length of a listened track does not seem to be part of the equation. This is likely related to the fact on how recognition confidence is calculated by Dejavu. Fingerprinted confidence equals to the number of unique hashes matched related to the total number of hashes for a given track. And the latter is generally proportional to the length of the track. So it is somewhat taken into account already. Note that it means that in order to ensure 100% recognition confidence, one has to submit the *entire* track for recognition.
 
 If we draw `S` as a function of number of threads `n`, varied by confidence parameter `c`, we will get something like this:
 
@@ -157,11 +157,25 @@ If we draw `S` as a function of number of threads `n`, varied by confidence para
 
 From this graph we need to cut off areas which have no physical meaning: number of threads shall be no less than one and success rate of recognition shall not exceed 100%.
 
-Measurement for a fixed size track gives the following:
+Actual measurement for a fixed size track gives the following:
 
-![Success-rate-as-function-of-number-of-threads](https://user-images.githubusercontent.com/22733222/194732048-f4611097-6885-4ba3-9623-c147c24195c6.png)
+![Success-rate-as-function-of-number-of-threads](https://user-images.githubusercontent.com/22733222/194777981-416308d8-9f86-4eb3-8b05-e85f33a28e65.png)
 
-We can see that it generally confirms the theory. 25% or less recognition confidence performs well even with a small number of threads; to get higher confidence one has to significantly increase the number of threads. In this case 100% confidence can never be reached (success `S` = 0%), because btoh the listening interval `i` and the length of the track equal to 3 seconds, and with a random start it is virtually impossible for AdVent to make Dejavu listen for the full length of the track.
+We can see that it generally confirms the theory. 25% or less recognition confidence performs well even with a small number of threads; to obtain higher confidence one has to significantly increase the number of threads. In this case 100% confidence can never be reached (success `S` = 0%), because both the listening interval `i` and the length of the track equal to 3 seconds, and with a random start it is virtually impossible for AdVent to make Dejavu listen for the full length of the track.
+
+Pink gradient background of the graph indicates system load - more threads mean more load. As already stated earlier, four threads on a four cores CPU would consume about 100% of the resource; ten threads would consume about 200%.
+
+From this graph it looks like for low confidences two threads perform nearly as well as four threads, but would consume two times less the CPU; so it makes sense to make it default.
+
+Now let's see what happens if we keep the number of threads `n` constant but vary the listening interval `i`:
+
+![Success-rate-as-function-of-interval](https://user-images.githubusercontent.com/22733222/194778961-46de075c-d308-439c-b466-9849240123ee.png)
+
+We can immediately see that for low confidences the listening interval of 2 seconds performs as well as the interval of 3 seconds. It makes sense to reduce this interval when possible, because then AdVent could react faster. So the default of 2 seconds would look reasonable. One can also see the confirmation of what was said earlier - in order to get some success with 100% confidence, for a 3 seconds track one has to listen for a least 3.5 seconds. Curiously, while it makes no sense to listen for more than track total length, increasing the interval beyond track length appears to improve confidence.
+
+The red area on the graph (interval below 1 second) indicates Dejavu breakdown. Dejavu would just issue some sort of warning and return no matches. It is probably possible to overcome this by playing further with Dejavu parameters (see [Dejavu Tuning](#dejavu-tuning)), but for this task it has no interest, as jingles are normally longer than one second.
+
+Finally, what concerns recognition confidence `c`, we can see that lower confidences perform much better, so one has to choose the lowest possible level where false positives do not step in. From measurements, false positives usually do not result in confidence higher than 5%, so setting default of 10% would allow for good performance and provide some margin against false positives.
 
 ## Supported Environment
 
