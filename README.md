@@ -137,6 +137,26 @@ An obvious disadvantage of having more fingerprints is that database size will g
 
 Note that changing Dejavu parameters has impact on fingerprint database. It is thus better to fix and not to change them in the process, or else the entire set of jingles might need re-processing. If you plan to play with these parameters, make sure to keep around copies of your original audio files.
 
+### AdVent Tuning
+
+AdVent has got its own parameters, which could affect the result success rate of recognition (`S`):
+
+* `n` - number of listening threads
+* `i` - listening interval (s)
+* `c` - recognition confidence
+
+Quite obviously, success rate `S` should be proportional to the listening interval `i` (the longer we listen, the better) and inversely proportional to the recognition confidence `c` (higher confidence of a match would inevitably mean lower success). Similarly, success rate should be proportional to the number of listening threads `n` (more threads mean more hits). Unfortunately, threads tend to compete with each other and with the operating system for resources, especially when the system is close to saturation. This means that threads contribution is not proportional, but more like a square root or a logarithm: to get two times better recognition, one has to run four times more threads. In summary, we could reasonably expect success rate to be something like:
+
+![Success-rate-formula](https://user-images.githubusercontent.com/22733222/194731420-8fd7a349-ecf9-4ba1-8981-928ef1832164.png)
+
+Curiously, the length of a listened track does not seem to be part of the equation. This is likely related to the fact on how recognition confidence is calculated by Dejavu. Fingerprinted confidence equals to the number of unique hashes matched related to the total number of hashes for a given track. And the latter is generally proportional to the length of the track. So it is somewhat taken into account.
+
+If we draw `S` as a function of number of threads `n`, varied by confidence parameter `c`, we will get something like this:
+
+![Success-rate-as-function-of-number-of-threads-theoretical](https://user-images.githubusercontent.com/22733222/194731579-f356af7b-4161-4d25-925b-d9c5eb11048a.png)
+
+
+
 ## Supported Environment
 
 There are many different ways of watching TV these days. Currently supported audio inputs:
