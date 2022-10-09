@@ -147,15 +147,21 @@ AdVent has got its own parameters, which could affect the result success rate of
 
 Quite obviously, success rate `S` should be proportional to the listening interval `i` (the longer we listen, the better) and inversely proportional to the recognition confidence `c` (higher confidence of a match would inevitably mean lower success). Similarly, success rate should be proportional to the number of listening threads `n` (more threads mean more hits). Unfortunately, threads tend to compete with each other and with the operating system for resources, especially when the system is close to saturation. This means that threads contribution is not proportional, but more like a square root or a logarithm: to get two times better recognition, one has to run four times more threads. In summary, we could reasonably expect success rate to be something like:
 
-![Success-rate-formula](https://user-images.githubusercontent.com/22733222/194731420-8fd7a349-ecf9-4ba1-8981-928ef1832164.png)
+![Success-rate-formula](https://user-images.githubusercontent.com/22733222/194731967-332eeb7c-600a-4b64-81c6-947993504a29.png)
 
-Curiously, the length of a listened track does not seem to be part of the equation. This is likely related to the fact on how recognition confidence is calculated by Dejavu. Fingerprinted confidence equals to the number of unique hashes matched related to the total number of hashes for a given track. And the latter is generally proportional to the length of the track. So it is somewhat taken into account.
+Curiously, the length of a listened track does not seem to be part of the equation. This is likely related to the fact on how recognition confidence is calculated by Dejavu. Fingerprinted confidence equals to the number of unique hashes matched related to the total number of hashes for a given track. And the latter is generally proportional to the length of the track. So it is somewhat taken into account. Note that it means that in order to ensure 100% recognition confidence, one has to submit the *entire* track for recognition.
 
 If we draw `S` as a function of number of threads `n`, varied by confidence parameter `c`, we will get something like this:
 
-![Success-rate-as-function-of-number-of-threads-theoretical](https://user-images.githubusercontent.com/22733222/194731579-f356af7b-4161-4d25-925b-d9c5eb11048a.png)
+![Success-rate-as-function-of-number-of-threads-theoretical](https://user-images.githubusercontent.com/22733222/194732348-373839a7-5254-4631-8378-738573a1b566.png)
 
+From this graph we need to cut off areas which have no physical meaning: number of threads shall be no less than one and success rate of recognition shall not exceed 100%.
 
+Measurement for a fixed size track gives the following:
+
+![Success-rate-as-function-of-number-of-threads](https://user-images.githubusercontent.com/22733222/194732048-f4611097-6885-4ba3-9623-c147c24195c6.png)
+
+We can see that it generally confirms the theory. 25% or less recognition confidence performs well even with a small number of threads; to get higher confidence one has to significantly increase the number of threads. In this case 100% confidence can never be reached (success `S` = 0%), because btoh the listening interval `i` and the length of the track equal to 3 seconds, and with a random start it is virtually impossible for AdVent to make Dejavu listen for the full length of the track.
 
 ## Supported Environment
 
