@@ -19,8 +19,8 @@ from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 
 # Settings
 VERSION=__version__
-REC_INTERVAL = 3          # (s) - typical duration of an ad jingle
-REC_DEADBAND = 0.4        # (s) - Dejavu processing time for a record of 3s. measured experimentally on 4 x 1200 MHz machine with 69 jingles in DB
+REC_INTERVAL = 2          # (s) - typical duration of an ad jingle
+REC_DEADBAND = 0.25       # (s) - Dejavu processing time for an interval of 2 s with 2 threads. Measured experimentally on 4 x 1200 MHz machine with 84 jingles in DB
 REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
 TV_DEAD_TIME = 30         # (s) - action dead time after previous action taken on TV
 MUTE_TIMEOUT = 600        # (s) - if TV is muted, unmute automatically after this time. Must be >= TV_DEAD_TIME
