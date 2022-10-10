@@ -19,7 +19,8 @@ from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
 
 # Settings
 VERSION=__version__
-REC_INTERVAL = 2          # (s) - typical duration of an ad jingle
+NUM_THREADS = 2           #     - number of threads to run
+REC_INTERVAL = 2          # (s) - Dejavu listening interval
 REC_DEADBAND = 0.25       # (s) - Dejavu processing time for an interval of 2 s with 2 threads. Measured experimentally on 4 x 1200 MHz machine with 84 jingles in DB
 REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
 TV_DEAD_TIME = 30         # (s) - action dead time after previous action taken on TV
@@ -28,7 +29,6 @@ LOG_FILE = 'advent.log'
 
 # Globals
 DJV_CONFIG = None
-NUM_THREADS = os.cpu_count()
 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
 TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
@@ -174,7 +174,7 @@ def main():
     parser.add_argument('-a', '--action', help='action on hit (default: mute)', choices=['mute', 'lower_volume'], default='mute')
     parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub: -5)', type=str)
     parser.add_argument('-m', '--mute_timeout', help=f'undo hit action automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
-    parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: = of CPU cores available, {NUM_THREADS})', type=int)
+    parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: {NUM_THREADS})', type=int)
     parser.add_argument('-i', '--rec_interval', help=f'audio recognition interval (s) (default: {REC_INTERVAL})', type=float)
     parser.add_argument('-c', '--rec_confidence', help=f'audio recognition confidence (%%) (default: {REC_CONFIDENCE})', type=int)
     parser.add_argument('-l', '--log', help='log events into a file (default: none)', choices=['none', 'events', 'debug'], default='none')
