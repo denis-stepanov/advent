@@ -288,7 +288,13 @@ Some useful presets:
 <td>10</td>
 </tr>
 <tr>
-<td>Super-confident</td>
+<td>Confident</td>
+<td>4</td>
+<td>5</td>
+<td>50</td>
+</tr>
+<tr>
+<td>Super-prudent</td>
 <td>4</td>
 <td>5</td>
 <td>100</td>
