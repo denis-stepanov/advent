@@ -256,9 +256,9 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 `-n NUM_THREADS` option allows selecting a number of recognition threads to run. The offset between threads will be adjusted automatically. The default is two threads. Increasing this number would improve coverage of jingles in the input stream, potentially improving recognition and reactivity. However, making it significantly higher than the number of CPU cores available (which on end user computers - Raspberry Pi included - is very often 4) would likely not attain the desired result because of system starvation. Decreasing this number will decrease the system load but also decrease jingle coverage, increasing a chance to miss one. `-n 1` will result in single-thread execution, which would result in small fractions of input not submitted to recognition due to inevitable Dejavu deadband.
 
-`-i REC_INTERVAL` option allows adjusting the recognition window, in seconds. The default is 2 seconds, which is the lowest interval where Dejavu still performs well. Increasing this parameter would increase Dejavu effectiveness (because it listens for longer) in expense of decreased effectiveness of AdVent (because threads would have a lower duty cycle), and vice versa. So, on average, the change would not make much difference for low confidence levels (25% or less). Another aspect to keep in mind is that the shorter the interval, the faster reaction of AdVent would be. If you would like to have a longer interval but still maintain a good reaction time, you would need to increase the number of threads accordingly. Going below 1 second would break Dejavu processing and so is pretty useless.
+`-i REC_INTERVAL` option allows adjusting the recognition window, in seconds. The default is 2 seconds, which is the lowest interval where Dejavu still performs well. Increasing this parameter would increase Dejavu effectiveness (because it listens for longer) in expense of decreased effectiveness of AdVent (because threads would have a lower duty cycle), and vice versa. So, on average, the change would not make much difference for low confidence levels (25% or less), but will have effect for higher confidences. Another aspect to keep in mind is that the shorter the interval, the faster reaction of AdVent would be. If you would like to have a longer interval but still maintain a good reaction time, you would need to increase the number of threads accordingly. Going below 1 second would break Dejavu processing and so is pretty useless.
 
-`-c REC_CONFIDENCE` option allows adjusting recognition confidence for a hit in the range of 0-100%. The default, selected experimentally, is 10%. Increasing this parameter will make AdVent less sensitive but more certain; decreasing it will make AdVent more sensitive but also increase a chance of having false positives. Selecting confidence of 0% would mean that anything non-silence will be taken as a hit. If you plan to increase confidence above 25%, consider also increasing the listening interval. To achieve confindence of 100%, you interval must be larger than the length of the jingles of interest.
+`-c REC_CONFIDENCE` option allows adjusting recognition confidence for a hit in the range of 0-100%. The default, selected experimentally, is 10%. Increasing this parameter will make AdVent less sensitive but more certain; decreasing it will make AdVent more sensitive but also increase a chance of having false positives. Selecting confidence of 0% would mean that anything non-silence will be taken as a hit. If you plan to increase confidence above 25%, consider also increasing the listening interval. To achieve confidence of 100%, the interval must be larger than the length of the jingles of interest.
 
 #### Miscellaneous Options
 
@@ -267,20 +267,19 @@ There is no option to select an audio source; AdVent takes a system default. See
 Debug log is useful to understand why AdVent reacted (or not). The log might look something like this:
 
 ```
-2022-09-23 23:21:49,655 MainThread INFO: AdVent v1.4.0
-2022-09-23 23:21:49,661 MainThread DEBUG: Dejavu config /home/ds/src/advent/advent-pyenv/lib/python3.7/site-packages/dejavu_py/dejavu.cnf loaded
-2022-09-23 23:21:49,662 MainThread INFO: TV control is harmonyhub with action 'mute' for 600 s max
-2022-09-23 23:21:49,662 MainThread INFO: Recognition interval is 3 s with confidence of 10%
-2022-09-23 23:21:50,016 MainThread INFO: Started 4 listening thread(s)
-2022-09-23 23:21:50,017 MainThread DEBUG: Thread offset is 0.85 s
-2022-09-23 23:21:55,117 Thread-4 DEBUG: Recognition start=23:21:50,517, end=23:21:55,117, match FR_TF1_220304_LESENFOIRES6_2, 0% confidence
-2022-09-23 23:21:55,624 Thread-1 DEBUG: Recognition start=23:21:51,387, end=23:21:55,624, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
-2022-09-23 23:21:56,474 Thread-3 DEBUG: Recognition start=23:21:52,244, end=23:21:56,474, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
-2022-09-23 23:21:57,289 Thread-2 DEBUG: Recognition start=23:21:53,172, end=23:21:57,289, match FR_TF1_220304_LESENFOIRES10_1, 0% confidence
-2022-09-23 23:21:59,256 Thread-4 DEBUG: Recognition start=23:21:55,118, end=23:21:59,256, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
-2022-09-23 23:22:00,011 Thread-1 DEBUG: Recognition start=23:21:56,040, end=23:22:00,011, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
-2022-09-23 23:22:01,033 Thread-3 DEBUG: Recognition start=23:21:56,986, end=23:22:01,033, match FR_TFX_220906_SHERLOCKHOLMES2_3, 0% confidence
-2022-09-23 23:22:01,931 Thread-2 DEBUG: Recognition start=23:21:57,892, end=23:22:01,931, match FR_TF1_220219_THEVOICE7_1, 0% confidence
+...
+2022-10-11 22:16:41,625 Thread-1 DEBUG: Recognition start=22:16:39,487, end=22:16:41,625, match FR_TFX_220906_SHERLOCKHOLMES3_1, 0% confidence
+2022-10-11 22:16:42,913 Thread-2 DEBUG: Recognition start=22:16:40,697, end=22:16:42,913, match FR_W9_220830_FBI1_3, 0% confidence
+2022-10-11 22:16:44,070 Thread-1 DEBUG: Recognition start=22:16:41,826, end=22:16:44,070, match FR_TF1_220219_THEVOICE5_1, 0% confidence
+2022-10-11 22:16:45,216 Thread-2 DEBUG: Recognition start=22:16:43,013, end=22:16:45,216, match FR_TFX_220906_SHERLOCKHOLMES1_1, 0% confidence
+2022-10-11 22:16:46,360 Thread-1 DEBUG: Recognition start=22:16:44,170, end=22:16:46,360, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
+2022-10-11 22:16:47,497 Thread-2 DEBUG: Recognition start=22:16:45,317, end=22:16:47,497, match FR_W9_220830_FBI1_3, 0% confidence
+2022-10-11 22:16:48,648 Thread-1 DEBUG: Recognition start=22:16:46,461, end=22:16:48,648, match FR_M6_220723_EVENING1_1, 3% confidence
+2022-10-11 22:16:49,821 Thread-2 DEBUG: Recognition start=22:16:47,597, end=22:16:49,821, match FR_M6_220723_EVENING1_1, 11% confidence
+2022-10-11 22:16:49,821 Thread-2 INFO: Hit: FR_M6_220723_EVENING1_1
+2022-10-11 22:16:49,821 Thread-2 INFO: TV muted
+2022-10-11 22:16:50,906 Thread-1 DEBUG: Recognition start=22:16:48,749, end=22:16:50,906, match FR_M6_220723_EVENING1_1, 4% confidence
+2022-10-11 22:16:52,204 Thread-2 DEBUG: Recognition start=22:16:49,922, end=22:16:52,204, match FR_M6_220723_EVENING1_1, 3% confidence
 ...
 ```
 
