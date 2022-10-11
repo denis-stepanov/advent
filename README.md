@@ -260,6 +260,41 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 `-c REC_CONFIDENCE` option allows adjusting recognition confidence for a hit in the range of 0-100%. The default, selected experimentally, is 10%. Increasing this parameter will make AdVent less sensitive but more certain; decreasing it will make AdVent more sensitive but also increase a chance of having false positives. Selecting confidence of 0% would mean that anything non-silence will be taken as a hit. If you plan to increase confidence above 25%, consider also increasing the listening interval. To achieve confidence of 100%, the interval must be larger than the length of the jingles of interest.
 
+Some useful presets:
+
+<table>
+<tr>
+<th>Preset</th>
+<th>n</th>
+<th>i</th>
+<th>c</th>
+</tr>
+<tr>
+<td>Optimal (default)</td>
+<td>2</td>
+<td>2</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Noise detector</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Super-fast</td>
+<td>4</td>
+<td>1</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Super-confident</td>
+<td>4</td>
+<td>5</td>
+<td>100</td>
+</tr>
+</table>
+
 #### Miscellaneous Options
 
 `-l LOG_LEVEL` option will log recognition process into a file `advent.log`. Supported levels of logging are `none` (default), `events` and `debug`.
