@@ -100,7 +100,7 @@ Here a green bar is the jingle; the red line is the time when the first hit was 
 
 Observations:
 
-1. there is a non-negligible "deadband" in Dejavu processing (marked with blue "tips" on the graph). For every 3 seconds recognition period, the actual recognition would take anytime between 3.2 and 3.5 seconds (on a 4 x 1200 MHz machine). Apparently, the engine just listens for 3 seconds and then does its jobs in the remaining time. So this deadband (currently recorded as a 0.4 seconds constant in the code - see issue [#24](https://github.com/denis-stepanov/advent/issues/24)) should be taken into account in calculations;
+1. there is a non-negligible "deadband" in Dejavu processing (marked with blue "tips" on the graph). For every 3 seconds recognition period, the actual recognition would take anytime between 3.2 and 3.5 seconds (on a 4 x 1200 MHz machine). Apparently, the engine just listens for 3 seconds and then does its jobs in the remaining time. So this deadband (currently recorded as a 0.25 second constant in the code - see issue [#24](https://github.com/denis-stepanov/advent/issues/24)) should be taken into account in calculations;
 2. threads are respecting the minimal distance of 1 second between each other (mutex is working). Due to this the duty cycle of a thread is not 100% but close to 80%. This is not bad for a default setup, as it keeps machine loaded close to 100% but still leaves some time for OS to do other tasks;
 3. new recognition starts not exactly at 1 second interval, but anytime between 1 and 1.1 seconds (because of `sleep(0.1)` when mutex cannot be taken). This error accumulates with time; but it is not very important for the purpose of the app.
 
@@ -136,6 +136,46 @@ Now, does this improve efficiency? I made a small synthetic test by playing a ji
 An obvious disadvantage of having more fingerprints is that database size will grow accordingly (in this case, by a factor of five), and the matching time ("Dejavu deadband") might increase. I tested it and did not observe a noticeable change (it remains in the order of 0.4 seconds for a three seconds track). Machine load was observed to be slightly higher, but not to the extent that could be realiably measured.
 
 Note that changing Dejavu parameters has impact on fingerprint database. It is thus better to fix and not to change them in the process, or else the entire set of jingles might need re-processing. If you plan to play with these parameters, make sure to keep around copies of your original audio files.
+
+### AdVent Tuning
+
+AdVent has got its own parameters, which could affect the success rate of recognition `S`:
+
+* `n` - number of listening threads
+* `i` - listening interval (s)
+* `c` - recognition confidence
+
+Quite obviously, success rate `S` should be proportional to the listening interval `i` (the longer we listen, the better) and inversely proportional to the recognition confidence `c` (higher confidence of a match would inevitably mean lower success). Similarly, success rate should be proportional to the number of listening threads `n` (more threads mean more hits). Unfortunately, threads tend to compete with each other and with the operating system for resources, especially when the system is close to saturation. This means that threads contribution is not proportional, but more like a square root or a logarithm: to get two times better recognition, one has to run four times more threads. In summary, we could reasonably expect success rate to be something like:
+
+![Success-rate-formula](https://user-images.githubusercontent.com/22733222/194731967-332eeb7c-600a-4b64-81c6-947993504a29.png)
+
+Curiously, the length of a listened track does not seem to be part of the equation. This is likely related to the fact on how recognition confidence is calculated by Dejavu. Fingerprinted confidence equals to the number of unique hashes matched related to the total number of hashes for a given track. And the latter is generally proportional to the length of the track. So it has been already indirectly taken into account. Note that it means that in order to ensure 100% recognition confidence, one has to submit the *entire* track for recognition.
+
+If we draw `S` as a function of number of threads `n`, varied by confidence parameter `c`, we will get something like this:
+
+![Success-rate-as-function-of-number-of-threads-theoretical](https://user-images.githubusercontent.com/22733222/194732348-373839a7-5254-4631-8378-738573a1b566.png)
+
+From this graph we need to cut off areas which have no physical meaning: number of threads shall be no less than one and success rate of recognition shall not exceed 100%.
+
+Actual measurement for a fixed size track gives the following:
+
+![Success-rate-as-function-of-number-of-threads](https://user-images.githubusercontent.com/22733222/194777981-416308d8-9f86-4eb3-8b05-e85f33a28e65.png)
+
+We can see that it generally confirms the theory. 25% or less recognition confidence performs well even with a small number of threads; to obtain higher confidence one has to significantly increase the number of threads. In this case 100% confidence can never be reached (success `S` = 0%), because both the listening interval `i` and the length of the track equal to 3 seconds, and with a random start it is virtually impossible for AdVent to make Dejavu listen for the full length of the track.
+
+Pink gradient background of the graph indicates system load - more threads mean more load. As already stated earlier, four threads on a four cores CPU would consume about 100% of the resource; ten threads would consume about 200%.
+
+From this graph it looks like for low confidences two threads perform nearly as well as four threads, but would consume two times less the CPU; so it makes sense to make it default.
+
+Now let's see what happens if we keep the number of threads `n` constant but vary the listening interval `i`:
+
+![Success-rate-as-function-of-interval](https://user-images.githubusercontent.com/22733222/194778961-46de075c-d308-439c-b466-9849240123ee.png)
+
+We can immediately see that for low confidences the listening interval of 2 seconds performs as good as the interval of 3 seconds. It makes sense to reduce this interval when possible, because then AdVent could react faster. So the default of 2 seconds would look reasonable. One can also see the confirmation of what was said earlier - in order to get some success with 100% confidence, for a 3 seconds track one has to listen for a least 3.5 seconds. Curiously, while it makes no sense to listen for more than the track total length, increasing the interval beyond the track length appears to improve confidence.
+
+The red area on the graph (the interval below 1 second) indicates Dejavu breakdown. Dejavu would just issue some sort of warning and return no matches. It is probably possible to overcome this by playing further with Dejavu parameters (see [Dejavu Tuning](#dejavu-tuning)), but for this task it has no interest, as jingles are normally longer than one second.
+
+Finally, what concerns recognition confidence `c`, we can see that lower confidences perform much better, so one has to choose the lowest possible level where false positives do not step in. From measurements, false positives usually do not result in confidence higher than 5%, so setting default of 10% would allow for good performance and provide some margin against false positives.
 
 ## Supported Environment
 
@@ -184,10 +224,10 @@ Runnig AdVent is as simple as:
 The output should resemble to this:
 
 ```
-AdVent v1.4.0
+AdVent v1.5.0
 TV control is pulseaudio with action 'mute' for 600 s max
-Recognition interval is 3 s with confidence of 10%
-Started 4 listening thread(s)
+Recognition interval is 2 s with confidence of 10%
+Started 2 listening thread(s)
 ...:o::o::::::o::::::::::o::ooo
 ```
 
@@ -214,11 +254,52 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 #### Recognition Tuning Options
 
-`-n NUM_THREADS` option allows selecting a number of recognition threads to run. The offset between threads will be adjusted automatically. Default is the number of CPU cores available (which on end user computers - Raspberry Pi included - is very often 4). Increasing this number would improve coverage of jingles in the input stream, potentially improving recognition. However, making it significantly higher than the number of CPU cores available would likely not attain the desired result because of system starvation. Decreasing this number will decrease the system load but also decrease jingle coverage, increasing a chance to miss one. `-n 1` will result in single-thread execution, which would result in small fractions of input not submitted to recognition due to inevitable Dejavu deadband. 
+`-n NUM_THREADS` option allows selecting a number of recognition threads to run. The offset between threads will be adjusted automatically. The default is two threads. Increasing this number would improve coverage of jingles in the input stream, potentially improving recognition and reactivity. However, making it significantly higher than the number of CPU cores available (which on end user computers - Raspberry Pi included - is very often 4) would likely not attain the desired result because of system starvation. Decreasing this number will decrease the system load but also decrease jingle coverage, increasing a chance to miss one. `-n 1` will result in single-thread execution, which would result in small fractions of input not submitted to recognition due to inevitable Dejavu deadband.
 
-`-i REC_INTERVAL` option allows adjusting the recognition window, in seconds. It is recommended to keep it close to a typical duration of jingles of the TV channels of interest. The default is 3 seconds, which is more or less common duration; it should also work fairly well for jingles longer that that. Increasing this interval would increase Dejavu effectiveness (because it listens for longer) in expense of decreased effectiveness of AdVent (because threads would have a lower duty cycle), and vice versa. So the change would likely not have much impact, except for some specific cases, like working with very short or very long jingles. Going significantly above 5 seconds would likely diminish the overall efficiency, as majority of jingles are less than 5 seconds long. Going below 2 seconds runs at risk of breaking down Dejavu recognition process and generating many false positives or false negatives.
+`-i REC_INTERVAL` option allows adjusting the recognition window, in seconds. The default is 2 seconds, which is the lowest interval where Dejavu still performs well. Increasing this parameter would increase Dejavu effectiveness (because it listens for longer) in expense of decreased effectiveness of AdVent (because threads would have a lower duty cycle), and vice versa. So, on average, the change would not make much difference for low confidence levels (25% or less), but will have effect for higher confidences. Another aspect to keep in mind is that the shorter the interval, the faster reaction of AdVent would be. If you would like to have a longer interval but still maintain a good reaction time, you would need to increase the number of threads accordingly. Going below 1 second would break Dejavu processing and so is pretty useless.
 
-`-c REC_CONFIDENCE` option allows adjusting recognition confidence for a hit in the range of 0-100%. The default, selected experimentally, is 10%. Increasing this parameter will make AdVent less sensitive but more certain; decreasing it will make AdVent more sensitive but also increase a chance of having false positives. Selecting confidence of 0% would mean that anything non-silence will be taken as a hit.
+`-c REC_CONFIDENCE` option allows adjusting recognition confidence for a hit in the range of 0-100%. The default, selected experimentally, is 10%. Increasing this parameter will make AdVent less sensitive but more certain; decreasing it will make AdVent more sensitive but also increase a chance of having false positives. Selecting confidence of 0% would mean that anything non-silence will be taken as a hit. If you plan to increase confidence above 25%, consider also increasing the listening interval. To achieve confidence of 100%, the interval must be larger than the length of the jingles of interest.
+
+Some useful presets:
+
+<table>
+<tr>
+<th>Preset</th>
+<th>n</th>
+<th>i</th>
+<th>c</th>
+</tr>
+<tr>
+<td>Optimal (default)</td>
+<td>2</td>
+<td>2</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Noise detector</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Super-fast</td>
+<td>4</td>
+<td>1</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Confident</td>
+<td>4</td>
+<td>5</td>
+<td>50</td>
+</tr>
+<tr>
+<td>Super-prudent</td>
+<td>4</td>
+<td>5</td>
+<td>100</td>
+</tr>
+</table>
 
 #### Miscellaneous Options
 
@@ -227,20 +308,19 @@ There is no option to select an audio source; AdVent takes a system default. See
 Debug log is useful to understand why AdVent reacted (or not). The log might look something like this:
 
 ```
-2022-09-23 23:21:49,655 MainThread INFO: AdVent v1.4.0
-2022-09-23 23:21:49,661 MainThread DEBUG: Dejavu config /home/ds/src/advent/advent-pyenv/lib/python3.7/site-packages/dejavu_py/dejavu.cnf loaded
-2022-09-23 23:21:49,662 MainThread INFO: TV control is harmonyhub with action 'mute' for 600 s max
-2022-09-23 23:21:49,662 MainThread INFO: Recognition interval is 3 s with confidence of 10%
-2022-09-23 23:21:50,016 MainThread INFO: Started 4 listening thread(s)
-2022-09-23 23:21:50,017 MainThread DEBUG: Thread offset is 0.85 s
-2022-09-23 23:21:55,117 Thread-4 DEBUG: Recognition start=23:21:50,517, end=23:21:55,117, match FR_TF1_220304_LESENFOIRES6_2, 0% confidence
-2022-09-23 23:21:55,624 Thread-1 DEBUG: Recognition start=23:21:51,387, end=23:21:55,624, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
-2022-09-23 23:21:56,474 Thread-3 DEBUG: Recognition start=23:21:52,244, end=23:21:56,474, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
-2022-09-23 23:21:57,289 Thread-2 DEBUG: Recognition start=23:21:53,172, end=23:21:57,289, match FR_TF1_220304_LESENFOIRES10_1, 0% confidence
-2022-09-23 23:21:59,256 Thread-4 DEBUG: Recognition start=23:21:55,118, end=23:21:59,256, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
-2022-09-23 23:22:00,011 Thread-1 DEBUG: Recognition start=23:21:56,040, end=23:22:00,011, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
-2022-09-23 23:22:01,033 Thread-3 DEBUG: Recognition start=23:21:56,986, end=23:22:01,033, match FR_TFX_220906_SHERLOCKHOLMES2_3, 0% confidence
-2022-09-23 23:22:01,931 Thread-2 DEBUG: Recognition start=23:21:57,892, end=23:22:01,931, match FR_TF1_220219_THEVOICE7_1, 0% confidence
+...
+2022-10-11 22:16:41,625 Thread-1 DEBUG: Recognition start=22:16:39,487, end=22:16:41,625, match FR_TFX_220906_SHERLOCKHOLMES3_1, 0% confidence
+2022-10-11 22:16:42,913 Thread-2 DEBUG: Recognition start=22:16:40,697, end=22:16:42,913, match FR_W9_220830_FBI1_3, 0% confidence
+2022-10-11 22:16:44,070 Thread-1 DEBUG: Recognition start=22:16:41,826, end=22:16:44,070, match FR_TF1_220219_THEVOICE5_1, 0% confidence
+2022-10-11 22:16:45,216 Thread-2 DEBUG: Recognition start=22:16:43,013, end=22:16:45,216, match FR_TFX_220906_SHERLOCKHOLMES1_1, 0% confidence
+2022-10-11 22:16:46,360 Thread-1 DEBUG: Recognition start=22:16:44,170, end=22:16:46,360, match FR_W9_220905_PIRATESOFTHECARRIBEAN1_3, 0% confidence
+2022-10-11 22:16:47,497 Thread-2 DEBUG: Recognition start=22:16:45,317, end=22:16:47,497, match FR_W9_220830_FBI1_3, 0% confidence
+2022-10-11 22:16:48,648 Thread-1 DEBUG: Recognition start=22:16:46,461, end=22:16:48,648, match FR_M6_220723_EVENING1_1, 3% confidence
+2022-10-11 22:16:49,821 Thread-2 DEBUG: Recognition start=22:16:47,597, end=22:16:49,821, match FR_M6_220723_EVENING1_1, 11% confidence
+2022-10-11 22:16:49,821 Thread-2 INFO: Hit: FR_M6_220723_EVENING1_1
+2022-10-11 22:16:49,821 Thread-2 INFO: TV muted
+2022-10-11 22:16:50,906 Thread-1 DEBUG: Recognition start=22:16:48,749, end=22:16:50,906, match FR_M6_220723_EVENING1_1, 4% confidence
+2022-10-11 22:16:52,204 Thread-2 DEBUG: Recognition start=22:16:49,922, end=22:16:52,204, match FR_M6_220723_EVENING1_1, 3% confidence
 ...
 ```
 
