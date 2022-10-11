@@ -228,8 +228,8 @@ def main():
             if args.rec_interval <= 0:
                 LOGGER.error(f'Error: invalid recognition interval: {args.rec_interval}; ignoring')
             else:
-                if args.rec_interval < 1.5:
-                    LOGGER.warning(f'Warning: recognition interval of {args.rec_interval} s is not reliable')
+                if args.rec_interval < 1:
+                    LOGGER.warning(f'Warning: recognition interval of {args.rec_interval} s will result in no matches')
                 REC_INTERVAL = args.rec_interval
                 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
                 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
