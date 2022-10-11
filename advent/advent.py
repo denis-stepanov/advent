@@ -238,7 +238,7 @@ def main():
             if args.rec_confidence < 0 or args.rec_confidence > 100:
                 LOGGER.error(f'Error: invalid recognition confidence: {args.rec_confidence}; ignoring')
             else:
-                if args.rec_confidence < 3:
+                if args.rec_confidence < 5:
                     LOGGER.warning(f'Warning: recognition confidence of {args.rec_confidence}% is not reliable')
                 REC_CONFIDENCE = args.rec_confidence
         LOGGER.info(f'Recognition interval is {REC_INTERVAL} s with confidence of {REC_CONFIDENCE}%')
