@@ -829,6 +829,12 @@ _Caveat2_: this simplistic command will try muting all devices known to Harmony.
 
 Note that AdVent relies on default Hub name which is `Harmony`. If your Hub name is different, the name needs to be corrected in the source code (and in the test command above). It there would be demand, it is possible to make a command line option for this (issue [#17](https://github.com/denis-stepanov/advent/issues/17)).
 
+### Other Uses
+
+It is possible to use AdVent for purposes other than controlling a TV - e.g., to detect some ambient sounds and to send notifications or operate domotics. The engine should be basically OK; you'd just need to fingerprint samples of the sound of interest. However, to program reactions, you'd need to write a few lines of Python to provide a fake `tv_control` module doing what's needed.
+
+Note that the current setup is optimized for sounds of a few seconds length. It should work for sharp sounds less than a second long as long as you can use the listening interval of at least one second. If you'd need shorter intervals, you'd have to do your own [Dejavu tuning](#Dejavu_Tuning).
+
 ## Privacy Statement (for paranoids)
 
 TV video input is not connected nor used. Audio matching represents a completely in-memory operation (no audio recording of any kind is performed), and a local copy of the online database is used for matching (no active network connection needed), so the information on what a person is watching on TV does not leave the local controller, and is not logged in any form on its persistent storage medium.
