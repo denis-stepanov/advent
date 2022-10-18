@@ -18,6 +18,7 @@ def main():
     parser_export = subparsers.add_parser('export', help='export tracks')
     parser_import = subparsers.add_parser('import', help='import tracks')
     parser_delete = subparsers.add_parser('delete', help='delete tracks')
+    parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
 
     parser_list.add_argument  ('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
     parser_export.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
@@ -120,6 +121,12 @@ def main():
                     print(song['song_name'])
             else:
                 print("No records found")
+
+        if args.cmd == 'dbinfo':
+            cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(total_hashes) AS n_hashes FROM songs")
+            songs_agg = cur.fetchone()
+            print(f"Tracks      : {songs_agg['n_tracks']}")
+            print(f"Fingerprints: {songs_agg['n_hashes']}")
 
         cur.close()
         return 0
