@@ -125,8 +125,14 @@ def main():
         if args.cmd == 'dbinfo':
             cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(total_hashes) AS n_hashes FROM songs")
             songs_agg = cur.fetchone()
-            print(f"Tracks      : {songs_agg['n_tracks']}")
-            print(f"Fingerprints: {songs_agg['n_hashes']}")
+            print(f"Tracks         : {songs_agg['n_tracks']}")
+            print(f"Fingerprints   : {songs_agg['n_hashes']}")
+            cur.execute("SELECT CASE WHEN COUNT(hash) <> 0 THEN ROUND((COUNT(hash) - COUNT(DISTINCT(hash))) * 100::NUMERIC / COUNT(hash), 2) ELSE 101 END AS col_rate FROM fingerprints")
+            col_rate = float(cur.fetchone()['col_rate'])
+            if col_rate <= 100:
+                print(f"Hash collisions: {col_rate}%")
+            else:
+                print("Hash collisions: n/a")
 
         cur.close()
         return 0
