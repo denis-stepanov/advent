@@ -154,6 +154,11 @@ def main():
             cur.execute("SELECT pg_size_pretty(pg_database_size(%s))", (DB_NAME,))
             print(f"Database size  : {cur.fetchone()['pg_size_pretty']}")
 
+            cur.execute("SELECT DATE_TRUNC('second', LEAST(MIN(s.date_created), MIN(s.date_modified), MIN(f.date_created), MIN(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
+            print(f"First update   : {cur.fetchone()['date_trunc']}")
+            cur.execute("SELECT DATE_TRUNC('second', GREATEST(MAX(s.date_created), MAX(s.date_modified), MAX(f.date_created), MAX(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
+            print(f"Last update    : {cur.fetchone()['date_trunc']}")
+
         cur.close()
         return 0
 
