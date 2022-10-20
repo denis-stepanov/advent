@@ -9,6 +9,13 @@ import csv
 
 FORMAT = "djv"
 FORMAT_VERSION = 1
+
+# Must match Dejavu presets; see https://github.com/denis-stepanov/advent#dejavu-tuning
+DEFAULT_WINDOW_SIZE = 1024
+DEFAULT_OVERLAP_RATIO = 0.75
+DEFAULT_FS = 44100
+
+# TODO: load this from config file
 DB_HOST = "localhost"
 DB_NAME = "advent"
 DB_USER = "advent"
@@ -129,35 +136,38 @@ def main():
         if args.cmd == 'dbinfo':
             cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(total_hashes) AS n_hashes FROM songs")
             songs_agg = cur.fetchone()
-            print(f"Tracks           = {songs_agg['n_tracks']}")
+            print(f"Tracks                    = {songs_agg['n_tracks']}")
 
             cur.execute("SELECT COUNT(DISTINCT(song_id, \"offset\")) AS n_peak_groups FROM fingerprints")
-            print(f"Peak groups      = {cur.fetchone()['n_peak_groups']}")
-            print(f"Fingerprints     = {songs_agg['n_hashes']}")
-
-            cur.execute("SELECT CASE WHEN COUNT(hash) <> 0 THEN ROUND((COUNT(hash) - COUNT(DISTINCT(hash))) * 100::NUMERIC / COUNT(hash), 2) ELSE 101 END AS col_rate FROM fingerprints")
-            col_rate = float(cur.fetchone()['col_rate'])
-            if col_rate <= 100:
-                print(f"Hash collisions ~= {col_rate}%")
-            else:
-                print("Hash collisions  = n/a")
+            print(f"Peak groups               = {cur.fetchone()['n_peak_groups']}")
+            print(f"Fingerprints              = {songs_agg['n_hashes']}")
 
             cur.execute("SELECT MIN(LENGTH(hash)), MAX(LENGTH(hash)) FROM fingerprints")
             hashes_agg = cur.fetchone()
             min_size = int(hashes_agg['min'])
             max_size = int(hashes_agg['min'])
             if max_size != min_size:
-                print(f"Hash size        = {min_size}-{max_size} B")
+                print(f"Hash size                 = {min_size}-{max_size} B")
             else:
-                print(f"Hash size        = {min_size} B")
+                print(f"Hash size                 = {min_size} B")
+
+            cur.execute("SELECT CASE WHEN COUNT(hash) <> 0 THEN ROUND((COUNT(hash) - COUNT(DISTINCT(hash))) * 100::NUMERIC / COUNT(hash), 2) ELSE 101 END AS col_rate FROM fingerprints")
+            col_rate = float(cur.fetchone()['col_rate'])
+            if col_rate <= 100:
+                print(f"Hash collisions          ~= {col_rate}%")
+            else:
+                print("Hash collisions            = n/a")
+
+            cur.execute("SELECT ROUND(SUM(max_offset) * %s * (1 - %s) / %s) FROM (SELECT MAX(\"offset\") AS max_offset FROM fingerprints GROUP BY song_id) AS offsets", (DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP_RATIO, DEFAULT_FS))
+            print(f"Total fingerprinted time ~= {cur.fetchone()[0]} s")
 
             cur.execute("SELECT pg_size_pretty(pg_database_size(%s))", (DB_NAME,))
-            print(f"Database size   ~= {cur.fetchone()['pg_size_pretty']}")
+            print(f"Database size            ~= {cur.fetchone()['pg_size_pretty']}")
 
             cur.execute("SELECT DATE_TRUNC('second', LEAST(MIN(s.date_created), MIN(s.date_modified), MIN(f.date_created), MIN(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
-            print(f"First update    ~= {cur.fetchone()['date_trunc']}")
+            print(f"First update             ~= {cur.fetchone()['date_trunc']}")
             cur.execute("SELECT DATE_TRUNC('second', GREATEST(MAX(s.date_created), MAX(s.date_modified), MAX(f.date_created), MAX(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
-            print(f"Last update     ~= {cur.fetchone()['date_trunc']}")
+            print(f"Last update              ~= {cur.fetchone()['date_trunc']}")
 
         cur.close()
         return 0
