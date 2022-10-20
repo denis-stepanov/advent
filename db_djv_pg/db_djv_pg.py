@@ -142,6 +142,15 @@ def main():
             else:
                 print("Hash collisions: n/a")
 
+            cur.execute("SELECT MIN(LENGTH(hash)), MAX(LENGTH(hash)) FROM fingerprints")
+            hashes_agg = cur.fetchone()
+            min_size = int(hashes_agg['min'])
+            max_size = int(hashes_agg['min'])
+            if max_size != min_size:
+                print(f"Hash size      : {min_size}-{max_size} B")
+            else:
+                print(f"Hash size      : {min_size} B")
+
             cur.execute("SELECT pg_size_pretty(pg_database_size(%s))", (DB_NAME,))
             print(f"Database size  : {cur.fetchone()['pg_size_pretty']}")
 
