@@ -138,21 +138,21 @@ def main():
             songs_agg = cur.fetchone()
             print(f"Tracks                    = {songs_agg['n_tracks']}")
 
-            cur.execute("SELECT COUNT(DISTINCT(song_id, \"offset\")) AS n_peak_groups FROM fingerprints")
-            print(f"Peak groups               = {cur.fetchone()['n_peak_groups']}")
+            cur.execute("SELECT COUNT(DISTINCT(song_id, \"offset\")) FROM fingerprints")
+            print(f"Peak groups               = {cur.fetchone()[0]}")
             print(f"Fingerprints              = {songs_agg['n_hashes']}")
 
             cur.execute("SELECT MIN(LENGTH(hash)), MAX(LENGTH(hash)) FROM fingerprints")
             hashes_agg = cur.fetchone()
             min_size = int(hashes_agg['min'])
-            max_size = int(hashes_agg['min'])
+            max_size = int(hashes_agg['max'])
             if max_size != min_size:
                 print(f"Hash size                 = {min_size}-{max_size} B")
             else:
                 print(f"Hash size                 = {min_size} B")
 
-            cur.execute("SELECT CASE WHEN COUNT(hash) <> 0 THEN ROUND((COUNT(hash) - COUNT(DISTINCT(hash))) * 100::NUMERIC / COUNT(hash), 2) ELSE 101 END AS col_rate FROM fingerprints")
-            col_rate = float(cur.fetchone()['col_rate'])
+            cur.execute("SELECT CASE WHEN COUNT(hash) <> 0 THEN ROUND((COUNT(hash) - COUNT(DISTINCT(hash))) * 100::NUMERIC / COUNT(hash), 2) ELSE 101 END FROM fingerprints")
+            col_rate = float(cur.fetchone()[0])
             if col_rate <= 100:
                 print(f"Hash collisions          ~= {col_rate}%")
             else:
@@ -162,12 +162,12 @@ def main():
             print(f"Total fingerprinted time ~= {cur.fetchone()[0]} s")
 
             cur.execute("SELECT pg_size_pretty(pg_database_size(%s))", (DB_NAME,))
-            print(f"Database size            ~= {cur.fetchone()['pg_size_pretty']}")
+            print(f"Database size            ~= {cur.fetchone()[0]}")
 
             cur.execute("SELECT DATE_TRUNC('second', LEAST(MIN(s.date_created), MIN(s.date_modified), MIN(f.date_created), MIN(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
-            print(f"First update             ~= {cur.fetchone()['date_trunc']}")
+            print(f"First update             ~= {cur.fetchone()[0]}")
             cur.execute("SELECT DATE_TRUNC('second', GREATEST(MAX(s.date_created), MAX(s.date_modified), MAX(f.date_created), MAX(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
-            print(f"Last update              ~= {cur.fetchone()['date_trunc']}")
+            print(f"Last update              ~= {cur.fetchone()[0]}")
 
         cur.close()
         return 0
