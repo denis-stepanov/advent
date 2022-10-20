@@ -126,7 +126,11 @@ def main():
             cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(total_hashes) AS n_hashes FROM songs")
             songs_agg = cur.fetchone()
             print(f"Tracks         : {songs_agg['n_tracks']}")
+
+            cur.execute("SELECT COUNT(DISTINCT(song_id, \"offset\")) AS n_peak_groups FROM fingerprints")
+            print(f"Peak groups    : {cur.fetchone()['n_peak_groups']}")
             print(f"Fingerprints   : {songs_agg['n_hashes']}")
+
             cur.execute("SELECT CASE WHEN COUNT(hash) <> 0 THEN ROUND((COUNT(hash) - COUNT(DISTINCT(hash))) * 100::NUMERIC / COUNT(hash), 2) ELSE 101 END AS col_rate FROM fingerprints")
             col_rate = float(cur.fetchone()['col_rate'])
             if col_rate <= 100:
