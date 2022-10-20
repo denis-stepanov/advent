@@ -9,6 +9,10 @@ import csv
 
 FORMAT = "djv"
 FORMAT_VERSION = 1
+DB_HOST = "localhost"
+DB_NAME = "advent"
+DB_USER = "advent"
+DB_PASSWORD = "advent"
 
 def main():
     parser = argparse.ArgumentParser(description='Process Dejavu tracks in PGSQL database',
@@ -29,7 +33,7 @@ def main():
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
     args = parser.parse_args()
 
-    conn = psycopg2.connect("host=localhost dbname=advent user=advent password=advent")
+    conn = psycopg2.connect(f"host={DB_HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}")
 
     with conn:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -137,6 +141,9 @@ def main():
                 print(f"Hash collisions: {col_rate}%")
             else:
                 print("Hash collisions: n/a")
+
+            cur.execute("SELECT pg_size_pretty(pg_database_size(%s))", (DB_NAME,))
+            print(f"Database size  : {cur.fetchone()['pg_size_pretty']}")
 
         cur.close()
         return 0
