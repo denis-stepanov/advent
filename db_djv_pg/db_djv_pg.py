@@ -168,7 +168,12 @@ def main():
                 print("Hash collisions            = n/a")
 
             cur.execute("SELECT ROUND(SUM(max_offset) * %s * (1 - %s) / %s) FROM (SELECT MAX(\"offset\") AS max_offset FROM fingerprints GROUP BY song_id) AS offsets", (DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP_RATIO, DEFAULT_FS))
-            print(f"Total fingerprinted time ~= {cur.fetchone()[0]} s")
+            times = cur.fetchone()[0]
+            print(f"Total fingerprinted time ~= {times} s", end='')
+            if songs['n_ftracks'] != 0:
+                print(f" (avg. ~= {round(times / songs['n_ftracks'], 1)} s per track)")
+            else:
+                print()
 
             cur.execute("SELECT pg_database_size(%s) AS size, pg_size_pretty(pg_database_size(%s)) AS size_pretty", (DB_NAME, DB_NAME))
             db_size = cur.fetchone()
