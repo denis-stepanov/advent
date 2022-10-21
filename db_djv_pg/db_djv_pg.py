@@ -170,8 +170,13 @@ def main():
             cur.execute("SELECT ROUND(SUM(max_offset) * %s * (1 - %s) / %s) FROM (SELECT MAX(\"offset\") AS max_offset FROM fingerprints GROUP BY song_id) AS offsets", (DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP_RATIO, DEFAULT_FS))
             print(f"Total fingerprinted time ~= {cur.fetchone()[0]} s")
 
-            cur.execute("SELECT pg_size_pretty(pg_database_size(%s))", (DB_NAME,))
-            print(f"Database size            ~= {cur.fetchone()[0]}")
+            cur.execute("SELECT pg_database_size(%s) AS size, pg_size_pretty(pg_database_size(%s)) AS size_pretty", (DB_NAME, DB_NAME))
+            db_size = cur.fetchone()
+            print(f"Database size            ~= {db_size['size_pretty']}", end='')
+            if songs['n_ftracks'] != 0:
+                print(f" (avg. ~= {round(db_size['size'] / 1024 / 1024 / songs['n_ftracks'], 2)} MB per track)")
+            else:
+                print()
 
             cur.execute("SELECT DATE_TRUNC('second', LEAST(MIN(s.date_created), MIN(s.date_modified), MIN(f.date_created), MIN(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
             print(f"First update             ~= {cur.fetchone()[0]}")
