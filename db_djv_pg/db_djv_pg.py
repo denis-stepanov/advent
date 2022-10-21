@@ -135,12 +135,17 @@ def main():
 
         if args.cmd == 'dbinfo':
             cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(fingerprinted) AS n_ftracks, SUM(total_hashes) AS n_hashes FROM songs")
-            songs_agg = cur.fetchone()
-            print(f"Fingerprinted tracks      = {songs_agg['n_ftracks']} / {songs_agg['n_tracks']}")
+            songs = cur.fetchone()
+            print(f"Fingerprinted tracks      = {songs['n_ftracks']} / {songs['n_tracks']}")
 
             cur.execute("SELECT COUNT(DISTINCT(song_id, \"offset\")) FROM fingerprints")
-            print(f"Peak groups               = {cur.fetchone()[0]}")
-            print(f"Fingerprints              = {songs_agg['n_hashes']}")
+            peak_groups = cur.fetchone()[0]
+            print(f"Peak groups               = {peak_groups}", end='')
+            if songs['n_ftracks'] != 0:
+                print(f" (avg. ~= {round(peak_groups / songs['n_ftracks'])} per track)")
+            else:
+                print()
+            print(f"Fingerprints              = {songs['n_hashes']}")
 
             cur.execute("SELECT MIN(LENGTH(hash)), MAX(LENGTH(hash)) FROM fingerprints")
             hashes_agg = cur.fetchone()
