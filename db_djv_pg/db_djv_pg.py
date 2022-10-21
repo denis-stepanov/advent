@@ -136,40 +136,24 @@ def main():
         if args.cmd == 'dbinfo':
             cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(fingerprinted) AS n_ftracks, SUM(total_hashes) AS n_hashes FROM songs")
             songs = cur.fetchone()
-            print(f"Fingerprinted tracks      = {songs['n_ftracks']} / {songs['n_tracks']}")
+            print(f"Fingerprinted / total tracks = {songs['n_ftracks']} / {songs['n_tracks']}")
 
             cur.execute("SELECT COUNT(DISTINCT(song_id, \"offset\")) FROM fingerprints")
             peak_groups = cur.fetchone()[0]
-            print(f"Peak groups               = {peak_groups}", end='')
+            print(f"Peak groups                  = {peak_groups}", end='')
             if songs['n_ftracks'] != 0:
                 print(f" (avg. ~= {round(peak_groups / songs['n_ftracks'])} per track)")
             else:
                 print()
-            print(f"Fingerprints              = {songs['n_hashes']}", end='')
+            print(f"Fingerprints                 = {songs['n_hashes']}", end='')
             if songs['n_ftracks'] != 0:
                 print(f" (avg. ~= {round(songs['n_hashes'] / songs['n_ftracks'])} per track)")
             else:
                 print()
 
-            cur.execute("SELECT MIN(LENGTH(hash)), MAX(LENGTH(hash)) FROM fingerprints")
-            hashes = cur.fetchone()
-            min_size = int(hashes['min'])
-            max_size = int(hashes['max'])
-            if max_size != min_size:
-                print(f"Hash size                 = {min_size}-{max_size} B")
-            else:
-                print(f"Hash size                 = {min_size} B")
-
-            cur.execute("SELECT CASE WHEN COUNT(hash) <> 0 THEN ROUND((COUNT(hash) - COUNT(DISTINCT(hash))) * 100::NUMERIC / COUNT(hash), 2) ELSE 101 END FROM fingerprints")
-            col_rate = float(cur.fetchone()[0])
-            if col_rate <= 100:
-                print(f"Hash collisions          ~= {col_rate}%")
-            else:
-                print("Hash collisions            = n/a")
-
             cur.execute("SELECT ROUND(SUM(max_offset) * %s * (1 - %s) / %s) FROM (SELECT MAX(\"offset\") AS max_offset FROM fingerprints GROUP BY song_id) AS offsets", (DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP_RATIO, DEFAULT_FS))
             times = cur.fetchone()[0]
-            print(f"Total fingerprinted time ~= {times} s", end='')
+            print(f"Total fingerprinted time    ~= {times} s", end='')
             if songs['n_ftracks'] != 0:
                 print(f" (avg. ~= {round(times / songs['n_ftracks'], 1)} s per track)")
             else:
@@ -177,16 +161,37 @@ def main():
 
             cur.execute("SELECT pg_database_size(%s) AS size, pg_size_pretty(pg_database_size(%s)) AS size_pretty", (DB_NAME, DB_NAME))
             db_size = cur.fetchone()
-            print(f"Database size            ~= {db_size['size_pretty']}", end='')
+            print(f"Database size               ~= {db_size['size_pretty']}", end='')
             if songs['n_ftracks'] != 0:
                 print(f" (avg. ~= {round(db_size['size'] / 1024 / 1024 / songs['n_ftracks'], 2)} MB per track)")
             else:
                 print()
 
+            if times != 0:
+                print(f"Fingerprinting density      ~= {round(songs['n_hashes'] / times)} Hz")
+            else:
+                print("Fingerprinting density        = n/a")
+
+            cur.execute("SELECT MIN(LENGTH(hash)), MAX(LENGTH(hash)) FROM fingerprints")
+            hashes = cur.fetchone()
+            min_size = int(hashes['min'])
+            max_size = int(hashes['max'])
+            if max_size != min_size:
+                print(f"Hash size                    = {min_size}-{max_size} B")
+            else:
+                print(f"Hash size                    = {min_size} B")
+
+            cur.execute("SELECT CASE WHEN COUNT(hash) <> 0 THEN ROUND((COUNT(hash) - COUNT(DISTINCT(hash))) * 100::NUMERIC / COUNT(hash), 2) ELSE 101 END FROM fingerprints")
+            col_rate = float(cur.fetchone()[0])
+            if col_rate <= 100:
+                print(f"Hash collisions             ~= {col_rate}%")
+            else:
+                print("Hash collisions               = n/a")
+
             cur.execute("SELECT DATE_TRUNC('second', LEAST(MIN(s.date_created), MIN(s.date_modified), MIN(f.date_created), MIN(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
-            print(f"First update             ~= {cur.fetchone()[0]}")
+            print(f"First update                ~= {cur.fetchone()[0]}")
             cur.execute("SELECT DATE_TRUNC('second', GREATEST(MAX(s.date_created), MAX(s.date_modified), MAX(f.date_created), MAX(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
-            print(f"Last update              ~= {cur.fetchone()[0]}")
+            print(f"Last update                 ~= {cur.fetchone()[0]}")
 
         cur.close()
         return 0
