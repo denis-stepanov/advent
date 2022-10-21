@@ -134,9 +134,9 @@ def main():
                 print("No records found")
 
         if args.cmd == 'dbinfo':
-            cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(total_hashes) AS n_hashes FROM songs")
+            cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(fingerprinted) AS n_ftracks, SUM(total_hashes) AS n_hashes FROM songs")
             songs_agg = cur.fetchone()
-            print(f"Tracks                    = {songs_agg['n_tracks']}")
+            print(f"Fingerprinted tracks      = {songs_agg['n_ftracks']} / {songs_agg['n_tracks']}")
 
             cur.execute("SELECT COUNT(DISTINCT(song_id, \"offset\")) FROM fingerprints")
             print(f"Peak groups               = {cur.fetchone()[0]}")
