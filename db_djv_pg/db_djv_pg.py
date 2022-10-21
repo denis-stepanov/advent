@@ -145,12 +145,16 @@ def main():
                 print(f" (avg. ~= {round(peak_groups / songs['n_ftracks'])} per track)")
             else:
                 print()
-            print(f"Fingerprints              = {songs['n_hashes']}")
+            print(f"Fingerprints              = {songs['n_hashes']}", end='')
+            if songs['n_ftracks'] != 0:
+                print(f" (avg. ~= {round(songs['n_hashes'] / songs['n_ftracks'])} per track)")
+            else:
+                print()
 
             cur.execute("SELECT MIN(LENGTH(hash)), MAX(LENGTH(hash)) FROM fingerprints")
-            hashes_agg = cur.fetchone()
-            min_size = int(hashes_agg['min'])
-            max_size = int(hashes_agg['max'])
+            hashes = cur.fetchone()
+            min_size = int(hashes['min'])
+            max_size = int(hashes['max'])
             if max_size != min_size:
                 print(f"Hash size                 = {min_size}-{max_size} B")
             else:
