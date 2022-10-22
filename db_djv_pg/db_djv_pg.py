@@ -216,11 +216,15 @@ def main():
                 else:
                     print()
 
+                cur.execute("SELECT SUM(CASE WHEN split_part(song_name, '_', 5) = '1' THEN 1 ELSE 0 END) FROM songs")
+                pure_entry = cur.fetchone()[0]
                 cur.execute("SELECT SUM(split_part(song_name, '_', 5)::INTEGER & 1) FROM songs")
-                print(f"  Entry jingles                = {cur.fetchone()[0]}")
+                print(f"  Pure entry / entry jingles   = {pure_entry} / {cur.fetchone()[0]}")
 
+                cur.execute("SELECT SUM(CASE WHEN split_part(song_name, '_', 5) = '2' THEN 1 ELSE 0 END) FROM songs")
+                pure_exit = cur.fetchone()[0]
                 cur.execute("SELECT SUM(split_part(song_name, '_', 5)::INTEGER & 2 >> 1) FROM songs")
-                print(f"  Exit jingles                 = {cur.fetchone()[0]}")
+                print(f"  Pure exit / exit jingles     = {pure_exit} / {cur.fetchone()[0]}")
 
                 cur.execute("WITH song_dates AS (SELECT MIN(split_part(song_name, '_', 3)) AS min_date FROM songs) SELECT '20' || substring(min_date FOR 2) || '-' || substring(min_date FROM 3 FOR 2) || '-' || substring(min_date FROM 5 FOR 2) FROM song_dates")
                 if cur.rowcount != 0:
