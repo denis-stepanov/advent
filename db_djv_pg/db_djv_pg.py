@@ -198,7 +198,16 @@ def main():
             print("\nAdVent info:")
 
             cur.execute("SELECT COUNT(DISTINCT(split_part(song_name, '_', 1))) FROM songs")
-            print(f"  Countries                    = {cur.fetchone()[0]}")
+            countries = cur.fetchone()[0]
+            print(f"  Countries                    = {countries}")
+
+            cur.execute("SELECT COUNT(DISTINCT(split_part(song_name, '_', 1) || '_' || split_part(song_name, '_', 2))) FROM songs")
+            channels = cur.fetchone()[0]
+            print(f"  TV channels                  = {channels}", end="")
+            if countries != 0:
+                print(f" (avg. {round(channels / countries)} per country)")
+            else:
+                print()
 
         cur.close()
         return 0
