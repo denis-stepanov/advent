@@ -226,6 +226,9 @@ def main():
                 cur.execute("SELECT SUM(split_part(song_name, '_', 5)::INTEGER & 2 >> 1) FROM songs")
                 print(f"  Pure exit / exit jingles     = {pure_exit} / {cur.fetchone()[0]}")
 
+                cur.execute("SELECT SUM(CASE WHEN split_part(song_name, '_', 5)::INTEGER & 3 = 0 THEN 1 ELSE 0 END) FROM songs")
+                print(f"  No action jingles            = {cur.fetchone()[0]}")
+
                 cur.execute("WITH song_dates AS (SELECT MIN(split_part(song_name, '_', 3)) AS min_date FROM songs) SELECT '20' || substring(min_date FOR 2) || '-' || substring(min_date FROM 3 FOR 2) || '-' || substring(min_date FROM 5 FOR 2) FROM song_dates")
                 if cur.rowcount != 0:
                     print(f"  Time coverage from           = {cur.fetchone()[0]}")
