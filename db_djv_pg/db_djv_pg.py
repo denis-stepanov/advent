@@ -195,19 +195,20 @@ def main():
             cur.execute("SELECT DATE_TRUNC('second', GREATEST(MAX(s.date_created), MAX(s.date_modified), MAX(f.date_created), MAX(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
             print(f"  Last update                 ~= {cur.fetchone()[0]}")
 
-            print("\nAdVent info:")
+            if DB_USER == 'advent':
+                print("\nAdVent info:")
 
-            cur.execute("SELECT COUNT(DISTINCT(split_part(song_name, '_', 1))) FROM songs")
-            countries = cur.fetchone()[0]
-            print(f"  Countries                    = {countries}")
+                cur.execute("SELECT COUNT(DISTINCT(split_part(song_name, '_', 1))) FROM songs")
+                countries = cur.fetchone()[0]
+                print(f"  Countries                    = {countries}")
 
-            cur.execute("SELECT COUNT(DISTINCT(split_part(song_name, '_', 1) || '_' || split_part(song_name, '_', 2))) FROM songs")
-            channels = cur.fetchone()[0]
-            print(f"  TV channels                  = {channels}", end="")
-            if countries != 0:
-                print(f" (avg. {round(channels / countries)} per country)")
-            else:
-                print()
+                cur.execute("SELECT COUNT(DISTINCT(split_part(song_name, '_', 1) || '_' || split_part(song_name, '_', 2))) FROM songs")
+                channels = cur.fetchone()[0]
+                print(f"  TV channels                  = {channels}", end="")
+                if countries != 0:
+                    print(f" (avg. {round(channels / countries)} per country)")
+                else:
+                    print()
 
         cur.close()
         return 0
