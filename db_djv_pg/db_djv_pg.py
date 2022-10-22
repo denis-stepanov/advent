@@ -170,9 +170,9 @@ def main():
                 print()
 
             if times != 0:
-                print(f"  Fingerprinting density      ~= {round(songs['n_hashes'] / times)} Hz")
+                print(f"  Fingerprinting frequency    ~= {round(songs['n_hashes'] / times)} Hz (~= {round(100 * songs['n_hashes'] / times / DEFAULT_FS, 2)}% of sampling frequency {DEFAULT_FS} Hz)")
             else:
-                print("  Fingerprinting density        = n/a")
+                print("  Fingerprinting frequency      = n/a")
 
             cur.execute("SELECT MIN(LENGTH(hash)), MAX(LENGTH(hash)) FROM fingerprints")
             hashes = cur.fetchone()
