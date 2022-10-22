@@ -216,6 +216,18 @@ def main():
                 else:
                     print()
 
+                cur.execute("WITH song_dates AS (SELECT MIN(split_part(song_name, '_', 3)) AS min_date FROM songs) SELECT '20' || substring(min_date FOR 2) || '-' || substring(min_date FROM 3 FOR 2) || '-' || substring(min_date FROM 5 FOR 2) FROM song_dates")
+                if cur.rowcount != 0:
+                    print(f"  Time coverage from           = {cur.fetchone()[0]}")
+                else:
+                    print(f"  Time coverage from           = n/a")
+
+                cur.execute("WITH song_dates AS (SELECT MAX(split_part(song_name, '_', 3)) AS min_date FROM songs) SELECT '20' || substring(min_date FOR 2) || '-' || substring(min_date FROM 3 FOR 2) || '-' || substring(min_date FROM 5 FOR 2) FROM song_dates")
+                if cur.rowcount != 0:
+                    print(f"  Time coverage till           = {cur.fetchone()[0]}")
+                else:
+                    print(f"  Time coverage till           = n/a")
+
         cur.close()
         return 0
 
