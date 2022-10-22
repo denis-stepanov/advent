@@ -206,7 +206,13 @@ def main():
                 channels = cur.fetchone()[0]
                 print(f"  TV channels                  = {channels}", end="")
                 if countries != 0:
-                    print(f" (avg. {round(channels / countries)} per country)")
+                    print(f" (avg. ~= {round(channels / countries)} per country)")
+                else:
+                    print()
+
+                print(f"  Jingles                      = {songs['n_ftracks']}", end="")
+                if channels != 0:
+                    print(f" (avg. ~= {round(songs['n_ftracks'] / channels)} per TV channel)")
                 else:
                     print()
 
