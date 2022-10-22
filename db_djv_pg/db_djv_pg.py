@@ -134,7 +134,7 @@ def main():
                 print("No records found")
 
         if args.cmd == 'dbinfo':
-            print("Dejavu info:")
+            print("Dejavu database info:")
 
             cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(fingerprinted) AS n_ftracks, SUM(total_hashes) AS n_hashes FROM songs")
             songs = cur.fetchone()
@@ -190,13 +190,16 @@ def main():
             else:
                 print("  Hash collisions               = n/a")
 
-            cur.execute("SELECT DATE_TRUNC('second', LEAST(MIN(s.date_created), MIN(s.date_modified), MIN(f.date_created), MIN(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
+            cur.execute("SELECT date_trunc('second', LEAST(MIN(s.date_created), MIN(s.date_modified), MIN(f.date_created), MIN(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
             print(f"  First update                ~= {cur.fetchone()[0]}")
-            cur.execute("SELECT DATE_TRUNC('second', GREATEST(MAX(s.date_created), MAX(s.date_modified), MAX(f.date_created), MAX(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
+            cur.execute("SELECT date_trunc('second', GREATEST(MAX(s.date_created), MAX(s.date_modified), MAX(f.date_created), MAX(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
             print(f"  Last update                 ~= {cur.fetchone()[0]}")
 
+            cur.execute("SELECT date_trunc('second', GREATEST(last_vacuum, last_autovacuum)::TIMESTAMP) FROM pg_stat_user_tables WHERE relname = 'fingerprints'")
+            print(f"  Last vacuum                 ~= {cur.fetchone()[0]}")
+
             if DB_USER == 'advent':
-                print("\nAdVent info:")
+                print("\nAdVent database info:")
 
                 cur.execute("SELECT COUNT(DISTINCT(split_part(song_name, '_', 1))) FROM songs")
                 countries = cur.fetchone()[0]
