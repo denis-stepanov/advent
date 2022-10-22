@@ -197,6 +197,9 @@ def main():
 
             print("\nAdVent info:")
 
+            cur.execute("SELECT COUNT(DISTINCT(split_part(song_name, '_', 1))) FROM songs")
+            print(f"  Countries                    = {cur.fetchone()[0]}")
+
         cur.close()
         return 0
 
