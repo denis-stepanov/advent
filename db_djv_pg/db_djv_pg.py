@@ -38,6 +38,7 @@ def main():
     parser_import.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
+    parser_dbinfo.add_argument('-c', '--check', action='store_true', help='check database consistency');
     args = parser.parse_args()
 
     conn = psycopg2.connect(f"host={DB_HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}")
@@ -198,6 +199,7 @@ def main():
             cur.execute("SELECT date_trunc('second', GREATEST(last_vacuum, last_autovacuum)::TIMESTAMP) FROM pg_stat_user_tables WHERE relname = 'fingerprints'")
             print(f"  Last vacuum                 ~= {cur.fetchone()[0]}")
 
+            ## AdVent-specific info
             if DB_USER == 'advent':
                 print("\nAdVent database info:")
 
@@ -243,6 +245,13 @@ def main():
                     print(f"  Time coverage till           = {cur.fetchone()[0]}")
                 else:
                     print(f"  Time coverage till           = n/a")
+
+            # DB consistency checks
+            if args.check:
+                print("\nDatabase consistency checks:")
+
+                cur.execute("SELECT COUNT(*) FROM songs s, fingerprints f WHERE f.song_id = s.song_id and GREATEST(s.date_created, s.date_modified, f.date_created, f.date_modified) > now()")
+                print(f"  D0010: no timestamps in future                 : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
 
         cur.close()
         return 0
