@@ -253,6 +253,9 @@ def main():
                 cur.execute("SELECT COUNT(*) FROM songs s, fingerprints f WHERE f.song_id = s.song_id and GREATEST(s.date_created, s.date_modified, f.date_created, f.date_modified) > now()")
                 print(f"  D0010: timestamps in future                    : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
 
+                cur.execute("SELECT count(*) FROM (SELECT date_created FROM songs WHERE date_created > date_modified UNION SELECT date_created FROM fingerprints WHERE date_created > date_modified) AS dates")
+                print(f"  D0011: created > modified                      : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+
                 cur.execute("SELECT COUNT(*) FROM songs s1, songs s2 WHERE s1.song_name = s2.song_name AND s1.file_sha1 <> s2.file_sha1")
                 print(f"  D0020: same song name, different SHA1          : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
 
