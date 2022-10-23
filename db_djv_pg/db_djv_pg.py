@@ -259,6 +259,9 @@ def main():
                 cur.execute("SELECT COUNT(*) FROM songs s1, songs s2 WHERE s1.file_sha1 = s2.file_sha1 AND s1.song_name <> s2.song_name")
                 print(f"  D0021: same SHA1, different song name          : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
 
+                cur.execute("SELECT COUNT(*) FROM songs WHERE fingerprinted <> 0 AND total_hashes = 0")
+                print(f"  D0030: fingerprinted without fingerprints      : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+
         cur.close()
         return 0
 
