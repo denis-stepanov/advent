@@ -268,6 +268,9 @@ def main():
                 cur.execute("SELECT (SELECT SUM(total_hashes) FROM songs) = (SELECT COUNT(*) FROM fingerprints)")
                 print(f"  D0035: fingerprint counts mismatch             : {'OK' if cur.fetchone()[0] else 'FAILED'}")
 
+                cur.execute("SELECT (SELECT MIN(LENGTH(hash)) FROM fingerprints) = (SELECT MAX(LENGTH(hash)) FROM fingerprints)")
+                print(f"  D0040: fingerprint hashes of variable size     : {'OK' if cur.fetchone()[0] else 'FAILED'}")
+
         cur.close()
         return 0
 
