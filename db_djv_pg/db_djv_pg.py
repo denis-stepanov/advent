@@ -256,6 +256,9 @@ def main():
                 cur.execute("SELECT COUNT(*) FROM songs s1, songs s2 WHERE s1.song_name = s2.song_name AND s1.file_sha1 <> s2.file_sha1")
                 print(f"  D0020: same song name, different SHA1          : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
 
+                cur.execute("SELECT COUNT(*) FROM songs s1, songs s2 WHERE s1.file_sha1 = s2.file_sha1 AND s1.song_name <> s2.song_name")
+                print(f"  D0021: same SHA1, different song name          : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+
         cur.close()
         return 0
 
