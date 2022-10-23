@@ -337,6 +337,7 @@ The tool allows for the following operations on jingles (aka "tracks"):
 - `import` - import tracks from files to database
 - `delete` - delete tracks from database
 - (planned - issue [#3](https://github.com/denis-stepanov/advent/issues/3)) `rename` - rename tracks in the database
+- (planned - issue [#36](https://github.com/denis-stepanov/advent/issues/36)) `dbinfo` - display database information and statistics
 - (planned - issue [#42](https://github.com/denis-stepanov/advent/issues/42)) `vacuum` - vacuum database (improves performance)
 
 Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; other commands operate on track names (without file extension). When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
