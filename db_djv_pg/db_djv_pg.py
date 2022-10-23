@@ -265,6 +265,9 @@ def main():
                 cur.execute("SELECT COUNT(*) FROM songs WHERE fingerprinted <> 0 AND total_hashes = 0")
                 print(f"  D0030: fingerprinted without fingerprints      : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
 
+                cur.execute("SELECT (SELECT SUM(total_hashes) FROM songs) = (SELECT COUNT(*) FROM fingerprints)")
+                print(f"  D0035: fingerprint counts mismatch             : {'OK' if cur.fetchone()[0] else 'FAILED'}")
+
         cur.close()
         return 0
 
