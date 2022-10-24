@@ -290,6 +290,9 @@ def main():
                     cur.execute("SELECT COUNT(*) FROM songs WHERE split_part(song_name, '_', 3) !~ '^\d{2}(([0][1-9])|([1][0-2]))(([0-2][0-9])|([3][0-1]))$'")
                     print(f"  A0051: bad track date format                   : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
 
+                    cur.execute("SELECT COUNT(*) FROM songs WHERE NOT(split_part(song_name, '_', 5)::INTEGER BETWEEN 0 AND 3)")
+                    print(f"  A0080: bad flags                               : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+
         cur.close()
         return 0
 
