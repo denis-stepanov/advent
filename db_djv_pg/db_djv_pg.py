@@ -274,6 +274,12 @@ def main():
                 cur.execute("SELECT n_ins_since_vacuum + n_dead_tup FROM pg_stat_user_tables WHERE relname = 'fingerprints'")
                 print(f"  D0100: vacuum needed                           : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
 
+                ## AdVent-specific checks
+                if DB_USER == 'advent':
+
+                    cur.execute("SELECT COUNT(*) FROM songs WHERE fingerprinted = 0")
+                    print(f"  A0010: non-fingerprinted tracks                : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+
         cur.close()
         return 0
 
