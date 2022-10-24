@@ -280,6 +280,9 @@ def main():
                     cur.execute("SELECT COUNT(*) FROM songs WHERE fingerprinted = 0")
                     print(f"  A0010: non-fingerprinted tracks                : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
 
+                    cur.execute("SELECT COUNT(*) FROM songs WHERE total_hashes < 500")
+                    print(f"  A0020: low confidence tracks                   : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+
         cur.close()
         return 0
 
