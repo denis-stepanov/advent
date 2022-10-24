@@ -271,6 +271,9 @@ def main():
                 cur.execute("SELECT (SELECT MIN(LENGTH(hash)) FROM fingerprints) = (SELECT MAX(LENGTH(hash)) FROM fingerprints)")
                 print(f"  D0040: fingerprint hashes of variable size     : {'OK' if cur.fetchone()[0] else 'FAILED'}")
 
+                cur.execute("SELECT n_ins_since_vacuum + n_dead_tup FROM pg_stat_user_tables WHERE relname = 'fingerprints'")
+                print(f"  D0100: vacuum needed                           : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+
         cur.close()
         return 0
 
