@@ -286,6 +286,10 @@ def main():
                     cur.execute("SELECT COUNT(*) FROM songs WHERE LENGTH(song_name) - LENGTH(translate(song_name, '_', '')) <> 4")
                     print(f"  A0050: bad track name format                   : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
 
+                    # Rudimentary check, because difficult to make it natively with Postgres
+                    cur.execute("SELECT COUNT(*) FROM songs WHERE split_part(song_name, '_', 3) !~ '^\d{2}(([0][1-9])|([1][0-2]))(([0-2][0-9])|([3][0-1]))$'")
+                    print(f"  A0051: bad track date format                   : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+
         cur.close()
         return 0
 
