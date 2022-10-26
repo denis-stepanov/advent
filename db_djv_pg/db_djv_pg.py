@@ -21,13 +21,23 @@ DB_NAME = "advent"
 DB_USER = "advent"
 DB_PASSWORD = "advent"
 
-def res_str(res = True):
+TERM_WIDTH = 50
+
+def res_str(res = False):
     return 'OK' if res else 'FAILED'
+
+def print_check_result(msg = "UNKNOWN", res = False, offset = 2):
+    for i in range(offset):
+        print(" ", end = '')
+    print(msg, end = '')
+    for i in range(TERM_WIDTH - len(msg)):
+        print(" ", end = '')
+    print(f": {res_str(res)}")
 
 def db_check(cursor, query, msg):
     cursor.execute(query)
     res = not(cursor.fetchone()[0])
-    print(f"{msg} : {res_str(res)}")
+    print_check_result(msg, res)
     return res
 
 def main():
@@ -330,8 +340,11 @@ def main():
                         "A0080: bad flags")
                     db_problem = db_problem or res
 
-                print( "  -------------------------------------------------------")
-                print(f"  TOTAL CHECKS                                   : {res_str(db_problem)}")
+                print("  ", end = '')
+                for i in range(TERM_WIDTH):
+                    print("-", end = '')
+                print("+-------")
+                print_check_result("TOTAL CHECKS", db_problem)
 
         cur.close()
         return 0
