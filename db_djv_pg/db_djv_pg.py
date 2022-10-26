@@ -41,6 +41,8 @@ def db_check(cursor, query, msg):
     return res
 
 def main():
+    RETURN_CODE = 0
+
     parser = argparse.ArgumentParser(description='Process Dejavu tracks in PGSQL database',
         epilog='Use "COMMAND -h" to get command-specific help')
     subparsers = parser.add_subparsers(dest='cmd', required=True, metavar='COMMAND')
@@ -345,9 +347,10 @@ def main():
                     print("-", end = '')
                 print("+-------")
                 print_check_result("TOTAL CHECKS", db_problem)
+                RETURN_CODE = 2 if db_problem else 0
 
         cur.close()
-        return 0
+        return RETURN_CODE
 
     return 1
 
