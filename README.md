@@ -1,5 +1,5 @@
 # AdVent
-This program combats TV commercials on the fly by detecting ad jingles in the input audio stream and sending mute orders to a TV.
+This program combats TV commercials on the fly by detecting ad jingles in the input audio stream and sending mute commands to a TV.
 
 Watch AdVent in action (make sure to turn the video sound on):
 
@@ -9,15 +9,17 @@ Here AdVent is running next to a TV stream in browser, watched by a user using h
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
-AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, AdVent code is ridiculously small - the core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions. There is no need to inform AdVent of which exact channel you are watching - it will probe for all known channels simultaneously.
-
-AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
+Web TV is nice for testing, but the main target are conventional TV-sets. Here is an example of AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
 
 ![AdVent on Raspberry Pi](https://user-images.githubusercontent.com/22733222/180578361-5f08129c-bd5b-498e-8b03-324fc9c2b74d.jpg)
 
 ## How Stuff Works
 
-Diagram below shows in blue a standard workflow for a person listening to a TV and muting TV sound with a remote.
+AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, AdVent code is ridiculously small - the core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
+
+There is no need to inform AdVent of an exact channel you are watching - it will probe for all known channels simultaneously.
+
+A diagram below shows in blue a standard workflow for a person listening to a TV and muting TV sound with a remote.
 
 ![AdVent Workflow](https://user-images.githubusercontent.com/22733222/180874326-85a9d62a-3681-4ad0-b29a-7d356529fe8d.png)
 
