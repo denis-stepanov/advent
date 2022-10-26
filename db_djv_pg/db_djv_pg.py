@@ -24,7 +24,7 @@ DB_PASSWORD = "advent"
 TERM_WIDTH = 50
 
 def res_str(res = False):
-    return 'OK' if res else 'FAILED'
+    return 'FAILED' if res else 'OK'
 
 def print_check_result(msg = "UNKNOWN", res = False, offset = 2):
     for i in range(offset):
@@ -34,9 +34,10 @@ def print_check_result(msg = "UNKNOWN", res = False, offset = 2):
         print(" ", end = '')
     print(f": {res_str(res)}")
 
+# Return False or 0 if no issue
 def db_check(cursor, query, msg):
     cursor.execute(query)
-    res = not(cursor.fetchone()[0])
+    res = cursor.fetchone()[0]
     print_check_result(msg, res)
     return res
 
