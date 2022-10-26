@@ -21,6 +21,15 @@ DB_NAME = "advent"
 DB_USER = "advent"
 DB_PASSWORD = "advent"
 
+def res_str(res = True):
+    return 'OK' if res else 'FAILED'
+
+def db_check(cursor, query, msg):
+    cursor.execute(query)
+    res = not(cursor.fetchone()[0])
+    print(f"{msg} : {res_str(res)}")
+    return res
+
 def main():
     parser = argparse.ArgumentParser(description='Process Dejavu tracks in PGSQL database',
         epilog='Use "COMMAND -h" to get command-specific help')
@@ -247,51 +256,82 @@ def main():
                     print(f"  Time coverage till           = n/a")
 
             # DB checks
+            ## By convention, a query shall return 0 or false() if no problem detected
             if args.check:
                 print("\nDatabase health checks:")
+                db_problem = False
 
-                cur.execute("SELECT COUNT(*) FROM songs s, fingerprints f WHERE f.song_id = s.song_id and GREATEST(s.date_created, s.date_modified, f.date_created, f.date_modified) > now()")
-                print(f"  D0010: timestamps in future                    : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                res = db_check(cur,
+                    "SELECT COUNT(*) FROM songs s, fingerprints f WHERE f.song_id = s.song_id and GREATEST(s.date_created, s.date_modified, f.date_created, f.date_modified) > now()",
+                    "D0010: timestamps in future")
+                db_problem = db_problem or res
 
-                cur.execute("SELECT count(*) FROM (SELECT date_created FROM songs WHERE date_created > date_modified UNION SELECT date_created FROM fingerprints WHERE date_created > date_modified) AS dates")
-                print(f"  D0011: created > modified                      : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                res = db_check(cur,
+                    "SELECT count(*) FROM (SELECT date_created FROM songs WHERE date_created > date_modified UNION SELECT date_created FROM fingerprints WHERE date_created > date_modified) AS dates",
+                    "D0011: created > modified")
+                db_problem = db_problem or res
 
-                cur.execute("SELECT COUNT(*) FROM songs s1, songs s2 WHERE s1.song_name = s2.song_name AND s1.file_sha1 <> s2.file_sha1")
-                print(f"  D0020: same song name, different SHA1          : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                res = db_check(cur,
+                    "SELECT COUNT(*) FROM songs s1, songs s2 WHERE s1.song_name = s2.song_name AND s1.file_sha1 <> s2.file_sha1",
+                    "D0020: same song name, different SHA1")
+                db_problem = db_problem or res
 
-                cur.execute("SELECT COUNT(*) FROM songs s1, songs s2 WHERE s1.file_sha1 = s2.file_sha1 AND s1.song_name <> s2.song_name")
-                print(f"  D0021: same SHA1, different song name          : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                res = db_check(cur,
+                    "SELECT COUNT(*) FROM songs s1, songs s2 WHERE s1.file_sha1 = s2.file_sha1 AND s1.song_name <> s2.song_name",
+                    "D0021: same SHA1, different song name")
+                db_problem = db_problem or res
 
-                cur.execute("SELECT COUNT(*) FROM songs WHERE fingerprinted <> 0 AND total_hashes = 0")
-                print(f"  D0030: fingerprinted without fingerprints      : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                res = db_check(cur,
+                    "SELECT COUNT(*) FROM songs WHERE fingerprinted <> 0 AND total_hashes = 0",
+                    "D0030: fingerprinted without fingerprints")
+                db_problem = db_problem or res
 
-                cur.execute("SELECT (SELECT SUM(total_hashes) FROM songs) = (SELECT COUNT(*) FROM fingerprints)")
-                print(f"  D0035: fingerprint counts mismatch             : {'OK' if cur.fetchone()[0] else 'FAILED'}")
+                res = db_check(cur,
+                    "SELECT (SELECT SUM(total_hashes) FROM songs) <> (SELECT COUNT(*) FROM fingerprints)",
+                    "D0035: fingerprint counts mismatch")
+                db_problem = db_problem or res
 
-                cur.execute("SELECT (SELECT MIN(LENGTH(hash)) FROM fingerprints) = (SELECT MAX(LENGTH(hash)) FROM fingerprints)")
-                print(f"  D0040: fingerprint hashes of variable size     : {'OK' if cur.fetchone()[0] else 'FAILED'}")
+                res = db_check(cur,
+                    "SELECT (SELECT MIN(LENGTH(hash)) FROM fingerprints) <> (SELECT MAX(LENGTH(hash)) FROM fingerprints)",
+                    "D0040: fingerprint hashes of variable size")
+                db_problem = db_problem or res
 
-                cur.execute("SELECT n_ins_since_vacuum + n_dead_tup FROM pg_stat_user_tables WHERE relname = 'fingerprints'")
-                print(f"  D0100: vacuum needed                           : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                res = db_check(cur,
+                    "SELECT n_ins_since_vacuum + n_dead_tup FROM pg_stat_user_tables WHERE relname = 'fingerprints'",
+                    "D0100: vacuum needed")
+                db_problem = db_problem or res
 
                 ## AdVent-specific checks
                 if DB_USER == 'advent':
 
-                    cur.execute("SELECT COUNT(*) FROM songs WHERE fingerprinted = 0")
-                    print(f"  A0010: non-fingerprinted tracks                : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                    res = db_check(cur,
+                        "SELECT COUNT(*) FROM songs WHERE fingerprinted = 0",
+                        "A0010: non-fingerprinted tracks")
+                    db_problem = db_problem or res
 
-                    cur.execute("SELECT COUNT(*) FROM songs WHERE total_hashes < 500")
-                    print(f"  A0020: low confidence tracks                   : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                    res = db_check(cur,
+                        "SELECT COUNT(*) FROM songs WHERE total_hashes < 500",
+                        "A0020: low confidence tracks")
+                    db_problem = db_problem or res
 
-                    cur.execute("SELECT COUNT(*) FROM songs WHERE LENGTH(song_name) - LENGTH(translate(song_name, '_', '')) <> 4")
-                    print(f"  A0050: bad track name format                   : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                    res = db_check(cur,
+                        "SELECT COUNT(*) FROM songs WHERE LENGTH(song_name) - LENGTH(translate(song_name, '_', '')) <> 4",
+                        "A0050: bad track name format")
+                    db_problem = db_problem or res
 
                     # Rudimentary check, because difficult to make it natively with Postgres
-                    cur.execute("SELECT COUNT(*) FROM songs WHERE split_part(song_name, '_', 3) !~ '^\d{2}(([0][1-9])|([1][0-2]))(([0-2][0-9])|([3][0-1]))$'")
-                    print(f"  A0051: bad track date format                   : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                    res = db_check(cur,
+                        "SELECT COUNT(*) FROM songs WHERE split_part(song_name, '_', 3) !~ '^\d{2}(([0][1-9])|([1][0-2]))(([0-2][0-9])|([3][0-1]))$'",
+                        "A0051: bad track date format")
+                    db_problem = db_problem or res
 
-                    cur.execute("SELECT COUNT(*) FROM songs WHERE NOT(split_part(song_name, '_', 5)::INTEGER BETWEEN 0 AND 3)")
-                    print(f"  A0080: bad flags                               : {'OK' if int(cur.fetchone()[0]) == 0 else 'FAILED'}")
+                    res = db_check(cur,
+                        "SELECT COUNT(*) FROM songs WHERE NOT(split_part(song_name, '_', 5)::INTEGER BETWEEN 0 AND 3)",
+                        "A0080: bad flags")
+                    db_problem = db_problem or res
+
+                print( "  -------------------------------------------------------")
+                print(f"  TOTAL CHECKS                                   : {res_str(db_problem)}")
 
         cur.close()
         return 0
