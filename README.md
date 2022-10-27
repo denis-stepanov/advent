@@ -1,5 +1,5 @@
 # AdVent
-This program combats TV commercials on the fly by detecting ad jingles in the input audio stream and sending mute orders to a TV.
+This program combats TV commercials on the fly by detecting ad jingles in the input audio stream and sending mute commands to a TV.
 
 Watch AdVent in action (make sure to turn the video sound on):
 
@@ -9,15 +9,17 @@ Here AdVent is running next to a TV stream in browser, watched by a user using h
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
-AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, AdVent code is ridiculously small - the core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions. There is no need to inform AdVent of which exact channel you are watching - it will probe for all known channels simultaneously.
-
-AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
+Web TV is nice for testing, but the main target are conventional TV-sets. Here is an example of AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
 
 ![AdVent on Raspberry Pi](https://user-images.githubusercontent.com/22733222/180578361-5f08129c-bd5b-498e-8b03-324fc9c2b74d.jpg)
 
 ## How Stuff Works
 
-Diagram below shows in blue a standard workflow for a person listening to a TV and muting TV sound with a remote.
+AdVent functions by comparing live sound with a database of known ad jingles using open source sound recognition software [Dejavu](https://github.com/denis-stepanov/dejavu). Because of Dejavu doing all the heavy lifting, AdVent code is ridiculously small - the core consists of circa 50 lines of code; the rest being nice-to-have sugar. A database of jingles is available as a separate repository [AdVent Database](https://github.com/denis-stepanov/advent-db) and is open for contributions.
+
+There is no need to inform AdVent of an exact channel you are watching - it will probe for all known channels simultaneously.
+
+A diagram below shows in blue a standard workflow for a person listening to a TV and muting TV sound with a remote.
 
 ![AdVent Workflow](https://user-images.githubusercontent.com/22733222/180874326-85a9d62a-3681-4ad0-b29a-7d356529fe8d.png)
 
@@ -28,8 +30,8 @@ AdVent is added in parallel (path in orange), using the same or similar tools fo
 Clearly, the approach of looking for ad jingles has inherent limitations:
 
 * TV channels not using entry / exit jingles would not work (I do not have these in my reach);
-* complex ad breaks (such as lasting for 20 mins and employing multiple jingles in between) would likely not work well (there are means to combat these too);
-* very short jingles (< 1.5s) might have recognition issues (not seen in practice).
+* complex ad breaks (such as those lasting for 20 mins and employing multiple jingles in between) would likely not work well (there are means to combat these too);
+* very short jingles (< 1 s) won't work out of the box (not seen in practice).
 
 However, most TV channels I watch here in France do fall in line. So the mission was, taking into account these external limitations, make the rest working  - and working well. The particular use case of interest is the evening movie watching, where ad breaks are sparsed and of simple structure.
 
@@ -337,6 +339,7 @@ The tool allows for the following operations on jingles (aka "tracks"):
 - `import` - import tracks from files to database
 - `delete` - delete tracks from database
 - (planned - issue [#3](https://github.com/denis-stepanov/advent/issues/3)) `rename` - rename tracks in the database
+- (planned - issue [#36](https://github.com/denis-stepanov/advent/issues/36)) `dbinfo` - display database information and statistics
 - (planned - issue [#42](https://github.com/denis-stepanov/advent/issues/42)) `vacuum` - vacuum database (improves performance)
 
 Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; other commands operate on track names (without file extension). When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
