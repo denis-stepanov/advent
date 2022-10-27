@@ -159,7 +159,7 @@ def main():
         if args.cmd == 'dbinfo':
             print("Dejavu database info:")
 
-            cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(fingerprinted) AS n_ftracks, SUM(total_hashes) AS n_hashes FROM songs")
+            cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(fingerprinted) AS n_ftracks FROM songs")
             songs = cur.fetchone()
             print(f"  Fingerprinted / total tracks = {songs['n_ftracks']} / {songs['n_tracks']}")
 
@@ -170,9 +170,12 @@ def main():
                 print(f" (avg. ~= {round(peak_groups / songs['n_ftracks'])} per track)")
             else:
                 print()
-            print(f"  Fingerprints                 = {songs['n_hashes']}", end='')
+
+            cur.execute("SELECT COUNT(*) FROM fingerprints")
+            n_hashes = cur.fetchone()[0]
+            print(f"  Fingerprints                 = {n_hashes}", end='')
             if songs['n_ftracks'] != 0:
-                print(f" (avg. ~= {round(songs['n_hashes'] / songs['n_ftracks'])} per track)")
+                print(f" (avg. ~= {round(n_hashes / songs['n_ftracks'])} per track)")
             else:
                 print()
 
@@ -193,7 +196,7 @@ def main():
                 print()
 
             if times != 0:
-                print(f"  Fingerprinting frequency    ~= {round(songs['n_hashes'] / times)} Hz (~= {round(100 * songs['n_hashes'] / times / DEFAULT_FS, 2)}% of sampling frequency {DEFAULT_FS} Hz)")
+                print(f"  Fingerprinting frequency    ~= {round(n_hashes / times)} Hz (~= {round(100 * n_hashes / times / DEFAULT_FS, 2)}% of sampling frequency {DEFAULT_FS} Hz)")
             else:
                 print("  Fingerprinting frequency     = n/a")
 
