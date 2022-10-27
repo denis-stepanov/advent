@@ -159,7 +159,7 @@ def main():
         if args.cmd == 'dbinfo':
             print("Dejavu database info:")
 
-            cur.execute("SELECT COUNT(song_id) AS n_tracks, SUM(fingerprinted) AS n_ftracks FROM songs")
+            cur.execute("SELECT COUNT(song_id) AS n_tracks, COALESCE(SUM(fingerprinted), 0) AS n_ftracks FROM songs")
             songs = cur.fetchone()
             print(f"  Fingerprinted / total tracks = {songs['n_ftracks']} / {songs['n_tracks']}")
 
@@ -251,28 +251,30 @@ def main():
                 else:
                     print()
 
-                cur.execute("SELECT SUM(CASE WHEN split_part(song_name, '_', 5) = '1' THEN 1 ELSE 0 END) FROM songs")
+                cur.execute("SELECT COALESCE(SUM(CASE WHEN split_part(song_name, '_', 5) = '1' THEN 1 ELSE 0 END), 0) FROM songs")
                 pure_entry = cur.fetchone()[0]
-                cur.execute("SELECT SUM(split_part(song_name, '_', 5)::INTEGER & 1) FROM songs")
+                cur.execute("SELECT COALESCE(SUM(split_part(song_name, '_', 5)::INTEGER & 1), 0) FROM songs")
                 print(f"  Pure entry / entry jingles   = {pure_entry} / {cur.fetchone()[0]}")
 
-                cur.execute("SELECT SUM(CASE WHEN split_part(song_name, '_', 5) = '2' THEN 1 ELSE 0 END) FROM songs")
+                cur.execute("SELECT COALESCE(SUM(CASE WHEN split_part(song_name, '_', 5) = '2' THEN 1 ELSE 0 END), 0) FROM songs")
                 pure_exit = cur.fetchone()[0]
-                cur.execute("SELECT SUM(split_part(song_name, '_', 5)::INTEGER & 2 >> 1) FROM songs")
+                cur.execute("SELECT COALESCE(SUM(split_part(song_name, '_', 5)::INTEGER & 2 >> 1), 0) FROM songs")
                 print(f"  Pure exit / exit jingles     = {pure_exit} / {cur.fetchone()[0]}")
 
-                cur.execute("SELECT SUM(CASE WHEN split_part(song_name, '_', 5)::INTEGER & 3 = 0 THEN 1 ELSE 0 END) FROM songs")
+                cur.execute("SELECT COALESCE(SUM(CASE WHEN split_part(song_name, '_', 5)::INTEGER & 3 = 0 THEN 1 ELSE 0 END), 0) FROM songs")
                 print(f"  No action jingles            = {cur.fetchone()[0]}")
 
                 cur.execute("WITH song_dates AS (SELECT MIN(split_part(song_name, '_', 3)) AS min_date FROM songs) SELECT '20' || substring(min_date FOR 2) || '-' || substring(min_date FROM 3 FOR 2) || '-' || substring(min_date FROM 5 FOR 2) FROM song_dates")
                 if cur.rowcount != 0:
-                    print(f"  Time coverage from           = {cur.fetchone()[0]}")
+                    date = cur.fetchone()[0]
+                    print(f"  Time coverage from           = {date if date != None else 'n/a'}")
                 else:
                     print(f"  Time coverage from           = n/a")
 
                 cur.execute("WITH song_dates AS (SELECT MAX(split_part(song_name, '_', 3)) AS min_date FROM songs) SELECT '20' || substring(min_date FOR 2) || '-' || substring(min_date FROM 3 FOR 2) || '-' || substring(min_date FROM 5 FOR 2) FROM song_dates")
                 if cur.rowcount != 0:
-                    print(f"  Time coverage till           = {cur.fetchone()[0]}")
+                    date = cur.fetchone()[0]
+                    print(f"  Time coverage till           = {date if date != None else 'n/a'}")
                 else:
                     print(f"  Time coverage till           = n/a")
 
