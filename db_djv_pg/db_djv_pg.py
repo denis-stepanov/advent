@@ -176,7 +176,7 @@ def main():
             else:
                 print()
 
-            cur.execute("SELECT ROUND(SUM(max_offset) * %s * (1 - %s) / %s) FROM (SELECT MAX(\"offset\") AS max_offset FROM fingerprints GROUP BY song_id) AS offsets", (DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP_RATIO, DEFAULT_FS))
+            cur.execute("SELECT COALESCE(ROUND(SUM(max_offset) * %s * (1 - %s) / %s), 0) FROM (SELECT MAX(\"offset\") AS max_offset FROM fingerprints GROUP BY song_id) AS offsets", (DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP_RATIO, DEFAULT_FS))
             times = cur.fetchone()[0]
             print(f"  Total fingerprinted time    ~= {times} s", end='')
             if songs['n_ftracks'] != 0:
@@ -195,28 +195,33 @@ def main():
             if times != 0:
                 print(f"  Fingerprinting frequency    ~= {round(songs['n_hashes'] / times)} Hz (~= {round(100 * songs['n_hashes'] / times / DEFAULT_FS, 2)}% of sampling frequency {DEFAULT_FS} Hz)")
             else:
-                print("  Fingerprinting frequency      = n/a")
+                print("  Fingerprinting frequency     = n/a")
 
             cur.execute("SELECT MIN(LENGTH(hash)), MAX(LENGTH(hash)) FROM fingerprints")
             hashes = cur.fetchone()
-            min_size = int(hashes['min'])
-            max_size = int(hashes['max'])
-            if max_size != min_size:
-                print(f"  Hash size                    = {min_size}-{max_size} B")
+            if hashes['min'] != None and hashes['max'] != None:
+                min_size = int(hashes['min'])
+                max_size = int(hashes['max'])
+                if max_size != min_size:
+                    print(f"  Hash size                    = {min_size}-{max_size} B")
+                else:
+                    print(f"  Hash size                    = {min_size} B")
             else:
-                print(f"  Hash size                    = {min_size} B")
+                print(f"  Hash size                    = n/a")
 
             cur.execute("SELECT CASE WHEN COUNT(hash) <> 0 THEN ROUND((COUNT(hash) - COUNT(DISTINCT(hash))) * 100::NUMERIC / COUNT(hash), 2) ELSE 101 END FROM fingerprints")
             col_rate = float(cur.fetchone()[0])
             if col_rate <= 100:
                 print(f"  Hash collisions             ~= {col_rate}%")
             else:
-                print("  Hash collisions               = n/a")
+                print("  Hash collisions              = n/a")
 
             cur.execute("SELECT date_trunc('second', LEAST(MIN(s.date_created), MIN(s.date_modified), MIN(f.date_created), MIN(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
-            print(f"  First update                ~= {cur.fetchone()[0]}")
+            date = cur.fetchone()[0]
+            print(f"  First update                ~= {date if date != None else 'n/a'}")
             cur.execute("SELECT date_trunc('second', GREATEST(MAX(s.date_created), MAX(s.date_modified), MAX(f.date_created), MAX(f.date_modified))) FROM songs s, fingerprints f WHERE f.song_id = s.song_id")
-            print(f"  Last update                 ~= {cur.fetchone()[0]}")
+            date = cur.fetchone()[0]
+            print(f"  Last update                 ~= {date if date != None else 'n/a'}")
 
             cur.execute("SELECT date_trunc('second', GREATEST(last_vacuum, last_autovacuum)::TIMESTAMP) FROM pg_stat_user_tables WHERE relname = 'fingerprints'")
             print(f"  Last vacuum                 ~= {cur.fetchone()[0]}")
