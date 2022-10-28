@@ -335,6 +335,7 @@ New jingles are fingerprinted following the regular Dejavu process (see ["Genera
 The tool allows for the following operations on jingles (aka "tracks"):
 
 - `list` - list tracks available in the database
+- (planned - issue [#50](https://github.com/denis-stepanov/advent/issues/50)) `info` - display track information
 - `export` - export tracks from database to files
 - `import` - import tracks from files to database
 - (planned - issue [#3](https://github.com/denis-stepanov/advent/issues/3)) `rename` - rename tracks in the database
