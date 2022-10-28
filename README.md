@@ -361,6 +361,9 @@ Examples of use:
 
 # Delete one jingle
 (advent-pyenv) $ db-djv-pg delete FR_TF1_220205_EVENING1_2
+
+# Delete the entire database
+(advent-pyenv) $ db-djv-pg delete \*
 ```
 
 Refer to `db-djv-pg -h` for exact synopsis.
@@ -396,11 +399,36 @@ AdVent database info:
 (advent-pyenv) $ 
 ```
 
-For explanation of Dejavu parameters see [Dejavu documentation](https://github.com/denis-stepanov/dejavu#dejavu). Some of these metrics depend on parameters fixed [Dejavu tuning](#dejavu-tuning): `DEFAULT_WINDOW_SIZE`, `DEFAULT_OVERLAP_RATIO` and `DEFAULT_FS` (this latter - the sampling frequency - is actually not variable by user and is taken directly from Dejavu sources). Currently, these parameters cannot be read from Dejavu and are hardcoded, so if you make your own tuning, consider updating them in the `db-djv-pg` source code. Approximations `~=` mean rounding or approximate calculations because the information is not stored in the database but calculated.
+For explanation of Dejavu parameters see [Dejavu documentation](https://github.com/denis-stepanov/dejavu#dejavu). Some of these metrics depend on parameters fixed during [Dejavu tuning](#dejavu-tuning): `DEFAULT_WINDOW_SIZE`, `DEFAULT_OVERLAP_RATIO` and `DEFAULT_FS` (this latter - the sampling frequency - is actually not variable by user and is taken directly from Dejavu sources). Currently, these parameters cannot be read from Dejavu and are hardcoded, so if you make your own tuning, consider updating them in the `db-djv-pg` source code. Approximations `~=` mean rounding or approximate calculations because the information is not stored in the database but calculated.
 
-"Fingerprinting frequency" is not a metric originally defined in Dejavu; it corresponds to "fingerprinting density" described above. The tool calls it frequency because it is measured in frequency units (counts per second). "Last vacuum" is a PostgreSQL-specific parameter (see [database vacuuming](#database-vacuuming) below).
+"Fingerprinting frequency" is not a metric originally defined in Dejavu; it corresponds to the "fingerprinting density" described above. The tool calls it frequency because it is measured in frequency units (counts per second). "Last vacuum" is a PostgreSQL-specific parameter (see [database vacuuming](#database-vacuuming) below).
 
 AdVent information is pretty self-describing; if you need more info, see [AdVent database documentation](https://github.com/denis-stepanov/advent-db#jingle-naming-convention).
+
+#### Database Health Check
+
+If you run `dbinfo` with `-c` parameter, it will additionally execute database health checks:
+
+```
+Database health checks:
+  D0010: timestamps in future                       : OK
+  D0011: created > modified                         : OK
+  D0020: same song name, different SHA1             : OK
+  D0021: same SHA1, different song name             : OK
+  D0030: fingerprinted without fingerprints         : OK
+  D0035: fingerprint counts mismatch                : OK
+  D0040: fingerprint hashes of variable size        : OK
+  D0100: vacuum needed                              : OK
+  A0010: non-fingerprinted tracks                   : OK
+  A0020: low confidence tracks                      : OK
+  A0050: bad track name format                      : OK
+  A0051: bad track date format                      : OK
+  A0080: bad flags                                  : OK
+  --------------------------------------------------+-------
+  TOTAL CHECKS                                      : OK
+```
+
+`Dxxx` are Dejavu-specific checks and `Axxx` are checks specific to AdVent. A healthy database shall display `OK` as a summary. Most of the time failures are not critical for application functioning, but they might contribute to incorrect results or performance degradation. To fix the "vacuum needed" failure you need to run [database vacuuming](#database-vacuuming). Fixing other issues most likely would require deleting problematic tracks or reloading the database altogether.
 
 #### Database Vacuuming
 
