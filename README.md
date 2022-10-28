@@ -337,9 +337,9 @@ The tool allows for the following operations on jingles (aka "tracks"):
 - `list` - list tracks available in the database
 - `export` - export tracks from database to files
 - `import` - import tracks from files to database
-- `delete` - delete tracks from database
 - (planned - issue [#3](https://github.com/denis-stepanov/advent/issues/3)) `rename` - rename tracks in the database
-- (planned - issue [#36](https://github.com/denis-stepanov/advent/issues/36)) `dbinfo` - display database information and statistics
+- `delete` - delete tracks from database
+- `dbinfo` - display database information and statistics
 - (planned - issue [#42](https://github.com/denis-stepanov/advent/issues/42)) `vacuum` - vacuum database (improves performance)
 
 Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; other commands operate on track names (without file extension). When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
@@ -347,6 +347,7 @@ Remaining parameters are jingle names, or masks using simple regular expression 
 The tool by default does not overwrite existing tracks in any direction; if this is desired, pass the `-o` option.
 
 Examples of use:
+
 ```
 # List database content
 (advent-pyenv) $ db-djv-pg list
@@ -360,9 +361,74 @@ Examples of use:
 
 # Delete one jingle
 (advent-pyenv) $ db-djv-pg delete FR_TF1_220205_EVENING1_2
+
+# Delete the entire database
+(advent-pyenv) $ db-djv-pg delete \*
 ```
 
 Refer to `db-djv-pg -h` for exact synopsis.
+
+#### Database Information
+
+`dbinfo` command will show detailed information about the database content, both for Dejavu and for AdVent:
+
+```
+(advent-pyenv) $ db-djv-pg dbinfo
+Dejavu database info:
+  Fingerprinted / total tracks = 117 / 117
+  Peak groups                  = 29482 (avg. ~= 252 per track)
+  Fingerprints                 = 760255 (avg. ~= 6498 per track)
+  Total fingerprinted time    ~= 489 s (avg. ~= 4.2 s per track)
+  Database size               ~= 117 MB (avg. ~= 1.0 MB per track)
+  Fingerprinting frequency    ~= 1555 Hz (~= 3.53% of sampling frequency 44100 Hz)
+  Hash size                    = 10 B
+  Hash collisions             ~= 19.74%
+  First update                ~= 2022-10-27 23:19:34
+  Last update                 ~= 2022-10-27 23:24:19
+  Last vacuum                 ~= 2022-10-27 23:46:24
+
+AdVent database info:
+  Countries                    = 1
+  TV channels                  = 11 (avg. ~= 11 per country)
+  Jingles                      = 117 (avg. ~= 11 per TV channel)
+  Pure entry / entry jingles   = 36 / 70
+  Pure exit / exit jingles     = 47 / 81
+  No action jingles            = 0
+  Time coverage from           = 2022-02-05
+  Time coverage till           = 2022-10-14
+(advent-pyenv) $ 
+```
+
+For explanation of Dejavu parameters see [Dejavu documentation](https://github.com/denis-stepanov/dejavu#dejavu). Some of these metrics depend on parameters fixed during [Dejavu tuning](#dejavu-tuning): `DEFAULT_WINDOW_SIZE`, `DEFAULT_OVERLAP_RATIO` and `DEFAULT_FS` (this latter - the sampling frequency - is actually not variable by user and is taken directly from Dejavu sources). Currently, these parameters cannot be read from Dejavu and are hardcoded, so if you make your own tuning, consider updating them in the `db-djv-pg` source code. Approximations `~=` mean rounding or approximate calculations because the information is not stored in the database but calculated.
+
+"Fingerprinting frequency" is not a metric originally defined in Dejavu; it corresponds to the "fingerprinting density" described above. The tool calls it frequency because it is measured in frequency units (counts per second). "Last vacuum" is a PostgreSQL-specific parameter (see [database vacuuming](#database-vacuuming) below).
+
+AdVent information is pretty self-describing; if you need more info, see [AdVent database documentation](https://github.com/denis-stepanov/advent-db#jingle-naming-convention).
+
+#### Database Health Check
+
+If you run `dbinfo` with `-c` parameter, it will additionally execute database health checks:
+
+```
+Database health checks:
+  D0010: timestamps in future                       : OK
+  D0011: created > modified                         : OK
+  D0020: same song name, different SHA1             : OK
+  D0021: same SHA1, different song name             : OK
+  D0030: fingerprinted without fingerprints         : OK
+  D0035: fingerprint counts mismatch                : OK
+  D0040: fingerprint hashes of variable size        : OK
+  D0100: vacuum needed                              : OK
+  A0010: non-fingerprinted tracks                   : OK
+  A0020: low confidence tracks                      : OK
+  A0050: bad track name format                      : OK
+  A0051: bad track date format                      : OK
+  A0080: bad flags                                  : OK
+  --------------------------------------------------+-------
+  TOTAL CHECKS                                      : OK
+```
+
+`Dxxx` are Dejavu-specific checks and `Axxx` are checks specific to AdVent. A healthy database shall display `OK` as a summary. Most of the time failures are not critical for application functioning, but they might contribute to incorrect results or performance degradation. To fix the "vacuum needed" failure you need to run [database vacuuming](#database-vacuuming). Fixing other issues most likely would require deleting problematic tracks or reloading the database altogether.
 
 #### Database Vacuuming
 
