@@ -50,6 +50,7 @@ def main():
     parser_list   = subparsers.add_parser('list', help='list tracks')
     parser_export = subparsers.add_parser('export', help='export tracks')
     parser_import = subparsers.add_parser('import', help='import tracks')
+    parser_rename = subparsers.add_parser('rename', help='rename a track')
     parser_delete = subparsers.add_parser('delete', help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
 
@@ -58,6 +59,8 @@ def main():
     parser_export.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
     parser_import.add_argument('filter', metavar='FILE', help='.' + FORMAT + ' file to import', nargs='+')
     parser_import.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
+    parser_rename.add_argument('name1', help='original track name')
+    parser_rename.add_argument('name2', help='new track name')
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
     parser_dbinfo.add_argument('-c', '--check', action='store_true', help='check database consistency');
@@ -146,6 +149,15 @@ def main():
                     print()
                 else:
                     print("(file not found)")
+
+        if args.cmd == 'rename':
+            cur.execute("UPDATE songs SET song_name = %s WHERE song_name = %s RETURNING song_name", (args.name2, args.name1))
+            conn.commit()
+            if cur.rowcount:
+                for song in cur:
+                    print(song['song_name'])
+            else:
+                print("No records found")
 
         if args.cmd == 'delete':
             cur.execute("DELETE FROM songs WHERE song_name LIKE %s RETURNING song_name", (args.filter.translate({42: 37, 63: 95}),))
