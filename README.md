@@ -30,7 +30,7 @@ AdVent is added in parallel (path in orange), using the same or similar tools fo
 Clearly, the approach of looking for ad jingles has inherent limitations:
 
 * TV channels not using entry / exit jingles would not work (I do not have these in my reach);
-* complex ad breaks (such as those lasting for 20 mins and employing multiple jingles in between) would likely not work well (there are means to combat these too);
+* complex ad breaks (such as those lasting for 20 mins and employing multiple jingles in between) would likely not work well (there are means to combat these too - e.g., see feature [#53](https://github.com/denis-stepanov/advent/issues/53));
 * very short jingles (< 1 s) won't work out of the box (not seen in practice).
 
 However, most TV channels I watch here in France do fall in line. So the mission was, taking into account these external limitations, make the rest working  - and working well. The particular use case of interest is the evening movie watching, where ad breaks are sparsed and of simple structure.
