@@ -154,6 +154,7 @@ def main():
         if args.cmd == 'rename':
             do_rename = True
             if args.name1 == args.name2:
+                do_rename = False
                 print(f"{args.name2} (source == target; skipped)")
             else:
                 cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name1,))
@@ -172,9 +173,12 @@ def main():
                             for song in cur:
                                 print(song['song_name'])
                         else:
+                            do_rename = False
                             print("No records found")
                 else:
+                    do_rename = False
                     print("No records found")
+            RETURN_CODE = 0 if do_rename else 1
 
         if args.cmd == 'delete':
             cur.execute("DELETE FROM songs WHERE song_name LIKE %s RETURNING song_name", (args.filter.translate({42: 37, 63: 95}),))
