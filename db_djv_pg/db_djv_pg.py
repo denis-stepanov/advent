@@ -157,27 +157,58 @@ def main():
                 do_rename = False
                 print(f"{args.name2} (source == target; skipped)")
             else:
-                cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name1,))
-                if int(cur.fetchone()[0]) > 0:
-                    cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name2,))
-                    if int(cur.fetchone()[0]) > 0:
-                        if args.overwrite:
-                            cur.execute("DELETE FROM songs WHERE song_name = %s", (args.name2,))
-                        else:
-                            do_rename = False
-                            print(f"{args.name2} (exists; skipped)")
-                    if do_rename:
-                        cur.execute("UPDATE songs SET song_name = %s WHERE song_name = %s RETURNING song_name", (args.name2, args.name1))
-                        conn.commit()
-                        if cur.rowcount:
-                            for song in cur:
-                                print(song['song_name'])
-                        else:
-                            do_rename = False
-                            print("No records found")
+                if args.name1.endswith('.' + FORMAT) or args.name2.endswith('.' + FORMAT):
+
+                    # File system operation
+                    if os.path.exists(args.name1):
+                        with open(args.name1, newline='') as djv_file1:
+                            djv_reader = csv.reader(djv_file1)
+                            with open(args.name2, mode='w') as djv_file2:
+                                djv_writer = csv.writer(djv_file2)
+
+                                row = next(djv_reader)
+                                if row[0] != FORMAT:
+                                    do_rename = False
+                                    print(f"(unknown format: '{row[0]}'; skipped)");
+                                elif int(row[1]) > FORMAT_VERSION:
+                                    do_rename = False
+                                    print(f"(unsupported version: {row[1]}; skipped)");
+                                else:
+                                    djv_writer.writerow(row)
+
+                                    row = next(djv_reader)
+                                    row[0] = args.name2[:-len('.' + FORMAT)]
+                                    djv_writer.writerow(row)
+
+                                    for row in djv_reader:
+                                        djv_writer.writerow(row)
+                    else:
+                        do_rename = False
+                        print("No records found")
                 else:
-                    do_rename = False
-                    print("No records found")
+
+                    # Database operation
+                    cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name1,))
+                    if int(cur.fetchone()[0]) > 0:
+                        cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name2,))
+                        if int(cur.fetchone()[0]) > 0:
+                            if args.overwrite:
+                                cur.execute("DELETE FROM songs WHERE song_name = %s", (args.name2,))
+                            else:
+                                do_rename = False
+                                print(f"{args.name2} (exists; skipped)")
+                        if do_rename:
+                            cur.execute("UPDATE songs SET song_name = %s WHERE song_name = %s RETURNING song_name", (args.name2, args.name1))
+                            conn.commit()
+                            if cur.rowcount:
+                                for song in cur:
+                                    print(song['song_name'])
+                            else:
+                                do_rename = False
+                                print("No records found")
+                    else:
+                        do_rename = False
+                        print("No records found")
             RETURN_CODE = 0 if do_rename else 1
 
         if args.cmd == 'delete':
