@@ -61,6 +61,7 @@ def main():
     parser_import.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
     parser_rename.add_argument('name1', help='original track name')
     parser_rename.add_argument('name2', help='new track name')
+    parser_rename.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing track');
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
     parser_dbinfo.add_argument('-c', '--check', action='store_true', help='check database consistency');
@@ -151,13 +152,29 @@ def main():
                     print("(file not found)")
 
         if args.cmd == 'rename':
-            cur.execute("UPDATE songs SET song_name = %s WHERE song_name = %s RETURNING song_name", (args.name2, args.name1))
-            conn.commit()
-            if cur.rowcount:
-                for song in cur:
-                    print(song['song_name'])
+            do_rename = True
+            if args.name1 == args.name2:
+                print(f"{args.name2} (source == target; skipped)")
             else:
-                print("No records found")
+                cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name1,))
+                if int(cur.fetchone()[0]) > 0:
+                    cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name2,))
+                    if int(cur.fetchone()[0]) > 0:
+                        if args.overwrite:
+                            cur.execute("DELETE FROM songs WHERE song_name = %s", (args.name2,))
+                        else:
+                            do_rename = False
+                            print(f"{args.name2} (exists; skipped)")
+                    if do_rename:
+                        cur.execute("UPDATE songs SET song_name = %s WHERE song_name = %s RETURNING song_name", (args.name2, args.name1))
+                        conn.commit()
+                        if cur.rowcount:
+                            for song in cur:
+                                print(song['song_name'])
+                        else:
+                            print("No records found")
+                else:
+                    print("No records found")
 
         if args.cmd == 'delete':
             cur.execute("DELETE FROM songs WHERE song_name LIKE %s RETURNING song_name", (args.filter.translate({42: 37, 63: 95}),))
