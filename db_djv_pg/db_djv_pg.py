@@ -153,9 +153,10 @@ def main():
 
         if args.cmd == 'rename':
             do_rename = True
+            print(f"{args.name1}", end="")
             if args.name1 == args.name2:
                 do_rename = False
-                print(f"{args.name2} (source == target; skipped)")
+                print(" (source == target; skipped)")
             else:
                 if args.name1.endswith('.' + FORMAT) or args.name2.endswith('.' + FORMAT):
 
@@ -169,10 +170,10 @@ def main():
                                 row = next(djv_reader)
                                 if row[0] != FORMAT:
                                     do_rename = False
-                                    print(f"(unknown format: '{row[0]}'; skipped)");
+                                    print(f" (unknown format: '{row[0]}'; skipped)");
                                 elif int(row[1]) > FORMAT_VERSION:
                                     do_rename = False
-                                    print(f"(unsupported version: {row[1]}; skipped)");
+                                    print(f" (unsupported version: {row[1]}; skipped)");
                                 else:
                                     djv_writer.writerow(row)
 
@@ -182,9 +183,10 @@ def main():
 
                                     for row in djv_reader:
                                         djv_writer.writerow(row)
+                                    print(f": {args.name2}")
                     else:
                         do_rename = False
-                        print("No records found")
+                        print(" (file not found)")
                 else:
 
                     # Database operation
@@ -196,19 +198,18 @@ def main():
                                 cur.execute("DELETE FROM songs WHERE song_name = %s", (args.name2,))
                             else:
                                 do_rename = False
-                                print(f"{args.name2} (exists; skipped)")
+                                print(" (target exists; skipped)")
                         if do_rename:
                             cur.execute("UPDATE songs SET song_name = %s WHERE song_name = %s RETURNING song_name", (args.name2, args.name1))
                             conn.commit()
                             if cur.rowcount:
-                                for song in cur:
-                                    print(song['song_name'])
+                                print(f": {cur.fetchone()[0]}")
                             else:
                                 do_rename = False
-                                print("No records found")
+                                print(" (not found)")
                     else:
                         do_rename = False
-                        print("No records found")
+                        print(" (not found)")
             RETURN_CODE = 0 if do_rename else 1
 
         if args.cmd == 'delete':
