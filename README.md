@@ -338,7 +338,7 @@ The tool allows for the following operations on jingles (aka "tracks"):
 - (planned - issue [#50](https://github.com/denis-stepanov/advent/issues/50)) `info` - display track information
 - `export` - export tracks from the database to files
 - `import` - import tracks from files to the database
-- `rename` - rename a track in the database
+- `rename` - rename a track in the database or on disk (for disk, specify `.djv` extension)
 - `delete` - delete tracks from the database
 - `dbinfo` - display database information and statistics
 - (planned - issue [#42](https://github.com/denis-stepanov/advent/issues/42)) `vacuum` - vacuum the database (improves performance)
@@ -360,8 +360,11 @@ Examples of use:
 # Note that escaping shall not be used in this case
 (advent-pyenv) $ db-djv-pg import -o *
 
-# Rename a jingle (e.g., to correct the flags)
+# Rename a jingle (e.g., to correct flags)
 (advent-pyenv) $ db-djv-pg rename FR_6TER_220903_ELEMENTARY1_1 FR_6TER_220903_ELEMENTARY1_3
+
+# Same but on disk. Jingle name is stored inside the file, so better use the tool when it comes to rename files
+(advent-pyenv) $ db-djv-pg rename FR_6TER_220903_ELEMENTARY1_1.djv FR_6TER_220903_ELEMENTARY1_3.djv
 
 # Delete one jingle
 (advent-pyenv) $ db-djv-pg delete FR_TF1_220205_EVENING1_2
