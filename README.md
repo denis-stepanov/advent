@@ -336,12 +336,12 @@ The tool allows for the following operations on jingles (aka "tracks"):
 
 - `list` - list tracks available in the database
 - (planned - issue [#50](https://github.com/denis-stepanov/advent/issues/50)) `info` - display track information
-- `export` - export tracks from database to files
-- `import` - import tracks from files to database
-- (planned - issue [#3](https://github.com/denis-stepanov/advent/issues/3)) `rename` - rename tracks in the database
-- `delete` - delete tracks from database
+- `export` - export tracks from the database to files
+- `import` - import tracks from files to the database
+- `rename` - rename a track in the database or on disk (for disk, specify `.djv` extension)
+- `delete` - delete tracks from the database
 - `dbinfo` - display database information and statistics
-- (planned - issue [#42](https://github.com/denis-stepanov/advent/issues/42)) `vacuum` - vacuum database (improves performance)
+- (planned - issue [#42](https://github.com/denis-stepanov/advent/issues/42)) `vacuum` - vacuum the database (improves performance)
 
 Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; other commands operate on track names (without file extension). When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
 
@@ -359,6 +359,12 @@ Examples of use:
 # Import all jingles in the current directory, overwriting existing ones
 # Note that escaping shall not be used in this case
 (advent-pyenv) $ db-djv-pg import -o *
+
+# Rename a jingle (e.g., to correct flags)
+(advent-pyenv) $ db-djv-pg rename FR_6TER_220903_ELEMENTARY1_1 FR_6TER_220903_ELEMENTARY1_3
+
+# Same but on disk. Jingle name is stored inside the file, so better use the tool when it comes to rename files
+(advent-pyenv) $ db-djv-pg rename FR_6TER_220903_ELEMENTARY1_1.djv FR_6TER_220903_ELEMENTARY1_3.djv
 
 # Delete one jingle
 (advent-pyenv) $ db-djv-pg delete FR_TF1_220205_EVENING1_2

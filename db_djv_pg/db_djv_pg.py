@@ -50,6 +50,7 @@ def main():
     parser_list   = subparsers.add_parser('list', help='list tracks')
     parser_export = subparsers.add_parser('export', help='export tracks')
     parser_import = subparsers.add_parser('import', help='import tracks')
+    parser_rename = subparsers.add_parser('rename', help='rename a track')
     parser_delete = subparsers.add_parser('delete', help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
 
@@ -58,6 +59,9 @@ def main():
     parser_export.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
     parser_import.add_argument('filter', metavar='FILE', help='.' + FORMAT + ' file to import', nargs='+')
     parser_import.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
+    parser_rename.add_argument('name1', help='original track name')
+    parser_rename.add_argument('name2', help='new track name')
+    parser_rename.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing track');
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
     parser_dbinfo.add_argument('-c', '--check', action='store_true', help='check database consistency');
@@ -146,6 +150,75 @@ def main():
                     print()
                 else:
                     print("(file not found)")
+
+        if args.cmd == 'rename':
+            do_rename = True
+            print(f"{args.name1}", end="")
+            if args.name1 == args.name2:
+                do_rename = False
+                print(" (source == target; skipped)")
+            else:
+                if args.name1.endswith('.' + FORMAT) or args.name2.endswith('.' + FORMAT):
+
+                    # File system operation
+                    if os.path.exists(args.name1):
+                        if os.path.exists(args.name2) and not(args.overwrite):
+                            do_rename = False
+                            print(" (target exists; skipped)")
+
+                        if do_rename:
+                            with open(args.name1, newline='') as djv_file1:
+                                djv_reader = csv.reader(djv_file1)
+                                with open(args.name2, mode='w') as djv_file2:
+                                    djv_writer = csv.writer(djv_file2)
+
+                                    row = next(djv_reader)
+                                    if row[0] != FORMAT:
+                                        do_rename = False
+                                        print(f" (unknown format: '{row[0]}'; skipped)");
+                                    elif int(row[1]) > FORMAT_VERSION:
+                                        do_rename = False
+                                        print(f" (unsupported version: {row[1]}; skipped)");
+                                    else:
+                                        djv_writer.writerow(row)
+
+                                        row = next(djv_reader)
+                                        row[0] = args.name2[:-len('.' + FORMAT)]
+                                        djv_writer.writerow(row)
+
+                                        for row in djv_reader:
+                                            djv_writer.writerow(row)
+                                        print(f": {args.name2}")
+
+                            if do_rename:
+                                os.remove(args.name1)
+                    else:
+                        do_rename = False
+                        print(" (file not found)")
+                else:
+
+                    # Database operation
+                    cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name1,))
+                    if int(cur.fetchone()[0]) > 0:
+                        cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name2,))
+                        if int(cur.fetchone()[0]) > 0:
+                            if args.overwrite:
+                                cur.execute("DELETE FROM songs WHERE song_name = %s", (args.name2,))
+                            else:
+                                do_rename = False
+                                print(" (target exists; skipped)")
+                        if do_rename:
+                            cur.execute("UPDATE songs SET song_name = %s WHERE song_name = %s RETURNING song_name", (args.name2, args.name1))
+                            conn.commit()
+                            if cur.rowcount:
+                                print(f": {cur.fetchone()[0]}")
+                            else:
+                                do_rename = False
+                                print(" (not found)")
+                    else:
+                        do_rename = False
+                        print(" (not found)")
+            RETURN_CODE = 0 if do_rename else 1
 
         if args.cmd == 'delete':
             cur.execute("DELETE FROM songs WHERE song_name LIKE %s RETURNING song_name", (args.filter.translate({42: 37, 63: 95}),))
