@@ -189,6 +189,9 @@ def main():
                                         for row in djv_reader:
                                             djv_writer.writerow(row)
                                         print(f": {args.name2}")
+
+                            if do_rename:
+                                os.remove(args.name1)
                     else:
                         do_rename = False
                         print(" (file not found)")
