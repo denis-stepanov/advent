@@ -162,28 +162,33 @@ def main():
 
                     # File system operation
                     if os.path.exists(args.name1):
-                        with open(args.name1, newline='') as djv_file1:
-                            djv_reader = csv.reader(djv_file1)
-                            with open(args.name2, mode='w') as djv_file2:
-                                djv_writer = csv.writer(djv_file2)
+                        if os.path.exists(args.name2) and not(args.overwrite):
+                            do_rename = False
+                            print(" (target exists; skipped)")
 
-                                row = next(djv_reader)
-                                if row[0] != FORMAT:
-                                    do_rename = False
-                                    print(f" (unknown format: '{row[0]}'; skipped)");
-                                elif int(row[1]) > FORMAT_VERSION:
-                                    do_rename = False
-                                    print(f" (unsupported version: {row[1]}; skipped)");
-                                else:
-                                    djv_writer.writerow(row)
+                        if do_rename:
+                            with open(args.name1, newline='') as djv_file1:
+                                djv_reader = csv.reader(djv_file1)
+                                with open(args.name2, mode='w') as djv_file2:
+                                    djv_writer = csv.writer(djv_file2)
 
                                     row = next(djv_reader)
-                                    row[0] = args.name2[:-len('.' + FORMAT)]
-                                    djv_writer.writerow(row)
-
-                                    for row in djv_reader:
+                                    if row[0] != FORMAT:
+                                        do_rename = False
+                                        print(f" (unknown format: '{row[0]}'; skipped)");
+                                    elif int(row[1]) > FORMAT_VERSION:
+                                        do_rename = False
+                                        print(f" (unsupported version: {row[1]}; skipped)");
+                                    else:
                                         djv_writer.writerow(row)
-                                    print(f": {args.name2}")
+
+                                        row = next(djv_reader)
+                                        row[0] = args.name2[:-len('.' + FORMAT)]
+                                        djv_writer.writerow(row)
+
+                                        for row in djv_reader:
+                                            djv_writer.writerow(row)
+                                        print(f": {args.name2}")
                     else:
                         do_rename = False
                         print(" (file not found)")
