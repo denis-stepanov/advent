@@ -54,14 +54,18 @@ def main():
     parser_delete = subparsers.add_parser('delete', help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
 
+    # TODO: use parent parser for shared opts
     parser_list.add_argument  ('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
     parser_export.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
-    parser_export.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
+    parser_export.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
+    parser_export.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
     parser_import.add_argument('filter', metavar='FILE', help='.' + FORMAT + ' file to import', nargs='+')
-    parser_import.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
+    parser_import.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
+    parser_import.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
     parser_rename.add_argument('name1', help='original track name')
     parser_rename.add_argument('name2', help='new track name')
-    parser_rename.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing track');
+    parser_rename.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing track if checkum differs');
+    parser_rename.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing track unconditionally');
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
     parser_dbinfo.add_argument('-c', '--check', action='store_true', help='check database consistency');
@@ -84,9 +88,28 @@ def main():
                         continue
 
                     fname = song['song_name'] + "." + FORMAT
-                    if not args.overwrite and os.path.exists(fname):
-                        print(" (exists; skipped)")
-                        continue
+                    if os.path.exists(fname) and not args.overwrite_always:
+                        if args.overwrite:
+                            with open(fname, newline='') as djv_file:
+                                djv_reader = csv.reader(djv_file)
+                                # TODO move this into a function
+                                row = next(djv_reader)
+                                if row[0] != FORMAT:
+                                    print(f"(unknown format: '{row[0]}'; skipped)");
+                                    continue
+                                if int(row[1]) > FORMAT_VERSION:
+                                    print(f"(unsupported version: {row[1]}; skipped)");
+                                    continue
+                                # TODO: more checks
+
+                                song_file = next(djv_reader)
+                                file_sha1 = song_file[2]
+                                if file_sha1 == bytes(song['file_sha1']).hex():
+                                    print(" (exists and checksum matches; skipped)")
+                                    continue
+                        else:
+                            print(" (exists; skipped)")
+                            continue
 
                     with open(fname, mode='w') as djv_file:
                         djv_writer = csv.writer(djv_file)
