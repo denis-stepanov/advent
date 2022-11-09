@@ -149,12 +149,16 @@ def main():
                         total_hashes  = song[3]
                         print(song_name, end="")
 
-                        cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (song_name,))
-                        if int(cur.fetchone()[0]) > 0:
-                            if args.overwrite:
+                        cur.execute("SELECT file_sha1 FROM songs WHERE song_name = %s", (song_name,))
+                        if cur.rowcount:
+                            song_db_sha1 = cur.fetchone()['file_sha1']
+                            if args.overwrite_always or args.overwrite and file_sha1 != bytes(song_db_sha1).hex():
                                 cur.execute("DELETE FROM songs WHERE song_name = %s", (song_name,))
                             else:
-                                print(" (exists; skipped)")
+                                if args.overwrite:
+                                    print(" (exists and checksum matches; skipped)")
+                                else:
+                                    print(" (exists; skipped)")
                                 continue
 
                         cur.execute("INSERT INTO songs (song_name, fingerprinted, file_sha1, total_hashes) VALUES (%s, %s, %s, %s) RETURNING song_id",
