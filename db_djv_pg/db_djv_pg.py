@@ -229,11 +229,17 @@ def main():
                     if int(cur.fetchone()[0]) > 0:
                         cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name2,))
                         if int(cur.fetchone()[0]) > 0:
-                            if args.overwrite:
-                                cur.execute("DELETE FROM songs WHERE song_name = %s", (args.name2,))
+                            if args.overwrite and not(args.overwrite_always):
+                                cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s AND file_sha1 IN (SELECT file_sha1 FROM songs WHERE song_name = %s)", (args.name2, args.name1))
+                                if int(cur.fetchone()[0]) > 0:
+                                    print(" (target exists and checksum matches; skipped)")
+                                    do_rename = False
                             else:
-                                do_rename = False
-                                print(" (target exists; skipped)")
+                                if not(args.overwrite_always):
+                                    do_rename = False
+                                    print(" (target exists; skipped)")
+                            if do_rename:
+                                cur.execute("DELETE FROM songs WHERE song_name = %s", (args.name2,))
                         if do_rename:
                             cur.execute("UPDATE songs SET song_name = %s WHERE song_name = %s RETURNING song_name", (args.name2, args.name1))
                             conn.commit()
