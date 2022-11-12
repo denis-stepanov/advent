@@ -182,16 +182,51 @@ def main():
             do_rename = True
             print(f"{args.name1}", end="")
             if args.name1 == args.name2:
-                do_rename = False
                 print(" (source == target; skipped)")
+                do_rename = False
             else:
                 if args.name1.endswith('.' + FORMAT) or args.name2.endswith('.' + FORMAT):
 
                     # File system operation
                     if os.path.exists(args.name1):
-                        if os.path.exists(args.name2) and not(args.overwrite):
-                            do_rename = False
-                            print(" (target exists; skipped)")
+                        if os.path.exists(args.name2) and not(args.overwrite_always):
+                            if args.overwrite:
+
+                                file1_sha1 = None
+                                file2_sha1 = None
+
+                                with open(args.name1, newline='') as djv_file:
+                                    djv_reader = csv.reader(djv_file)
+                                    # TODO move this into a function
+                                    row = next(djv_reader)
+                                    if row[0] != FORMAT:
+                                        print(f"(unknown format: '{row[0]}'; skipped)");
+                                    elif int(row[1]) > FORMAT_VERSION:
+                                        print(f"(unsupported version: {row[1]}; skipped)");
+                                    # TODO: more checks
+                                    else:
+                                        song_file = next(djv_reader)
+                                        file1_sha1 = song_file[2]
+
+                                with open(args.name2, newline='') as djv_file:
+                                    djv_reader = csv.reader(djv_file)
+                                    # TODO move this into a function
+                                    row = next(djv_reader)
+                                    if row[0] != FORMAT:
+                                        print(f"(unknown format: '{row[0]}'; skipped)");
+                                    elif int(row[1]) > FORMAT_VERSION:
+                                        print(f"(unsupported version: {row[1]}; skipped)");
+                                    # TODO: more checks
+                                    else:
+                                        song_file = next(djv_reader)
+                                        file2_sha1 = song_file[2]
+
+                                if file1_sha1 == file2_sha1:
+                                    print(" (target exists and checksum matches; skipped)")
+                                    do_rename = False
+                            else:
+                                print(" (target exists; skipped)")
+                                do_rename = False
 
                         if do_rename:
                             with open(args.name1, newline='') as djv_file1:
@@ -220,8 +255,8 @@ def main():
                             if do_rename:
                                 os.remove(args.name1)
                     else:
-                        do_rename = False
                         print(" (file not found)")
+                        do_rename = False
                 else:
 
                     # Database operation
@@ -236,8 +271,8 @@ def main():
                                     do_rename = False
                             else:
                                 if not(args.overwrite_always):
-                                    do_rename = False
                                     print(" (target exists; skipped)")
+                                    do_rename = False
                             if do_rename:
                                 cur.execute("DELETE FROM songs WHERE song_name = %s", (args.name2,))
                         if do_rename:
@@ -246,11 +281,11 @@ def main():
                             if cur.rowcount:
                                 print(f": {cur.fetchone()[0]}")
                             else:
-                                do_rename = False
                                 print(" (not found)")
+                                do_rename = False
                     else:
-                        do_rename = False
                         print(" (not found)")
+                        do_rename = False
             RETURN_CODE = 0 if do_rename else 1
 
         if args.cmd == 'delete':
