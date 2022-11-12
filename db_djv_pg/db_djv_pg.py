@@ -44,31 +44,26 @@ def db_check(cursor, query, msg):
 def main():
     RETURN_CODE = 0
 
+    parser_overwrite = argparse.ArgumentParser(add_help=False)
+    overwrite_group = parser_overwrite.add_mutually_exclusive_group()
+    overwrite_group.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
+    overwrite_group.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
+
     parser = argparse.ArgumentParser(description='Process Dejavu tracks in PGSQL database',
         epilog='Use "COMMAND -h" to get command-specific help')
     subparsers = parser.add_subparsers(dest='cmd', required=True, metavar='COMMAND')
     parser_list   = subparsers.add_parser('list', help='list tracks')
-    parser_export = subparsers.add_parser('export', help='export tracks')
-    parser_import = subparsers.add_parser('import', help='import tracks')
-    parser_rename = subparsers.add_parser('rename', help='rename a track')
+    parser_export = subparsers.add_parser('export', parents=[parser_overwrite], help='export tracks')
+    parser_import = subparsers.add_parser('import', parents=[parser_overwrite], help='import tracks')
+    parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite], help='rename a track')
     parser_delete = subparsers.add_parser('delete', help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
 
-    # TODO: use parent parser for shared opts
     parser_list.add_argument  ('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
     parser_export.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
-    export_overwrite_group = parser_export.add_mutually_exclusive_group()
-    export_overwrite_group.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
-    export_overwrite_group.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
     parser_import.add_argument('filter', metavar='FILE', help='.' + FORMAT + ' file to import', nargs='+')
-    import_overwrite_group = parser_import.add_mutually_exclusive_group()
-    import_overwrite_group.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
-    import_overwrite_group.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
     parser_rename.add_argument('name1', help='original track name')
     parser_rename.add_argument('name2', help='new track name')
-    rename_overwrite_group = parser_rename.add_mutually_exclusive_group()
-    rename_overwrite_group.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing track if checkum differs');
-    rename_overwrite_group.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing track unconditionally');
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
     parser_dbinfo.add_argument('-c', '--check', action='store_true', help='check database consistency');
