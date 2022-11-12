@@ -55,7 +55,7 @@ def main():
     parser_list   = subparsers.add_parser('list', help='list tracks')
     parser_export = subparsers.add_parser('export', parents=[parser_overwrite], help='export tracks')
     parser_import = subparsers.add_parser('import', parents=[parser_overwrite], help='import tracks')
-    parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite], help='rename a track')
+    parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite], help='rename a track', epilog=f'Names ending with .{FORMAT} will result in file operation, othrwise rename will be done in the database')
     parser_delete = subparsers.add_parser('delete', help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
 
