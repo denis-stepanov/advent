@@ -57,15 +57,18 @@ def main():
     # TODO: use parent parser for shared opts
     parser_list.add_argument  ('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
     parser_export.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
-    parser_export.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
-    parser_export.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
+    export_overwrite_group = parser_export.add_mutually_exclusive_group()
+    export_overwrite_group.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
+    export_overwrite_group.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
     parser_import.add_argument('filter', metavar='FILE', help='.' + FORMAT + ' file to import', nargs='+')
-    parser_import.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
-    parser_import.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
+    import_overwrite_group = parser_import.add_mutually_exclusive_group()
+    import_overwrite_group.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
+    import_overwrite_group.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
     parser_rename.add_argument('name1', help='original track name')
     parser_rename.add_argument('name2', help='new track name')
-    parser_rename.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing track if checkum differs');
-    parser_rename.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing track unconditionally');
+    rename_overwrite_group = parser_rename.add_mutually_exclusive_group()
+    rename_overwrite_group.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing track if checkum differs');
+    rename_overwrite_group.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing track unconditionally');
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
     parser_dbinfo.add_argument('-c', '--check', action='store_true', help='check database consistency');
@@ -264,7 +267,7 @@ def main():
                     if int(cur.fetchone()[0]) > 0:
                         cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name2,))
                         if int(cur.fetchone()[0]) > 0:
-                            if args.overwrite and not(args.overwrite_always):
+                            if args.overwrite:
                                 cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s AND file_sha1 IN (SELECT file_sha1 FROM songs WHERE song_name = %s)", (args.name2, args.name1))
                                 if int(cur.fetchone()[0]) > 0:
                                     print(" (target exists and checksum matches; skipped)")
