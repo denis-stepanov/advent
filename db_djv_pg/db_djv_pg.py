@@ -41,6 +41,19 @@ def db_check(cursor, query, msg):
     print_check_result(msg, res)
     return res
 
+def file_check(djv_reader):
+    res = True
+    row = next(djv_reader)
+    if row[0] != FORMAT:
+        print(f"(unknown format: '{row[0]}'; skipped)");
+        res = False
+    # TODO: protect conversion
+    elif int(row[1]) > FORMAT_VERSION:
+        print(f"(unsupported version: {row[1]}; skipped)");
+        res = False
+    # TODO: more checks
+    return res
+
 def main():
     RETURN_CODE = 0
 
@@ -90,15 +103,8 @@ def main():
                         if args.overwrite:
                             with open(fname, newline='') as djv_file:
                                 djv_reader = csv.reader(djv_file)
-                                # TODO move this into a function
-                                row = next(djv_reader)
-                                if row[0] != FORMAT:
-                                    print(f"(unknown format: '{row[0]}'; skipped)");
+                                if not(file_check(djv_reader)):
                                     continue
-                                if int(row[1]) > FORMAT_VERSION:
-                                    print(f"(unsupported version: {row[1]}; skipped)");
-                                    continue
-                                # TODO: more checks
 
                                 song_file = next(djv_reader)
                                 file_sha1 = song_file[2]
@@ -131,14 +137,8 @@ def main():
                 if os.path.exists(fname):
                     with open(fname, newline='') as djv_file:
                         djv_reader = csv.reader(djv_file)
-                        row = next(djv_reader)
-                        if row[0] != FORMAT:
-                            print(f"(unknown format: '{row[0]}'; skipped)");
+                        if not(file_check(djv_reader)):
                             continue
-                        if int(row[1]) > FORMAT_VERSION:
-                            print(f"(unsupported version: {row[1]}; skipped)");
-                            continue
-                        # TODO: more checks
 
                         song = next(djv_reader)
                         song_name     = song[0]
@@ -195,27 +195,13 @@ def main():
 
                                 with open(args.name1, newline='') as djv_file:
                                     djv_reader = csv.reader(djv_file)
-                                    # TODO move this into a function
-                                    row = next(djv_reader)
-                                    if row[0] != FORMAT:
-                                        print(f"(unknown format: '{row[0]}'; skipped)");
-                                    elif int(row[1]) > FORMAT_VERSION:
-                                        print(f"(unsupported version: {row[1]}; skipped)");
-                                    # TODO: more checks
-                                    else:
+                                    if file_check(djv_reader):
                                         song_file = next(djv_reader)
                                         file1_sha1 = song_file[2]
 
                                 with open(args.name2, newline='') as djv_file:
                                     djv_reader = csv.reader(djv_file)
-                                    # TODO move this into a function
-                                    row = next(djv_reader)
-                                    if row[0] != FORMAT:
-                                        print(f"(unknown format: '{row[0]}'; skipped)");
-                                    elif int(row[1]) > FORMAT_VERSION:
-                                        print(f"(unsupported version: {row[1]}; skipped)");
-                                    # TODO: more checks
-                                    else:
+                                    if file_check(djv_reader):
                                         song_file = next(djv_reader)
                                         file2_sha1 = song_file[2]
 
@@ -229,19 +215,10 @@ def main():
                         if do_rename:
                             with open(args.name1, newline='') as djv_file1:
                                 djv_reader = csv.reader(djv_file1)
-                                with open(args.name2, mode='w') as djv_file2:
-                                    djv_writer = csv.writer(djv_file2)
-
-                                    row = next(djv_reader)
-                                    if row[0] != FORMAT:
-                                        do_rename = False
-                                        print(f" (unknown format: '{row[0]}'; skipped)");
-                                    elif int(row[1]) > FORMAT_VERSION:
-                                        do_rename = False
-                                        print(f" (unsupported version: {row[1]}; skipped)");
-                                    else:
-                                        djv_writer.writerow(row)
-
+                                if file_check(djv_reader):
+                                    with open(args.name2, mode='w') as djv_file2:
+                                        djv_writer = csv.writer(djv_file2)
+                                        djv_writer.writerow([FORMAT, FORMAT_VERSION])
                                         row = next(djv_reader)
                                         row[0] = args.name2[:-len('.' + FORMAT)]
                                         djv_writer.writerow(row)
@@ -249,6 +226,8 @@ def main():
                                         for row in djv_reader:
                                             djv_writer.writerow(row)
                                         print(f": {args.name2}")
+                                else:
+                                    do_rename = False
 
                             if do_rename:
                                 os.remove(args.name1)
