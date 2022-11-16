@@ -338,14 +338,14 @@ The tool allows for the following operations on jingles (aka "tracks"):
 - (planned - issue [#50](https://github.com/denis-stepanov/advent/issues/50)) `info` - display track information
 - `export` - export tracks from the database to files
 - `import` - import tracks from files to the database
-- `rename` - rename a track in the database or on disk (for disk, specify `.djv` extension)
-- `delete` - delete tracks from the database
+- `rename` - rename a track in the database or on disk (for disk, specify `.djv` extension. Caveat: for a file tree under version control this might be a disruptive action - see issue [#55](https://github.com/denis-stepanov/advent/issues/55))
+- `delete` - delete tracks from the database (file deletion planned - see issue [#54](https://github.com/denis-stepanov/advent/issues/54))
 - `dbinfo` - display database information and statistics
 - (planned - issue [#42](https://github.com/denis-stepanov/advent/issues/42)) `vacuum` - vacuum the database (improves performance)
 
 Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; other commands operate on track names (without file extension). When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
 
-The tool by default does not overwrite existing tracks in any direction; if this is desired, pass the `-o` option.
+The tool by default does not overwrite existing tracks in any direction; if this is desired, pass the `-o` option. As overwriting is a potentially expensive operation, the tool will first check SHA1 of the source and of the target and will refuse update if they match (i.e., update would make no difference). If this heuristic is not desired (e.g., when the target is suspected to be corrupted), use `-O` (unconditional overwrite) option.
 
 Examples of use:
 
