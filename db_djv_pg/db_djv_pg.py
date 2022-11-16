@@ -41,27 +41,42 @@ def db_check(cursor, query, msg):
     print_check_result(msg, res)
     return res
 
+def file_check(djv_reader):
+    res = True
+    row = next(djv_reader)
+    if row[0] != FORMAT:
+        print(f"(unknown format: '{row[0]}'; skipped)");
+        res = False
+    # TODO: protect conversion
+    elif int(row[1]) > FORMAT_VERSION:
+        print(f"(unsupported version: {row[1]}; skipped)");
+        res = False
+    # TODO: more checks
+    return res
+
 def main():
     RETURN_CODE = 0
+
+    parser_overwrite = argparse.ArgumentParser(add_help=False)
+    overwrite_group = parser_overwrite.add_mutually_exclusive_group()
+    overwrite_group.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
+    overwrite_group.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
 
     parser = argparse.ArgumentParser(description='Process Dejavu tracks in PGSQL database',
         epilog='Use "COMMAND -h" to get command-specific help')
     subparsers = parser.add_subparsers(dest='cmd', required=True, metavar='COMMAND')
     parser_list   = subparsers.add_parser('list', help='list tracks')
-    parser_export = subparsers.add_parser('export', help='export tracks')
-    parser_import = subparsers.add_parser('import', help='import tracks')
-    parser_rename = subparsers.add_parser('rename', help='rename a track')
+    parser_export = subparsers.add_parser('export', parents=[parser_overwrite], help='export tracks')
+    parser_import = subparsers.add_parser('import', parents=[parser_overwrite], help='import tracks')
+    parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite], help='rename a track', epilog=f'Names ending with .{FORMAT} will result in file operation, othrwise rename will be done in the database')
     parser_delete = subparsers.add_parser('delete', help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
 
     parser_list.add_argument  ('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
     parser_export.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
-    parser_export.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
     parser_import.add_argument('filter', metavar='FILE', help='.' + FORMAT + ' file to import', nargs='+')
-    parser_import.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks');
     parser_rename.add_argument('name1', help='original track name')
     parser_rename.add_argument('name2', help='new track name')
-    parser_rename.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing track');
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
     parser_dbinfo.add_argument('-c', '--check', action='store_true', help='check database consistency');
@@ -84,9 +99,21 @@ def main():
                         continue
 
                     fname = song['song_name'] + "." + FORMAT
-                    if not args.overwrite and os.path.exists(fname):
-                        print(" (exists; skipped)")
-                        continue
+                    if os.path.exists(fname) and not args.overwrite_always:
+                        if args.overwrite:
+                            with open(fname, newline='') as djv_file:
+                                djv_reader = csv.reader(djv_file)
+                                if not(file_check(djv_reader)):
+                                    continue
+
+                                song_file = next(djv_reader)
+                                file_sha1 = song_file[2]
+                                if file_sha1 == bytes(song['file_sha1']).hex():
+                                    print(" (exists and checksum matches; skipped)")
+                                    continue
+                        else:
+                            print(" (exists; skipped)")
+                            continue
 
                     with open(fname, mode='w') as djv_file:
                         djv_writer = csv.writer(djv_file)
@@ -110,14 +137,8 @@ def main():
                 if os.path.exists(fname):
                     with open(fname, newline='') as djv_file:
                         djv_reader = csv.reader(djv_file)
-                        row = next(djv_reader)
-                        if row[0] != FORMAT:
-                            print(f"(unknown format: '{row[0]}'; skipped)");
+                        if not(file_check(djv_reader)):
                             continue
-                        if int(row[1]) > FORMAT_VERSION:
-                            print(f"(unsupported version: {row[1]}; skipped)");
-                            continue
-                        # TODO: more checks
 
                         song = next(djv_reader)
                         song_name     = song[0]
@@ -126,12 +147,16 @@ def main():
                         total_hashes  = song[3]
                         print(song_name, end="")
 
-                        cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (song_name,))
-                        if int(cur.fetchone()[0]) > 0:
-                            if args.overwrite:
+                        cur.execute("SELECT file_sha1 FROM songs WHERE song_name = %s", (song_name,))
+                        if cur.rowcount:
+                            song_db_sha1 = cur.fetchone()['file_sha1']
+                            if args.overwrite_always or args.overwrite and file_sha1 != bytes(song_db_sha1).hex():
                                 cur.execute("DELETE FROM songs WHERE song_name = %s", (song_name,))
                             else:
-                                print(" (exists; skipped)")
+                                if args.overwrite:
+                                    print(" (exists and checksum matches; skipped)")
+                                else:
+                                    print(" (exists; skipped)")
                                 continue
 
                         cur.execute("INSERT INTO songs (song_name, fingerprinted, file_sha1, total_hashes) VALUES (%s, %s, %s, %s) RETURNING song_id",
@@ -155,33 +180,45 @@ def main():
             do_rename = True
             print(f"{args.name1}", end="")
             if args.name1 == args.name2:
-                do_rename = False
                 print(" (source == target; skipped)")
+                do_rename = False
             else:
                 if args.name1.endswith('.' + FORMAT) or args.name2.endswith('.' + FORMAT):
 
                     # File system operation
                     if os.path.exists(args.name1):
-                        if os.path.exists(args.name2) and not(args.overwrite):
-                            do_rename = False
-                            print(" (target exists; skipped)")
+                        if os.path.exists(args.name2) and not(args.overwrite_always):
+                            if args.overwrite:
+
+                                file1_sha1 = None
+                                file2_sha1 = None
+
+                                with open(args.name1, newline='') as djv_file:
+                                    djv_reader = csv.reader(djv_file)
+                                    if file_check(djv_reader):
+                                        song_file = next(djv_reader)
+                                        file1_sha1 = song_file[2]
+
+                                with open(args.name2, newline='') as djv_file:
+                                    djv_reader = csv.reader(djv_file)
+                                    if file_check(djv_reader):
+                                        song_file = next(djv_reader)
+                                        file2_sha1 = song_file[2]
+
+                                if file1_sha1 == file2_sha1:
+                                    print(" (target exists and checksum matches; skipped)")
+                                    do_rename = False
+                            else:
+                                print(" (target exists; skipped)")
+                                do_rename = False
 
                         if do_rename:
                             with open(args.name1, newline='') as djv_file1:
                                 djv_reader = csv.reader(djv_file1)
-                                with open(args.name2, mode='w') as djv_file2:
-                                    djv_writer = csv.writer(djv_file2)
-
-                                    row = next(djv_reader)
-                                    if row[0] != FORMAT:
-                                        do_rename = False
-                                        print(f" (unknown format: '{row[0]}'; skipped)");
-                                    elif int(row[1]) > FORMAT_VERSION:
-                                        do_rename = False
-                                        print(f" (unsupported version: {row[1]}; skipped)");
-                                    else:
-                                        djv_writer.writerow(row)
-
+                                if file_check(djv_reader):
+                                    with open(args.name2, mode='w') as djv_file2:
+                                        djv_writer = csv.writer(djv_file2)
+                                        djv_writer.writerow([FORMAT, FORMAT_VERSION])
                                         row = next(djv_reader)
                                         row[0] = args.name2[:-len('.' + FORMAT)]
                                         djv_writer.writerow(row)
@@ -189,12 +226,14 @@ def main():
                                         for row in djv_reader:
                                             djv_writer.writerow(row)
                                         print(f": {args.name2}")
+                                else:
+                                    do_rename = False
 
                             if do_rename:
                                 os.remove(args.name1)
                     else:
-                        do_rename = False
                         print(" (file not found)")
+                        do_rename = False
                 else:
 
                     # Database operation
@@ -203,21 +242,27 @@ def main():
                         cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s", (args.name2,))
                         if int(cur.fetchone()[0]) > 0:
                             if args.overwrite:
-                                cur.execute("DELETE FROM songs WHERE song_name = %s", (args.name2,))
+                                cur.execute("SELECT COUNT(*) FROM songs WHERE song_name = %s AND file_sha1 IN (SELECT file_sha1 FROM songs WHERE song_name = %s)", (args.name2, args.name1))
+                                if int(cur.fetchone()[0]) > 0:
+                                    print(" (target exists and checksum matches; skipped)")
+                                    do_rename = False
                             else:
-                                do_rename = False
-                                print(" (target exists; skipped)")
+                                if not(args.overwrite_always):
+                                    print(" (target exists; skipped)")
+                                    do_rename = False
+                            if do_rename:
+                                cur.execute("DELETE FROM songs WHERE song_name = %s", (args.name2,))
                         if do_rename:
                             cur.execute("UPDATE songs SET song_name = %s WHERE song_name = %s RETURNING song_name", (args.name2, args.name1))
                             conn.commit()
                             if cur.rowcount:
                                 print(f": {cur.fetchone()[0]}")
                             else:
-                                do_rename = False
                                 print(" (not found)")
+                                do_rename = False
                     else:
-                        do_rename = False
                         print(" (not found)")
+                        do_rename = False
             RETURN_CODE = 0 if do_rename else 1
 
         if args.cmd == 'delete':
