@@ -336,7 +336,7 @@ The tool allows for the following operations on jingles (aka "tracks"):
 
 - `list` - list tracks available in the database
 - (planned - issue [#50](https://github.com/denis-stepanov/advent/issues/50)) `info` - display track information
-- `export` - export tracks from the database to files
+- `export` - export tracks from the database to files (add `-d` to arrange exported files in folders)
 - `import` - import tracks from files to the database
 - `rename` - rename a track in the database or on disk (for disk, specify `.djv` extension. Caveat: for a file tree under version control this might be a disruptive action - see issue [#55](https://github.com/denis-stepanov/advent/issues/55))
 - `delete` - delete tracks from the database (file deletion planned - see issue [#54](https://github.com/denis-stepanov/advent/issues/54))
@@ -356,9 +356,15 @@ Examples of use:
 # Export TF1 channel jingles
 (advent-pyenv) $ db-djv-pg export "FR_TF1*"
 
+# Export the entire database using AdVent DB file system layout
+(advent-pyenv) $ db-djv-pg export -d
+
 # Import all jingles in the current directory, overwriting existing ones
 # Note that escaping shall not be used in this case
 (advent-pyenv) $ db-djv-pg import -o *
+
+# Import the entire AdVent DB snapshot
+(advent-pyenv) $ db-djv-pg import DB
 
 # Rename a jingle (e.g., to correct flags)
 (advent-pyenv) $ db-djv-pg rename FR_6TER_220903_ELEMENTARY1_1 FR_6TER_220903_ELEMENTARY1_3
@@ -573,9 +579,8 @@ Now it's data's turn. Pull and load the latest snapshot of ad fingerprints. See 
 
 ```
 (advent-pyenv) $ git clone https://github.com/denis-stepanov/advent-db.git
-(advent-pyenv) $ find advent-db -name "*.djv" | xargs db-djv-pg import
+(advent-pyenv) $ db-djv-pg import advent-db/DB
 ```
-(the need to use `find` should go away with resolution of issue [#4](https://github.com/denis-stepanov/advent/issues/4))
 
 This is all what concers AdVent per se. However, depending on your audio capturing options and on preferred way to control TV you might have additional work to do. See below for instructions.
 
