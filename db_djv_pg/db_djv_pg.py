@@ -74,6 +74,7 @@ def main():
 
     parser_list.add_argument  ('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
     parser_export.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
+    parser_export.add_argument('-d', '--make-directories', action='store_true', help='split files in folders according to file prefix')
     parser_import.add_argument('filter', metavar='FILE', help='.' + FORMAT + ' file to import', nargs='+')
     parser_rename.add_argument('name1', help='original track name')
     parser_rename.add_argument('name2', help='new track name')
@@ -98,7 +99,14 @@ def main():
                         print()
                         continue
 
-                    fname = song['song_name'] + "." + FORMAT
+                    if args.make_directories:
+                        fname = 'DB/' + '/'.join(song['song_name'].split('_')[:2])   # First two fields
+                        os.makedirs(fname, exist_ok=True)
+                        fname += '/' + song['song_name']
+                    else:
+                        fname = song['song_name']
+
+                    fname += "." + FORMAT
                     if os.path.exists(fname) and not args.overwrite_always:
                         if args.overwrite:
                             with open(fname, newline='') as djv_file:
