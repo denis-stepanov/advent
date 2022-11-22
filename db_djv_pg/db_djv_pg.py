@@ -132,10 +132,19 @@ def main():
                 print("No records found")
 
         if args.cmd == 'import':
+            flist = []
             for fname in args.filter:
-                print(f"{fname}: ", end="")
-                if os.path.exists(fname):
-                    with open(fname, newline='') as djv_file:
+                if os.path.isdir(fname):
+                    for root, dirs, files in os.walk(fname):
+                        for f in files:
+                            flist.append(os.path.join(root, f))
+                else:
+                    flist.append(fname)
+
+            for f in flist:
+                print(f"{f}: ", end="")
+                if os.path.exists(f):
+                    with open(f, newline='') as djv_file:
                         djv_reader = csv.reader(djv_file)
                         if not(file_check(djv_reader)):
                             continue

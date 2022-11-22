@@ -1,1 +1,1 @@
-__version__="1.5b5"
+__version__="1.5b6"
