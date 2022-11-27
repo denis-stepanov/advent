@@ -129,6 +129,7 @@ def main():
                             print(" (exists; skipped)")
                             continue
 
+                    print(f": {fname}")
                     with open(fname, mode='w') as djv_file:
                         djv_writer = csv.writer(djv_file)
                         djv_writer.writerow([FORMAT, FORMAT_VERSION])
@@ -141,7 +142,6 @@ def main():
                         for fingerprint in cur2:
                             djv_writer.writerow([fingerprint['offset'], bytes(fingerprint['hash']).hex()])
                         cur2.close()
-                    print()
 
                 if args.sync:
                     files_on_disk = set()
