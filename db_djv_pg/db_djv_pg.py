@@ -93,7 +93,8 @@ def main():
         if args.cmd == 'export' or args.cmd == 'list':
 
             output_files = set()
-            args.overwrite = True if args.cmd == 'export' and args.sync else args.overwrite
+            if args.cmd == 'export' and args.sync:
+                args.overwrite = True
 
             # Fetch tracks
             cur.execute("SELECT * FROM songs WHERE song_name LIKE %s ORDER BY song_name", (args.filter.translate({42: 37, 63: 95}),))
@@ -144,7 +145,7 @@ def main():
                             djv_writer.writerow([fingerprint['offset'], bytes(fingerprint['hash']).hex()])
                         cur2.close()
 
-                if args.sync:
+                if args.cmd == 'export' and args.sync:
                     files_on_disk = set()
                     for root, dirs, files in os.walk('.'):
                         for f in files:
@@ -158,7 +159,8 @@ def main():
                 print("No records found")
 
         if args.cmd == 'import':
-            args.overwrite = True if args.sync else args.overwrite
+            if args.sync:
+                args.overwrite = True
 
             flist = []
             for fname in args.filter:
