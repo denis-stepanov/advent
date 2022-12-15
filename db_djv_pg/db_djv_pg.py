@@ -77,6 +77,7 @@ def main():
     parser_export.add_argument('-d', '--make-directories', action='store_true', help='split files in folders according to file prefix')
     parser_export.add_argument('-s', '--sync', action='store_true', help='align file system content to database (implies \'-o\')')
     parser_import.add_argument('filter', metavar='FILE', help='.' + FORMAT + ' file to import', nargs='+')
+    parser_import.add_argument('-s', '--sync', action='store_true', help='align database content to file system (implies \'-o\')')
     parser_rename.add_argument('name1', help='original track name')
     parser_rename.add_argument('name2', help='new track name')
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
@@ -150,13 +151,15 @@ def main():
                             files_on_disk.add(os.path.join(root, f)[2:])
                     extra_files = files_on_disk - output_files
                     for f in extra_files:
-                        print(f"{f}: (does not exist in database; deleted)")
+                        print(f"{f}: (does not exist in database; deleted on disk)")
                         os.remove(f)
 
             else:
                 print("No records found")
 
         if args.cmd == 'import':
+            args.overwrite = True if args.sync else args.overwrite
+
             flist = []
             for fname in args.filter:
                 if os.path.isdir(fname):
@@ -166,6 +169,7 @@ def main():
                 else:
                     flist.append(fname)
 
+            input_files = set()
             for f in flist:
                 print(f"{f}: ", end="")
                 if os.path.exists(f):
@@ -180,6 +184,8 @@ def main():
                         file_sha1     = song[2]
                         total_hashes  = song[3]
                         print(song_name, end="")
+                        if args.sync:
+                            input_files.add(song_name)
 
                         cur.execute("SELECT file_sha1 FROM songs WHERE song_name = %s", (song_name,))
                         if cur.rowcount:
@@ -209,6 +215,20 @@ def main():
                     print()
                 else:
                     print("(file not found)")
+
+            if args.sync:
+                database_files = set()
+                cur.execute("SELECT song_name FROM songs")
+
+                for song in cur:
+                    database_files.add(song['song_name'])
+                extra_files = database_files - input_files
+
+                for f in extra_files:
+                    cur.execute("DELETE FROM songs WHERE song_name = %s", (f,))
+                    print(f"{f}: (does not exist on disk; deleted from the database)")
+
+                conn.commit()
 
         if args.cmd == 'rename':
             do_rename = True
