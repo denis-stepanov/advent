@@ -345,7 +345,9 @@ The tool allows for the following operations on jingles (aka "tracks"):
 
 Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; other commands operate on track names (without file extension). When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
 
-The tool by default does not overwrite existing tracks in any direction; if this is desired, pass the `-o` option. As overwriting is a potentially expensive operation, the tool will first check SHA1 of the source and of the target and will refuse update if they match (i.e., update would make no difference). If this heuristic is not desired (e.g., when the target is suspected to be corrupted), use `-O` (unconditional overwrite) option.
+The tool by default does not overwrite existing tracks in any direction; if this is desired, pass the `-o` option. As overwriting is a potentially expensive operation, the tool will first check SHA1 of the source and of the target and will refuse update if they match (i.e., if update would make no difference). If this heuristic is not desired, use `-O` (unconditional overwrite) option.
+
+To make sure the database is perfectly in sync with the snapshot on the file system, pass `-s` parameter during import. This will overwrite all tracks that appear different and delete all those not having a matching file. Similarly in opposite direction: if you specify `-s` during export, the file system snapshot will be aligned to the database content. 
 
 Examples of use:
 
@@ -363,13 +365,13 @@ Examples of use:
 # Note that escaping shall not be used in this case
 (advent-pyenv) $ db-djv-pg import -o *
 
-# Import the entire AdVent DB snapshot
-(advent-pyenv) $ db-djv-pg import DB
+# Import the entire AdVent DB snapshot and make sure the database has nothing else
+(advent-pyenv) $ db-djv-pg import -s DB
 
 # Rename a jingle (e.g., to correct flags)
 (advent-pyenv) $ db-djv-pg rename FR_6TER_220903_ELEMENTARY1_1 FR_6TER_220903_ELEMENTARY1_3
 
-# Same but on disk. Jingle name is stored inside the file, so better use the tool when it comes to rename files
+# Same but on disk. Jingle name is stored inside the file, so it is better to use the tool when it comes to rename files
 (advent-pyenv) $ db-djv-pg rename FR_6TER_220903_ELEMENTARY1_1.djv FR_6TER_220903_ELEMENTARY1_3.djv
 
 # Delete one jingle
