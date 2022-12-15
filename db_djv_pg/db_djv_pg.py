@@ -75,7 +75,9 @@ def main():
     parser_list.add_argument  ('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
     parser_export.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
     parser_export.add_argument('-d', '--make-directories', action='store_true', help='split files in folders according to file prefix')
+    parser_export.add_argument('-s', '--sync', action='store_true', help='align file system content to database (implies \'-o\')')
     parser_import.add_argument('filter', metavar='FILE', help='.' + FORMAT + ' file to import', nargs='+')
+    parser_import.add_argument('-s', '--sync', action='store_true', help='align database content to file system (implies \'-o\')')
     parser_rename.add_argument('name1', help='original track name')
     parser_rename.add_argument('name2', help='new track name')
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
@@ -89,6 +91,10 @@ def main():
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         if args.cmd == 'export' or args.cmd == 'list':
+
+            output_files = set()
+            if args.cmd == 'export' and args.sync:
+                args.overwrite = True
 
             # Fetch tracks
             cur.execute("SELECT * FROM songs WHERE song_name LIKE %s ORDER BY song_name", (args.filter.translate({42: 37, 63: 95}),))
@@ -105,8 +111,10 @@ def main():
                         fname += '/' + song['song_name']
                     else:
                         fname = song['song_name']
-
                     fname += "." + FORMAT
+                    if args.sync:
+                        output_files.add(fname)
+
                     if os.path.exists(fname) and not args.overwrite_always:
                         if args.overwrite:
                             with open(fname, newline='') as djv_file:
@@ -123,6 +131,7 @@ def main():
                             print(" (exists; skipped)")
                             continue
 
+                    print(f": {fname}")
                     with open(fname, mode='w') as djv_file:
                         djv_writer = csv.writer(djv_file)
                         djv_writer.writerow([FORMAT, FORMAT_VERSION])
@@ -135,11 +144,24 @@ def main():
                         for fingerprint in cur2:
                             djv_writer.writerow([fingerprint['offset'], bytes(fingerprint['hash']).hex()])
                         cur2.close()
-                    print()
+
+                if args.cmd == 'export' and args.sync:
+                    files_on_disk = set()
+                    for root, dirs, files in os.walk('.'):
+                        for f in files:
+                            files_on_disk.add(os.path.join(root, f)[2:])
+                    extra_files = files_on_disk - output_files
+                    for f in extra_files:
+                        print(f"{f}: (does not exist in database; deleted on disk)")
+                        os.remove(f)
+
             else:
                 print("No records found")
 
         if args.cmd == 'import':
+            if args.sync:
+                args.overwrite = True
+
             flist = []
             for fname in args.filter:
                 if os.path.isdir(fname):
@@ -149,6 +171,7 @@ def main():
                 else:
                     flist.append(fname)
 
+            input_files = set()
             for f in flist:
                 print(f"{f}: ", end="")
                 if os.path.exists(f):
@@ -163,6 +186,8 @@ def main():
                         file_sha1     = song[2]
                         total_hashes  = song[3]
                         print(song_name, end="")
+                        if args.sync:
+                            input_files.add(song_name)
 
                         cur.execute("SELECT file_sha1 FROM songs WHERE song_name = %s", (song_name,))
                         if cur.rowcount:
@@ -192,6 +217,20 @@ def main():
                     print()
                 else:
                     print("(file not found)")
+
+            if args.sync:
+                database_files = set()
+                cur.execute("SELECT song_name FROM songs")
+
+                for song in cur:
+                    database_files.add(song['song_name'])
+                extra_files = database_files - input_files
+
+                for f in extra_files:
+                    cur.execute("DELETE FROM songs WHERE song_name = %s", (f,))
+                    print(f"{f}: (does not exist on disk; deleted from the database)")
+
+                conn.commit()
 
         if args.cmd == 'rename':
             do_rename = True
