@@ -54,6 +54,16 @@ def file_check(djv_reader):
     # TODO: more checks
     return res
 
+def db_vacuum(conn, cur, full=False):
+    query = "VACUUM"
+    if full:
+        query += " FULL"
+    autocommit = conn.autocommit
+    conn.autocommit = True   # VACUUM cannot run inside a transaction block
+    cur.execute(query)
+    conn.autocommit = autocommit
+
+
 def main():
     RETURN_CODE = 0
 
@@ -234,6 +244,8 @@ def main():
 
                 conn.commit()
 
+            db_vacuum(conn, cur)
+
         if args.cmd == 'rename':
             do_rename = True
             print(f"{args.name1}", end="")
@@ -318,9 +330,11 @@ def main():
                             else:
                                 print(" (not found)")
                                 do_rename = False
+                            db_vacuum(conn, cur)
                     else:
                         print(" (not found)")
                         do_rename = False
+
             RETURN_CODE = 0 if do_rename else 1
 
         if args.cmd == 'delete':
@@ -329,6 +343,7 @@ def main():
             if cur.rowcount:
                 for song in cur:
                     print(song['song_name'])
+                db_vacuum(conn, cur)
             else:
                 print("No records found")
 
@@ -542,11 +557,7 @@ def main():
         return RETURN_CODE
 
         if args.cmd == 'vacuum':
-            query = "VACUUM"
-            if args.full:
-                query += " FULL"
-            cur.execute(query)
-            conn.commit()
+            db_vacuum(conn, cur, args.full)
 
     return 1
 
