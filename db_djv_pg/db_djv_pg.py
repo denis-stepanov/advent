@@ -71,6 +71,7 @@ def main():
     parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite], help='rename a track', epilog=f'Names ending with .{FORMAT} will result in file operation, othrwise rename will be done in the database')
     parser_delete = subparsers.add_parser('delete', help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
+    parser_vacuum = subparsers.add_parser('vacuum', help='vacuum the database (improves performance)')
 
     parser_list.add_argument  ('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
     parser_export.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
@@ -83,6 +84,7 @@ def main():
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
     parser_dbinfo.add_argument('-c', '--check', action='store_true', help='check database consistency');
+    parser_vacuum.add_argument('-f', '--full', action='store_true', help='perform a full vacuum (requires stopping AdVent)');
     args = parser.parse_args()
 
     conn = psycopg2.connect(f"host={DB_HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}")
@@ -538,6 +540,13 @@ def main():
 
         cur.close()
         return RETURN_CODE
+
+        if args.cmd == 'vacuum':
+            query = "VACUUM"
+            if args.full:
+                query += " FULL"
+            cur.execute(query)
+            conn.commit()
 
     return 1
 
