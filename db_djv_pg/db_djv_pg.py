@@ -345,6 +345,7 @@ def main():
                 for song in cur:
                     print(song['song_name'])
                 db_vacuum(conn)
+                db_vacuum(conn)   # No idea why, but after deletion VACUUM has to be run twice to purge it completely
             else:
                 print("No records found")
 
