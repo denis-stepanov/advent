@@ -118,6 +118,7 @@ def main():
                         print(song['song_name'])
                 else:
                     with alive_bar(cur.rowcount) as bar:
+                        bar.title = 'Exporting'
                         for song in cur:
                             bar.text = song['song_name']
                             if args.make_directories:
