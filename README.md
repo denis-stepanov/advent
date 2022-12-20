@@ -340,8 +340,8 @@ The tool allows for the following operations on jingles (aka "tracks"):
 - `import` - import tracks from files to the database
 - `rename` - rename a track in the database or on disk (for disk, specify `.djv` extension. Caveat: for a file tree under version control this might be a disruptive action - see issue [#55](https://github.com/denis-stepanov/advent/issues/55))
 - `delete` - delete tracks from the database (file deletion planned - see issue [#54](https://github.com/denis-stepanov/advent/issues/54))
-- `dbinfo` - display database information and statistics
-- (planned - issue [#42](https://github.com/denis-stepanov/advent/issues/42)) `vacuum` - vacuum the database (improves performance)
+- `dbinfo` - display database information and statistics (add `-c` for health checks)
+- `vacuum` - vacuum the database (add `-f` to run full vacuum)
 
 Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; other commands operate on track names (without file extension). When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
 
@@ -447,17 +447,15 @@ Database health checks:
 
 #### Database Vacuuming
 
-Even a modest database of a few dozens of tracks could have hundreds of thousands of fingerprints. AdVent puts a stress on the database by constantly querying it from multiple threads. It is thus important to keep the database clean of old transactions and with indexes optimized. In PostgreSQL this is achieved with the help of a `VACUUM` command. It is recommended to run it from time to time, and especially after database update is done. Use this command:
+Even a modest database of a few dozens of tracks could have hundreds of thousands of fingerprints. AdVent puts a stress on the database by constantly querying it from multiple threads. It is thus important to keep the database clean of old transactions and with indexes optimized. In PostgreSQL this is achieved with the help of a `VACUUM` command. Use this command:
 
 ```
-$ psql -h localhost -U advent advent -c "VACUUM"
-Password for user advent: (enter "advent")
-...
-WARNING:  skipping "pg_database" --- only superuser can vacuum it
-...
-VACUUM
-$
+(advent-pyenv) $ db-djv-pg vacuum
 ```
+
+If you pass `-f` parameter, a `VACUUM FULL` instruction will be run. Full vacuum is not required in any regular scenario; if you run it, make sure AdVent is not running at the same time, as full vacuuming needs exclusive access to the database.
+
+Vacuum is run automatically on all operations that modify database content, so, normally, there's no need to run it explicitly.
 
 ## Installation
 

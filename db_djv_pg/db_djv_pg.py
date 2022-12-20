@@ -54,6 +54,17 @@ def file_check(djv_reader):
     # TODO: more checks
     return res
 
+def db_vacuum(conn, full=False):
+    query = "VACUUM"
+    if full:
+        query += " FULL"
+    autocommit = conn.autocommit
+    conn.autocommit = True   # VACUUM cannot run inside a transaction block
+    cur = conn.cursor()
+    cur.execute(query)
+    conn.autocommit = autocommit
+
+
 def main():
     RETURN_CODE = 0
 
@@ -68,9 +79,10 @@ def main():
     parser_list   = subparsers.add_parser('list', help='list tracks')
     parser_export = subparsers.add_parser('export', parents=[parser_overwrite], help='export tracks')
     parser_import = subparsers.add_parser('import', parents=[parser_overwrite], help='import tracks')
-    parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite], help='rename a track', epilog=f'Names ending with .{FORMAT} will result in file operation, othrwise rename will be done in the database')
+    parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite], help='rename a track', epilog=f'Names ending with .{FORMAT} will result in file operation, otherwise rename will be done in the database')
     parser_delete = subparsers.add_parser('delete', help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
+    parser_vacuum = subparsers.add_parser('vacuum', help='vacuum the database (improves performance)')
 
     parser_list.add_argument  ('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
     parser_export.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: * == all)', nargs='?', default='*')
@@ -83,6 +95,7 @@ def main():
     # NB: technically, "?" does not mean "none" but all tracks with one char name, but normally we should not have any
     parser_delete.add_argument('filter', help='filter name using simple pattern matching (*, ?; default: ? == none)', nargs='?', default='?')
     parser_dbinfo.add_argument('-c', '--check', action='store_true', help='check database consistency');
+    parser_vacuum.add_argument('-f', '--full', action='store_true', help='perform a full vacuum (requires stopping AdVent)');
     args = parser.parse_args()
 
     conn = psycopg2.connect(f"host={DB_HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}")
@@ -232,6 +245,8 @@ def main():
 
                 conn.commit()
 
+            db_vacuum(conn)
+
         if args.cmd == 'rename':
             do_rename = True
             print(f"{args.name1}", end="")
@@ -316,9 +331,11 @@ def main():
                             else:
                                 print(" (not found)")
                                 do_rename = False
+                            db_vacuum(conn)
                     else:
                         print(" (not found)")
                         do_rename = False
+
             RETURN_CODE = 0 if do_rename else 1
 
         if args.cmd == 'delete':
@@ -327,6 +344,8 @@ def main():
             if cur.rowcount:
                 for song in cur:
                     print(song['song_name'])
+                db_vacuum(conn)
+                db_vacuum(conn)   # No idea why, but after deletion VACUUM has to be run twice to purge it completely
             else:
                 print("No records found")
 
@@ -535,6 +554,9 @@ def main():
                 print("+-------")
                 print_check_result("TOTAL CHECKS", db_problem)
                 RETURN_CODE = 2 if db_problem else 0
+
+        if args.cmd == 'vacuum':
+            db_vacuum(conn, args.full)
 
         cur.close()
         return RETURN_CODE
