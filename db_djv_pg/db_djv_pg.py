@@ -6,6 +6,7 @@ import argparse
 import psycopg2
 import psycopg2.extras
 import csv
+from alive_progress import alive_bar
 
 FORMAT = "djv"
 FORMAT_VERSION = 1
@@ -112,51 +113,55 @@ def main():
             # Fetch tracks
             cur.execute("SELECT * FROM songs WHERE song_name LIKE %s ORDER BY song_name", (args.filter.translate({42: 37, 63: 95}),))
             if cur.rowcount:
-                for song in cur:
-                    print(f"{song['song_name']}", end="")
-                    if args.cmd == 'list':
-                        print()
-                        continue
+                if args.cmd == 'list':
+                    for song in cur:
+                        print(song['song_name'])
+                else:
+                    with alive_bar(cur.rowcount) as bar:
+                        for song in cur:
+                            if args.make_directories:
+                                fname = 'DB/' + '/'.join(song['song_name'].split('_')[:2])   # First two fields
+                                os.makedirs(fname, exist_ok=True)
+                                fname += '/' + song['song_name']
+                            else:
+                                fname = song['song_name']
+                            fname += "." + FORMAT
+                            if args.sync:
+                                output_files.add(fname)
 
-                    if args.make_directories:
-                        fname = 'DB/' + '/'.join(song['song_name'].split('_')[:2])   # First two fields
-                        os.makedirs(fname, exist_ok=True)
-                        fname += '/' + song['song_name']
-                    else:
-                        fname = song['song_name']
-                    fname += "." + FORMAT
-                    if args.sync:
-                        output_files.add(fname)
+                            if os.path.exists(fname) and not args.overwrite_always:
+                                if args.overwrite:
+                                    with open(fname, newline='') as djv_file:
+                                        djv_reader = csv.reader(djv_file)
+                                        if not(file_check(djv_reader)):
+                                            bar()
+                                            continue
 
-                    if os.path.exists(fname) and not args.overwrite_always:
-                        if args.overwrite:
-                            with open(fname, newline='') as djv_file:
-                                djv_reader = csv.reader(djv_file)
-                                if not(file_check(djv_reader)):
+                                        song_file = next(djv_reader)
+                                        file_sha1 = song_file[2]
+                                        if file_sha1 == bytes(song['file_sha1']).hex():
+                                            print(f"{song['song_name']} (exists and checksum matches; skipped)")
+                                            bar()
+                                            continue
+                                else:
+                                    print(f"{song['song_name']} (exists; skipped)")
+                                    bar()
                                     continue
 
-                                song_file = next(djv_reader)
-                                file_sha1 = song_file[2]
-                                if file_sha1 == bytes(song['file_sha1']).hex():
-                                    print(" (exists and checksum matches; skipped)")
-                                    continue
-                        else:
-                            print(" (exists; skipped)")
-                            continue
+                            with open(fname, mode='w') as djv_file:
+                                djv_writer = csv.writer(djv_file)
+                                djv_writer.writerow([FORMAT, FORMAT_VERSION])
+                                djv_writer.writerow([song['song_name'], song['fingerprinted'], bytes(song['file_sha1']).hex(), song['total_hashes']])
+                                song_id = song['song_id']
 
-                    print(f": {fname}")
-                    with open(fname, mode='w') as djv_file:
-                        djv_writer = csv.writer(djv_file)
-                        djv_writer.writerow([FORMAT, FORMAT_VERSION])
-                        djv_writer.writerow([song['song_name'], song['fingerprinted'], bytes(song['file_sha1']).hex(), song['total_hashes']])
-                        song_id = song['song_id']
-
-                        # Fetch fingerprints
-                        cur2 = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-                        cur2.execute("SELECT * FROM fingerprints WHERE song_id = %s ORDER BY fingerprints.offset, hash", (song_id,))
-                        for fingerprint in cur2:
-                            djv_writer.writerow([fingerprint['offset'], bytes(fingerprint['hash']).hex()])
-                        cur2.close()
+                                # Fetch fingerprints
+                                cur2 = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+                                cur2.execute("SELECT * FROM fingerprints WHERE song_id = %s ORDER BY fingerprints.offset, hash", (song_id,))
+                                for fingerprint in cur2:
+                                    djv_writer.writerow([fingerprint['offset'], bytes(fingerprint['hash']).hex()])
+                                cur2.close()
+                            print(f"{song['song_name']}: {fname}")
+                            bar()
 
                 if args.cmd == 'export' and args.sync:
                     files_on_disk = set()
