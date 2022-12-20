@@ -119,6 +119,7 @@ def main():
                 else:
                     with alive_bar(cur.rowcount) as bar:
                         for song in cur:
+                            bar.text = song['song_name']
                             if args.make_directories:
                                 fname = 'DB/' + '/'.join(song['song_name'].split('_')[:2])   # First two fields
                                 os.makedirs(fname, exist_ok=True)
