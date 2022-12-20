@@ -54,12 +54,13 @@ def file_check(djv_reader):
     # TODO: more checks
     return res
 
-def db_vacuum(conn, cur, full=False):
+def db_vacuum(conn, full=False):
     query = "VACUUM"
     if full:
         query += " FULL"
     autocommit = conn.autocommit
     conn.autocommit = True   # VACUUM cannot run inside a transaction block
+    cur = conn.cursor()
     cur.execute(query)
     conn.autocommit = autocommit
 
@@ -78,7 +79,7 @@ def main():
     parser_list   = subparsers.add_parser('list', help='list tracks')
     parser_export = subparsers.add_parser('export', parents=[parser_overwrite], help='export tracks')
     parser_import = subparsers.add_parser('import', parents=[parser_overwrite], help='import tracks')
-    parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite], help='rename a track', epilog=f'Names ending with .{FORMAT} will result in file operation, othrwise rename will be done in the database')
+    parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite], help='rename a track', epilog=f'Names ending with .{FORMAT} will result in file operation, otherwise rename will be done in the database')
     parser_delete = subparsers.add_parser('delete', help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
     parser_vacuum = subparsers.add_parser('vacuum', help='vacuum the database (improves performance)')
@@ -244,7 +245,7 @@ def main():
 
                 conn.commit()
 
-            db_vacuum(conn, cur)
+            db_vacuum(conn)
 
         if args.cmd == 'rename':
             do_rename = True
@@ -330,7 +331,7 @@ def main():
                             else:
                                 print(" (not found)")
                                 do_rename = False
-                            db_vacuum(conn, cur)
+                            db_vacuum(conn)
                     else:
                         print(" (not found)")
                         do_rename = False
@@ -343,7 +344,7 @@ def main():
             if cur.rowcount:
                 for song in cur:
                     print(song['song_name'])
-                db_vacuum(conn, cur)
+                db_vacuum(conn)
             else:
                 print("No records found")
 
@@ -553,11 +554,11 @@ def main():
                 print_check_result("TOTAL CHECKS", db_problem)
                 RETURN_CODE = 2 if db_problem else 0
 
+        if args.cmd == 'vacuum':
+            db_vacuum(conn, args.full)
+
         cur.close()
         return RETURN_CODE
-
-        if args.cmd == 'vacuum':
-            db_vacuum(conn, cur, args.full)
 
     return 1
 
