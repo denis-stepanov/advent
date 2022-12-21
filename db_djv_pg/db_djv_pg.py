@@ -56,14 +56,15 @@ def file_check(song_name, djv_reader):
     return res
 
 def db_vacuum(conn, full=False):
-    query = "VACUUM"
-    if full:
-        query += " FULL"
-    autocommit = conn.autocommit
-    conn.autocommit = True   # VACUUM cannot run inside a transaction block
-    cur = conn.cursor()
-    cur.execute(query)
-    conn.autocommit = autocommit
+    with alive_bar(title='Vacuuming', receipt=False) as bar:
+        query = "VACUUM"
+        if full:
+            query += " FULL"
+        autocommit = conn.autocommit
+        conn.autocommit = True   # VACUUM cannot run inside a transaction block
+        cur = conn.cursor()
+        cur.execute(query)
+        conn.autocommit = autocommit
 
 
 def main():
@@ -355,9 +356,8 @@ def main():
             if cur.rowcount:
                 for song in cur:
                     print(song['song_name'])
-                with alive_bar(title='Vacuuming', receipt=False) as bar:
-                    db_vacuum(conn)
-                    db_vacuum(conn)   # No idea why, but after deletion VACUUM has to be run twice to purge it completely
+                db_vacuum(conn)
+                db_vacuum(conn)   # No idea why, but after deletion VACUUM has to be run twice to purge it completely
             else:
                 print("No records found")
 
