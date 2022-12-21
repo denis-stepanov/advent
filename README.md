@@ -343,11 +343,13 @@ The tool allows for the following operations on jingles (aka "tracks"):
 - `dbinfo` - display database information and statistics (add `-c` for health checks)
 - `vacuum` - vacuum the database (add `-f` to run full vacuum)
 
-Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; other commands operate on track names (without file extension). When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
+Remaining parameters are jingle names, or masks using simple regular expression syntax (`*`, `?`). `import` takes file names as parameters; `rename` may take file name or track name (without file extension), other commands operate on track names. When using track name regular expressions in shell, remember to protect them from shell expansion using quotes.
 
 The tool by default does not overwrite existing tracks in any direction; if this is desired, pass the `-o` option. As overwriting is a potentially expensive operation, the tool will first check SHA1 of the source and of the target and will refuse update if they match (i.e., if update would make no difference). If this heuristic is not desired, use `-O` (unconditional overwrite) option.
 
-To make sure the database is perfectly in sync with the snapshot on the file system, pass `-s` parameter during import. This will overwrite all tracks that appear different and delete all those not having a matching file. Similarly in opposite direction: if you specify `-s` during export, the file system snapshot will be aligned to the database content. 
+To make sure the database is perfectly in sync with the snapshot on the file system, pass `-s` parameter during import. This will overwrite all tracks that appear different and delete all those not having a matching file. Similarly in opposite direction: if you specify `-s` during export, the file system snapshot will be aligned to the database content.
+
+Long operations (such as mass import or export) are signalled with a progress bar.
 
 Examples of use:
 
@@ -453,7 +455,7 @@ Even a modest database of a few dozens of tracks could have hundreds of thousand
 (advent-pyenv) $ db-djv-pg vacuum
 ```
 
-If you pass `-f` parameter, a `VACUUM FULL` instruction will be run. Full vacuum is not required in any regular scenario; if you run it, make sure AdVent is not running at the same time, as full vacuuming needs exclusive access to the database.
+If you pass `-f` parameter, a `VACUUM FULL` instruction will be run. Full vacuum is not required in any regular scenario; if you run it, make sure AdVent is not running at the same time, as full vacuuming rebuilds the tables and thus needs exclusive access to the database.
 
 Vacuum is run automatically on all operations that modify database content, so, normally, there's no need to run it explicitly.
 

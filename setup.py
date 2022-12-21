@@ -21,5 +21,6 @@ setup(
         'PyDejavu',
         'psycopg2',
         'requests',
+        'alive-progress',
     ],
 )

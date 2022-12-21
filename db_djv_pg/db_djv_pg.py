@@ -6,6 +6,7 @@ import argparse
 import psycopg2
 import psycopg2.extras
 import csv
+from alive_progress import alive_bar
 
 FORMAT = "djv"
 FORMAT_VERSION = 1
@@ -41,28 +42,31 @@ def db_check(cursor, query, msg):
     print_check_result(msg, res)
     return res
 
-def file_check(djv_reader):
+def file_check(song_name, djv_reader):
     res = True
     row = next(djv_reader)
     if row[0] != FORMAT:
-        print(f"(unknown format: '{row[0]}'; skipped)");
+        print(f"{song_name} (unknown format: '{row[0]}'; skipped)");
         res = False
     # TODO: protect conversion
     elif int(row[1]) > FORMAT_VERSION:
-        print(f"(unsupported version: {row[1]}; skipped)");
+        print(f"{song_name} (unsupported version: {row[1]}; skipped)");
         res = False
     # TODO: more checks
     return res
 
 def db_vacuum(conn, full=False):
-    query = "VACUUM"
-    if full:
-        query += " FULL"
-    autocommit = conn.autocommit
-    conn.autocommit = True   # VACUUM cannot run inside a transaction block
-    cur = conn.cursor()
-    cur.execute(query)
-    conn.autocommit = autocommit
+    with alive_bar(title='Vacuuming', receipt=False) as bar:
+        query = "VACUUM"
+        if full:
+            query += " FULL"
+        autocommit = conn.autocommit
+        conn.autocommit = True   # VACUUM cannot run inside a transaction block
+        cur = conn.cursor()
+        cur.execute(query)
+        if not(full):
+            cur.execute(query)   # No idea why, but sometimes VACUUM has to be run twice to take effect
+        conn.autocommit = autocommit
 
 
 def main():
@@ -112,51 +116,56 @@ def main():
             # Fetch tracks
             cur.execute("SELECT * FROM songs WHERE song_name LIKE %s ORDER BY song_name", (args.filter.translate({42: 37, 63: 95}),))
             if cur.rowcount:
-                for song in cur:
-                    print(f"{song['song_name']}", end="")
-                    if args.cmd == 'list':
-                        print()
-                        continue
+                if args.cmd == 'list':
+                    for song in cur:
+                        print(song['song_name'])
+                else:
+                    with alive_bar(cur.rowcount, title='Exporting', enrich_print=False) as bar:
+                        for song in cur:
+                            bar.text = song['song_name']
+                            if args.make_directories:
+                                fname = 'DB/' + '/'.join(song['song_name'].split('_')[:2])   # First two fields
+                                os.makedirs(fname, exist_ok=True)
+                                fname += '/' + song['song_name']
+                            else:
+                                fname = song['song_name']
+                            fname += "." + FORMAT
+                            if args.sync:
+                                output_files.add(fname)
 
-                    if args.make_directories:
-                        fname = 'DB/' + '/'.join(song['song_name'].split('_')[:2])   # First two fields
-                        os.makedirs(fname, exist_ok=True)
-                        fname += '/' + song['song_name']
-                    else:
-                        fname = song['song_name']
-                    fname += "." + FORMAT
-                    if args.sync:
-                        output_files.add(fname)
+                            if os.path.exists(fname) and not args.overwrite_always:
+                                if args.overwrite:
+                                    with open(fname, newline='') as djv_file:
+                                        djv_reader = csv.reader(djv_file)
+                                        if not(file_check(song['song_name'], djv_reader)):
+                                            bar()
+                                            continue
 
-                    if os.path.exists(fname) and not args.overwrite_always:
-                        if args.overwrite:
-                            with open(fname, newline='') as djv_file:
-                                djv_reader = csv.reader(djv_file)
-                                if not(file_check(djv_reader)):
+                                        song_file = next(djv_reader)
+                                        file_sha1 = song_file[2]
+                                        if file_sha1 == bytes(song['file_sha1']).hex():
+                                            print(f"{song['song_name']} (exists and checksum matches; skipped)")
+                                            bar()
+                                            continue
+                                else:
+                                    print(f"{song['song_name']} (exists; skipped)")
+                                    bar()
                                     continue
 
-                                song_file = next(djv_reader)
-                                file_sha1 = song_file[2]
-                                if file_sha1 == bytes(song['file_sha1']).hex():
-                                    print(" (exists and checksum matches; skipped)")
-                                    continue
-                        else:
-                            print(" (exists; skipped)")
-                            continue
+                            with open(fname, mode='w') as djv_file:
+                                djv_writer = csv.writer(djv_file)
+                                djv_writer.writerow([FORMAT, FORMAT_VERSION])
+                                djv_writer.writerow([song['song_name'], song['fingerprinted'], bytes(song['file_sha1']).hex(), song['total_hashes']])
+                                song_id = song['song_id']
 
-                    print(f": {fname}")
-                    with open(fname, mode='w') as djv_file:
-                        djv_writer = csv.writer(djv_file)
-                        djv_writer.writerow([FORMAT, FORMAT_VERSION])
-                        djv_writer.writerow([song['song_name'], song['fingerprinted'], bytes(song['file_sha1']).hex(), song['total_hashes']])
-                        song_id = song['song_id']
-
-                        # Fetch fingerprints
-                        cur2 = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-                        cur2.execute("SELECT * FROM fingerprints WHERE song_id = %s ORDER BY fingerprints.offset, hash", (song_id,))
-                        for fingerprint in cur2:
-                            djv_writer.writerow([fingerprint['offset'], bytes(fingerprint['hash']).hex()])
-                        cur2.close()
+                                # Fetch fingerprints
+                                cur2 = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+                                cur2.execute("SELECT * FROM fingerprints WHERE song_id = %s ORDER BY fingerprints.offset, hash", (song_id,))
+                                for fingerprint in cur2:
+                                    djv_writer.writerow([fingerprint['offset'], bytes(fingerprint['hash']).hex()])
+                                cur2.close()
+                            print(f"{song['song_name']}: {fname}")
+                            bar()
 
                 if args.cmd == 'export' and args.sync:
                     files_on_disk = set()
@@ -185,51 +194,55 @@ def main():
                     flist.append(fname)
 
             input_files = set()
-            for f in flist:
-                print(f"{f}: ", end="")
-                if os.path.exists(f):
-                    with open(f, newline='') as djv_file:
-                        djv_reader = csv.reader(djv_file)
-                        if not(file_check(djv_reader)):
-                            continue
-
-                        song = next(djv_reader)
-                        song_name     = song[0]
-                        fingerprinted = song[1]
-                        file_sha1     = song[2]
-                        total_hashes  = song[3]
-                        print(song_name, end="")
-                        if args.sync:
-                            input_files.add(song_name)
-
-                        cur.execute("SELECT file_sha1 FROM songs WHERE song_name = %s", (song_name,))
-                        if cur.rowcount:
-                            song_db_sha1 = cur.fetchone()['file_sha1']
-                            if args.overwrite_always or args.overwrite and file_sha1 != bytes(song_db_sha1).hex():
-                                cur.execute("DELETE FROM songs WHERE song_name = %s", (song_name,))
-                            else:
-                                if args.overwrite:
-                                    print(" (exists and checksum matches; skipped)")
-                                else:
-                                    print(" (exists; skipped)")
+            with alive_bar(len(flist), title='Importing', enrich_print=False) as bar:
+                for f in flist:
+                    bar.text = f
+                    if os.path.exists(f):
+                        with open(f, newline='') as djv_file:
+                            djv_reader = csv.reader(djv_file)
+                            if not(file_check(f, djv_reader)):
+                                bar()
                                 continue
 
-                        cur.execute("INSERT INTO songs (song_name, fingerprinted, file_sha1, total_hashes) VALUES (%s, %s, %s, %s) RETURNING song_id",
-                            (song_name, int(fingerprinted), bytes.fromhex(file_sha1), int(total_hashes)))
-                        song_id = int(cur.fetchone()[0])
+                            song = next(djv_reader)
+                            song_name     = song[0]
+                            fingerprinted = song[1]
+                            file_sha1     = song[2]
+                            total_hashes  = song[3]
+                            if args.sync:
+                                input_files.add(song_name)
 
-                        for fingerprint in djv_reader:
-                            offset = fingerprint[0]
-                            hash = fingerprint[1]
+                            cur.execute("SELECT file_sha1 FROM songs WHERE song_name = %s", (song_name,))
+                            conn.commit()
+                            if cur.rowcount:
+                                song_db_sha1 = cur.fetchone()['file_sha1']
+                                if args.overwrite_always or args.overwrite and file_sha1 != bytes(song_db_sha1).hex():
+                                    cur.execute("DELETE FROM songs WHERE song_name = %s", (song_name,))
+                                else:
+                                    if args.overwrite:
+                                        print(f"{song_name} (exists and checksum matches; skipped)")
+                                    else:
+                                        print(f"{song_name} (exists; skipped)")
+                                    bar()
+                                    continue
 
-                            cur.execute("INSERT INTO fingerprints (song_id, \"offset\", hash) VALUES (%s, %s, %s)",
-                                (song_id, int(offset), bytes.fromhex(hash)))
+                            cur.execute("INSERT INTO songs (song_name, fingerprinted, file_sha1, total_hashes) VALUES (%s, %s, %s, %s) RETURNING song_id",
+                                (song_name, int(fingerprinted), bytes.fromhex(file_sha1), int(total_hashes)))
+                            song_id = int(cur.fetchone()[0])
 
-                        conn.commit()
+                            for fingerprint in djv_reader:
+                                offset = fingerprint[0]
+                                hash = fingerprint[1]
 
-                    print()
-                else:
-                    print("(file not found)")
+                                cur.execute("INSERT INTO fingerprints (song_id, \"offset\", hash) VALUES (%s, %s, %s)",
+                                    (song_id, int(offset), bytes.fromhex(hash)))
+
+                            conn.commit()
+
+                        print(song_name)
+                    else:
+                        print(f"{f} (file not found)")
+                    bar()
 
             if args.sync:
                 database_files = set()
@@ -266,13 +279,13 @@ def main():
 
                                 with open(args.name1, newline='') as djv_file:
                                     djv_reader = csv.reader(djv_file)
-                                    if file_check(djv_reader):
+                                    if file_check(args.name1, djv_reader):
                                         song_file = next(djv_reader)
                                         file1_sha1 = song_file[2]
 
                                 with open(args.name2, newline='') as djv_file:
                                     djv_reader = csv.reader(djv_file)
-                                    if file_check(djv_reader):
+                                    if file_check(args.name2, djv_reader):
                                         song_file = next(djv_reader)
                                         file2_sha1 = song_file[2]
 
@@ -286,7 +299,7 @@ def main():
                         if do_rename:
                             with open(args.name1, newline='') as djv_file1:
                                 djv_reader = csv.reader(djv_file1)
-                                if file_check(djv_reader):
+                                if file_check(args.name1, djv_reader):
                                     with open(args.name2, mode='w') as djv_file2:
                                         djv_writer = csv.writer(djv_file2)
                                         djv_writer.writerow([FORMAT, FORMAT_VERSION])
@@ -339,13 +352,13 @@ def main():
             RETURN_CODE = 0 if do_rename else 1
 
         if args.cmd == 'delete':
-            cur.execute("DELETE FROM songs WHERE song_name LIKE %s RETURNING song_name", (args.filter.translate({42: 37, 63: 95}),))
-            conn.commit()
+            with alive_bar(title='Deleting', receipt=False) as bar:
+                cur.execute("DELETE FROM songs WHERE song_name LIKE %s RETURNING song_name", (args.filter.translate({42: 37, 63: 95}),))
+                conn.commit()
             if cur.rowcount:
                 for song in cur:
                     print(song['song_name'])
                 db_vacuum(conn)
-                db_vacuum(conn)   # No idea why, but after deletion VACUUM has to be run twice to purge it completely
             else:
                 print("No records found")
 
