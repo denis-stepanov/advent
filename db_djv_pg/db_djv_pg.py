@@ -64,6 +64,8 @@ def db_vacuum(conn, full=False):
         conn.autocommit = True   # VACUUM cannot run inside a transaction block
         cur = conn.cursor()
         cur.execute(query)
+        if not(full):
+            cur.execute(query)   # No idea why, but sometimes VACUUM has to be run twice to take effect
         conn.autocommit = autocommit
 
 
@@ -357,7 +359,6 @@ def main():
                 for song in cur:
                     print(song['song_name'])
                 db_vacuum(conn)
-                db_vacuum(conn)   # No idea why, but after deletion VACUUM has to be run twice to purge it completely
             else:
                 print("No records found")
 
