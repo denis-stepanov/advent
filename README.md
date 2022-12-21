@@ -181,27 +181,28 @@ Finally, what concerns recognition confidence `c`, we can see that lower confide
 
 ## Supported Environment
 
+### Supported Audio Inputs
+
 There are many different ways of watching TV these days. Currently supported audio inputs:
 
 * microphone;
 * video streaming in browser (via [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) monitor). This is a default;
 * [S/PDIF](https://en.wikipedia.org/wiki/S/PDIF) digital audio out from a TV-set: optical [TOSLINK](https://en.wikipedia.org/wiki/TOSLINK) or electrical [RCA](https://en.wikipedia.org/wiki/RCA_connector) (RCA untested but should work).
 
-
-Supported TV controls:
+### Supported TV Controls
 
 * PulseAudio (when watching TV on Linux). This is a default;
 * [Logitech Harmony Hub](https://support.myharmony.com/en-es/hub) (deprecated);
 * (planned - issue [#64](https://github.com/denis-stepanov/advent/issues/64)) [BroadLink Universal Remote](https://www.broadlink.ae/universal-remote).
 
-Supported actions:
+### Supported Actions
 
 * sound on / off. This is a default;
 * volume lowering;
 * (could be implemented if there's interest - see issue [#15](https://github.com/denis-stepanov/advent/issues/15)) changing a TV channel;
 * ...
 
-Supported OS:
+### Supported OS
 
 * recent Fedora (tested on Fedora 36). This is a default;
 * Raspbian 10. Actually, it is less laborious to support than Fedora, as many problematic points are either non-existing on Raspbian, or implemented in more user-friendly way;
