@@ -349,13 +349,15 @@ def main():
             RETURN_CODE = 0 if do_rename else 1
 
         if args.cmd == 'delete':
-            cur.execute("DELETE FROM songs WHERE song_name LIKE %s RETURNING song_name", (args.filter.translate({42: 37, 63: 95}),))
-            conn.commit()
+            with alive_bar(title='Deleting', receipt=False) as bar:
+                cur.execute("DELETE FROM songs WHERE song_name LIKE %s RETURNING song_name", (args.filter.translate({42: 37, 63: 95}),))
+                conn.commit()
             if cur.rowcount:
                 for song in cur:
                     print(song['song_name'])
-                db_vacuum(conn)
-                db_vacuum(conn)   # No idea why, but after deletion VACUUM has to be run twice to purge it completely
+                with alive_bar(title='Vacuuming', receipt=False) as bar:
+                    db_vacuum(conn)
+                    db_vacuum(conn)   # No idea why, but after deletion VACUUM has to be run twice to purge it completely
             else:
                 print("No records found")
 
