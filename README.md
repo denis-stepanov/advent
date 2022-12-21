@@ -464,7 +464,7 @@ Vacuum is run automatically on all operations that modify database content, so, 
 
 Installation was tested on Fedora and Raspbian. The differences are marked below accordingly. Setup process is a bit long, mostly because Dejavu and its database need some dependencies and configuration. Some of these steps are covered in (a bit dated) [Dejavu original manual](https://github.com/denis-stepanov/dejavu/blob/master/INSTALLATION.md), but I reiterate here for completeness.
 
-* `#` prompt means execution from root
+* `#` prompt means execution from root (you can use `sudo` instead if it is configured on your system)
 * `$` prompt means execution from user
 * `(advent-pyenv) $` prompt means execution from user in a [Python virtual environment](https://docs.python.org/3/library/venv.html)
 
