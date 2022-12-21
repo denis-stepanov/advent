@@ -210,6 +210,7 @@ def main():
                                 input_files.add(song_name)
 
                             cur.execute("SELECT file_sha1 FROM songs WHERE song_name = %s", (song_name,))
+                            conn.commit()
                             if cur.rowcount:
                                 song_db_sha1 = cur.fetchone()['file_sha1']
                                 if args.overwrite_always or args.overwrite and file_sha1 != bytes(song_db_sha1).hex():
