@@ -559,6 +559,12 @@ $ source advent-pyenv/bin/activate
 (advent-pyenv) $
 ```
 
+On Fedora, it is recommended to add `wheel` package to your virtual environment, otherwise you could get deprecation warnings when installing AdVent with the latest `pip`. On Raspbian, `wheel` comes installed by default.
+
+```
+(advent-pyenv) $ pip install wheel
+```
+
 ### Step 5: Install Dejavu and AdVent
 
 [My clone of Dejavu](https://github.com/denis-stepanov/dejavu) includes several non-functional adjustments allowing better co-habitation with AdVent, so I recommend using it instead of Dejavu upstream:
