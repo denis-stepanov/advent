@@ -191,8 +191,8 @@ There are many different ways of watching TV these days. Currently supported aud
 Supported TV controls:
 
 * PulseAudio (when watching TV on Linux). This is a default;
-* [Logitech Harmony Hub](https://support.myharmony.com/en-es/hub);
-* (could be implemented if there's interest) IrDA TV control (vendor-specific).
+* [Logitech Harmony Hub](https://support.myharmony.com/en-es/hub) (deprecated);
+* (planned - issue [#64](https://github.com/denis-stepanov/advent/issues/64)) [BroadLink Universal Remote](https://www.broadlink.ae/universal-remote).
 
 Supported actions:
 
@@ -834,11 +834,13 @@ $ pactl set-sink-mute @DEFAULT_SINK@ toggle
 
 AdVent does just that. Another advantage with PulseAudio is that the application can query the status of speaker on startup and thus start in sync. There is often no way to do that with other TV controls, which are mostly unidirectional.
 
-### Logitech Harmony Hub
+### Logitech Harmony Hub (deprecated)
 
 (selected with `-t harmonyhub` option to AdVent)
 
-I have been using this device for TV control from a smartphone since long time. Apart from the default cloud interface, it can also provide a local API, which is convenient for AdVent needs.
+I have been using this device for TV control from a smartphone since long time. Unfortunately, it is no longer sold nor supported by Logitech, and I no longer have the device in my possession, so it might be phased out with the next major version of AdVent.
+
+Apart from the default cloud interface, Harmony Hub it can also provide a local API, which is convenient for AdVent needs.
 
 ![Logitech Harmony Hub](https://user-images.githubusercontent.com/22733222/180626764-788fca83-ede6-46e2-9b7c-7db087c13a4b.jpg)
 
