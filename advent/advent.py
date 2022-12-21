@@ -76,9 +76,6 @@ class TV:
     def getTimeSinceLastAction(self):
         return datetime.now() - self.last_action_time
 
-    # Note: use of mutexes below is not fully canonical, as only permission to act are protected, but not the actions themselves
-    # This does not seem to pose particular problem, but should be probably refactored in future
-
     # Run next detection no earlier that REC_OFFSET seconds
     def OKToDetect(self):
         global REC_OFFSET_TD
