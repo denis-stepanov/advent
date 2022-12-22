@@ -527,9 +527,16 @@ def main():
                     "D0040: fingerprint hashes of variable size")
                 db_problem = db_problem or res
 
-                res = db_check(cur,
-                    "SELECT n_ins_since_vacuum + n_dead_tup FROM pg_stat_user_tables WHERE relname = 'fingerprints'",
-                    "D0100: vacuum needed")
+                # Need to take into account older Postgres
+                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'pg_stat_user_tables' AND column_name = 'n_ins_since_vacuum'")
+                if cur.rowcount != 0:
+                    res = db_check(cur,
+                        "SELECT n_ins_since_vacuum + n_dead_tup FROM pg_stat_user_tables WHERE relname = 'fingerprints'",
+                        "D0100: vacuum needed")
+                else:
+                    res = db_check(cur,
+                        "SELECT n_dead_tup FROM pg_stat_user_tables WHERE relname = 'fingerprints'",
+                        "D0100: vacuum needed")
                 db_problem = db_problem or res
 
                 ## AdVent-specific checks
