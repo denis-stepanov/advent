@@ -179,6 +179,14 @@ The red area on the graph (the interval below 1 second) indicates Dejavu breakdo
 
 Finally, what concerns recognition confidence `c`, we can see that lower confidences perform much better, so one has to choose the lowest possible level where false positives do not step in. From measurements, false positives usually do not result in confidence higher than 5%, so setting default of 10% would allow for good performance and provide some margin against false positives.
 
+### Recognition Quality
+
+In the example below a TV series [9-1-1](https://en.wikipedia.org/wiki/9-1-1_(TV_series)) has been watched on the French [M6](https://www.6play.fr/m6) TV channel during two hours of May 2, 2023. All four ad breaks happening during that period have been detected and TV muted.
+
+![20230205-m6-9-1-1-for-2h-annotated](https://user-images.githubusercontent.com/22733222/236021561-f95c45ea-8a30-46ce-ac2a-991da4ddb00d.png)
+
+With the current sound theme M6 is a relatively "easy" TV channel to process. Most of the channels fall into this category. Few channels do exist which work less reliably, either because of irregular use of jingles or because of employing jingles with poor sound spectrum.
+
 ## Supported Environment
 
 ### Supported Audio Inputs
