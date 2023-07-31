@@ -43,6 +43,8 @@ The biggest problem with Dejavu is that it does not support continuous recogniti
 
 ![Streaming Implementation](https://user-images.githubusercontent.com/22733222/181107790-0cb879a7-e7df-411c-b211-03a4ae8b40ea.png)
 
+_Side note:_ CPython is known to have limited support for threads, which does not work well for CPU-intense (aka "CPU-bound") tasks (see more in [GIL](https://docs.python.org/3.7/glossary.html#term-global-interpreter-lock)). However, the way Dejavu works is actually closer to "I/O-bound" execution, as it spends most of the time either listening for input from PulseAudio, or querying the database for hashes, both PulseAudio and database being pools of processes on their own. For I/O-bound threads Python works fairly well. So, when talking for simplicity about AdVent threads loading the CPU, we would actually mean that AdVent threads produce enough I/O to keep CPU busy.
+
 Question is how many threads would be needed. To understand this better I took a random three seconds jingle and tested its recognition once being split in two parts. Results:
 
 <table>
