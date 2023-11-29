@@ -23,7 +23,7 @@ A diagram below shows in blue a standard workflow for a person listening to a TV
 
 ![AdVent Workflow](https://user-images.githubusercontent.com/22733222/180874326-85a9d62a-3681-4ad0-b29a-7d356529fe8d.png)
 
-AdVent is added in parallel (path in orange), using the same or similar tools for mute. The main difference is the audio source. The source should be different from the one that person hears, because AdVent needs to continue listening while the sound is muted. Obviously, this is required to be able to unmute later on. This is why a microphone is generally not a good source; it is better to feed something not affected by the `Mute` button of a TV. S/PDIF digital output of the TV is one good candidate.
+AdVent is added in parallel (path in orange), using the same or similar tools for mute. The main difference is an audio source. The source should be different from the one that person hears, because AdVent needs to continue listening while the sound is muted. Obviously, this is required to be able to unmute later on. This is why a microphone is generally not a good source; it is better to feed something not affected by the `Mute` button of a TV. S/PDIF digital output of the TV is one good candidate.
 
 ### Limitations
 
