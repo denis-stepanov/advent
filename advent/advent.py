@@ -27,10 +27,10 @@ REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
 TV_DEAD_TIME = 30         # (s) - action dead time after previous action taken on TV
 MUTE_TIMEOUT = 600        # (s) - if TV is muted, unmute automatically after this time. Must be >= TV_DEAD_TIME
 LOG_FILE = 'advent.log'
-TV_CODES = os.environ['HOME'] + 'tv-codes' # Folder where TV control codes are stored (used with BroadLink)
 
 # Globals
 DJV_CONFIG = None
+TV_CODES = os.environ['HOME'] + '/' + 'tv-codes' # Folder where TV control codes are stored (used with BroadLink)
 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
 TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
@@ -201,18 +201,6 @@ def main():
         LOGGER.debug(f'Dejavu config {dejavu_cnf.name} loaded')
 
         # TV controls
-        if args.tv_control == 'pulseaudio':
-            tvc = TVControlPulseAudio()
-        elif args.tv_control == 'harmonyhub':
-            tvc = TVControlHarmonyHub()
-        elif args.tv_control == 'broadlink':
-            if args.tv_codes:
-                TV_CODES=args.tv_codes
-            tvc = TVControlBroadLink()
-        else:
-            tvc = TVControl()
-        tv = TV(tvc, args.action, args.volume if args.volume != None else '')
-
         if args.mute_timeout != None:
             if args.mute_timeout < 0:
                 LOGGER.error(f'Error: invalid timeout for action: {args.mute_timeout}; ignoring')
@@ -224,7 +212,20 @@ def main():
                 MUTE_TIMEOUT = args.mute_timeout
                 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 
-        LOGGER.info(f'TV control is {args.tv_control} with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else ''))
+        LOGGER.info(f'TV control is \'{args.tv_control}\' with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else ''))
+
+        if args.tv_control == 'pulseaudio':
+            tvc = TVControlPulseAudio()
+        elif args.tv_control == 'harmonyhub':
+            tvc = TVControlHarmonyHub()
+        elif args.tv_control == 'broadlink':
+            if args.tv_codes:
+                TV_CODES=args.tv_codes
+            tvc = TVControlBroadLink(TV_CODES)
+        else:
+            tvc = TVControl()
+        tv = TV(tvc, args.action, args.volume if args.volume != None else '')
+
         if tv.isInAction():
             LOGGER.warning(f'Warning: TV starts with action in progress: \'{args.action}\'')
 

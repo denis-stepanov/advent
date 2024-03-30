@@ -6,8 +6,30 @@ import time
 
 class TVControlBroadLink(TVControl):
 
-    def __init__(self):
+    def __init__(self, tv_codes):
         super().__init__()
+
+        self.FILE_CODE_MUTE_TOGGLE="mute-toggle.code"
+        self.FILE_CODE_VOLUME_DOWN="volume-down.code"
+        self.FILE_CODE_VOLUME_UP="volume-up.code"
+
+        self.CODE_MUTE_TOGGLE=""
+        self.CODE_VOLUME_DOWN=""
+        self.CODE_VOLUME_UP=""
+
+        try:
+            with open(tv_codes + '/' + self.FILE_CODE_MUTE_TOGGLE, 'r') as code:
+                self.CODE_MUTE_TOGGLE = code.read()
+        except FileNotFoundError as e:
+            print(f"Warning: file {e.filename} not found. Action 'mute' will be disabled")
+        try:
+            with open(tv_codes + '/' + self.FILE_CODE_VOLUME_DOWN, 'r') as code:
+                self.CODE_VOLUME_DOWN = code.read()
+            with open(tv_codes + '/' + self.FILE_CODE_VOLUME_UP, 'r') as code:
+                self.CODE_VOLUME_UP = code.read()
+        except FileNotFoundError as e:
+            print(f"Warning: file {e.filename} not found. Action 'lower_volume' will be disabled")
+
         self.nominal_volume = "+5"
         self.current_volume = self.nominal_volume
 
