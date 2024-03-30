@@ -16,7 +16,8 @@ class TVControlBroadLink(TVControl):
                 print("Warning: more than one BroadLink device discovered. Using the first one found")
                 break
             self.device = device
-            print(f"TV controller: {device}")
+            self.device.auth()
+            print(f"TV controller: {self.device}")
             break
         if self.device == "":
            print("Warning: no BroadLink devices discovered. TV action will be disabled")
@@ -32,14 +33,14 @@ class TVControlBroadLink(TVControl):
 
         try:
             with open(tv_codes + '/' + self.FILE_CODE_MUTE_TOGGLE, 'r') as code:
-                self.CODE_MUTE_TOGGLE = code.read()
+                self.CODE_MUTE_TOGGLE = bytearray.fromhex(code.read())
         except FileNotFoundError as e:
             print(f"Warning: file {e.filename} not found. Action 'mute' will be disabled")
         try:
             with open(tv_codes + '/' + self.FILE_CODE_VOLUME_DOWN, 'r') as code:
-                self.CODE_VOLUME_DOWN = code.read()
+                self.CODE_VOLUME_DOWN = bytearray.fromhex(code.read())
             with open(tv_codes + '/' + self.FILE_CODE_VOLUME_UP, 'r') as code:
-                self.CODE_VOLUME_UP = code.read()
+                self.CODE_VOLUME_UP = bytearray.fromhex(code.read())
         except FileNotFoundError as e:
             print(f"Warning: file {e.filename} not found. Action 'lower_volume' will be disabled")
 
@@ -47,7 +48,11 @@ class TVControlBroadLink(TVControl):
         self.current_volume = self.nominal_volume
 
     def toggleMute(self):
-        return super().toggleMute()
+        if self.CODE_MUTE_TOGGLE != "":
+            self.device.send_data(self.CODE_MUTE_TOGGLE)
+            return super().toggleMute()
+        else:
+            return False
 
     def lowerVolume(self, new_volume = '-5'):
         return super().lowerVolume(new_volume)
