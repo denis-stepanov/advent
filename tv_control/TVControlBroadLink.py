@@ -9,13 +9,26 @@ class TVControlBroadLink(TVControl):
     def __init__(self, tv_codes):
         super().__init__()
 
-        self.FILE_CODE_MUTE_TOGGLE="mute-toggle.code"
-        self.FILE_CODE_VOLUME_DOWN="volume-down.code"
-        self.FILE_CODE_VOLUME_UP="volume-up.code"
+        # Discover the control device
+        self.device = ""
+        for device in broadlink.xdiscover():
+            if self.device != "":
+                print("Warning: more than one BroadLink device discovered. Using the first one found")
+                break
+            self.device = device
+            print(f"TV controller: {device}")
+            break
+        if self.device == "":
+           print("Warning: no BroadLink devices discovered. TV action will be disabled")
 
-        self.CODE_MUTE_TOGGLE=""
-        self.CODE_VOLUME_DOWN=""
-        self.CODE_VOLUME_UP=""
+        # Fetch TV control codes
+        self.FILE_CODE_MUTE_TOGGLE = "mute-toggle.code"
+        self.FILE_CODE_VOLUME_DOWN = "volume-down.code"
+        self.FILE_CODE_VOLUME_UP = "volume-up.code"
+
+        self.CODE_MUTE_TOGGLE = ""
+        self.CODE_VOLUME_DOWN = ""
+        self.CODE_VOLUME_UP = ""
 
         try:
             with open(tv_codes + '/' + self.FILE_CODE_MUTE_TOGGLE, 'r') as code:
