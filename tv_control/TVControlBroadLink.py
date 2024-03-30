@@ -2,7 +2,6 @@
 
 from tv_control.TVControl import TVControl
 import broadlink
-import time
 
 class TVControlBroadLink(TVControl):
 
@@ -65,7 +64,6 @@ class TVControlBroadLink(TVControl):
             command = self.CODE_VOLUME_DOWN if vol < 0 else self.CODE_VOLUME_UP
             for i in range(vol if vol >= 0 else -vol):
                 self.device.send_data(command)
-                time.sleep(0.25)
             return super().lowerVolume(new_volume)
         else:
             return False
@@ -76,7 +74,6 @@ class TVControlBroadLink(TVControl):
             command = self.CODE_VOLUME_DOWN if vol < 0 else self.CODE_VOLUME_UP
             for i in range(vol if vol >= 0 else -vol):
                 self.device.send_data(command)
-                time.sleep(0.25)
             return super().restoreVolume()
         else:
             return False
