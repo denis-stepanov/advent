@@ -55,7 +55,28 @@ class TVControlBroadLink(TVControl):
             return False
 
     def lowerVolume(self, new_volume = '-5'):
-        return super().lowerVolume(new_volume)
+        if self.CODE_VOLUME_DOWN != "" and self.CODE_VOLUME_UP != "":
+            try:
+                vol = int(new_volume)
+            except ValueError:
+                print(f"Invalid volume parameter \'{new_volume}\' for 'lower_volume'")
+                return False
+            self.nominal_volume = str(-vol)
+            command = self.CODE_VOLUME_DOWN if vol < 0 else self.CODE_VOLUME_UP
+            for i in range(vol if vol >= 0 else -vol):
+                self.device.send_data(command)
+                time.sleep(0.25)
+            return super().lowerVolume(new_volume)
+        else:
+            return False
 
     def restoreVolume(self):
-        return super().restoreVolume()
+        if self.CODE_VOLUME_DOWN != "" and self.CODE_VOLUME_UP != "":
+            vol = int(self.nominal_volume)
+            command = self.CODE_VOLUME_DOWN if vol < 0 else self.CODE_VOLUME_UP
+            for i in range(vol if vol >= 0 else -vol):
+                self.device.send_data(command)
+                time.sleep(0.25)
+            return super().restoreVolume()
+        else:
+            return False
