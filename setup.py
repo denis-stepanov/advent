@@ -20,7 +20,8 @@ setup(
     install_requires=[
         'PyDejavu',
         'psycopg2',
-        'requests',
         'alive-progress',
+        'requests',
+        'broadlink',
     ],
 )

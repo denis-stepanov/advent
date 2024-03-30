@@ -16,6 +16,7 @@ from advent import __version__
 from tv_control.TVControl import TVControl
 from tv_control.TVControlPulseAudio import TVControlPulseAudio
 from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
+from tv_control.TVControlBroadLink import TVControlBroadLink
 
 # Settings
 VERSION=__version__
@@ -26,6 +27,7 @@ REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
 TV_DEAD_TIME = 30         # (s) - action dead time after previous action taken on TV
 MUTE_TIMEOUT = 600        # (s) - if TV is muted, unmute automatically after this time. Must be >= TV_DEAD_TIME
 LOG_FILE = 'advent.log'
+TV_CODES = os.environ['HOME'] + 'tv-codes' # Folder where TV control codes are stored (used with BroadLink)
 
 # Globals
 DJV_CONFIG = None
@@ -162,14 +164,16 @@ def main():
     global REC_OFFSET_TD
     global MUTE_TIMEOUT
     global MUTE_TIMEOUT_TD
+    global TV_CODES
 
     ## Command-line parser
     parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
-    parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
+    parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub', 'broadlink'], default='pulseaudio')
     parser.add_argument('-a', '--action', help='action on hit (default: mute)', choices=['mute', 'lower_volume'], default='mute')
-    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub: -5)', type=str)
+    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub and BroadLink: -5)', type=str)
+    parser.add_argument('-d', '--tv_codes', help='path to a folder with TV control codes (used with BroadLink; default: $HOME/tv-codes)', default=TV_CODES)
     parser.add_argument('-m', '--mute_timeout', help=f'undo hit action automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
     parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: {NUM_THREADS})', type=int)
     parser.add_argument('-i', '--rec_interval', help=f'audio recognition interval (s) (default: {REC_INTERVAL})', type=float)
@@ -201,6 +205,10 @@ def main():
             tvc = TVControlPulseAudio()
         elif args.tv_control == 'harmonyhub':
             tvc = TVControlHarmonyHub()
+        elif args.tv_control == 'broadlink':
+            if args.tv_codes:
+                TV_CODES=args.tv_codes
+            tvc = TVControlBroadLink()
         else:
             tvc = TVControl()
         tv = TV(tvc, args.action, args.volume if args.volume != None else '')
