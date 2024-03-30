@@ -221,6 +221,7 @@ def main():
         elif args.tv_control == 'broadlink':
             if args.tv_codes:
                 TV_CODES=args.tv_codes
+            LOGGER.info(f'TV control codes folder: {TV_CODES}')
             tvc = TVControlBroadLink(TV_CODES)
         else:
             tvc = TVControl()
