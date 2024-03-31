@@ -10,7 +10,7 @@ import logging
 from pkg_resources import Requirement, resource_filename
 from datetime import datetime
 from datetime import timedelta
-from sshkeyboard import listen_keyboard
+from sshkeyboard import listen_keyboard, stop_listening
 from dejavu import Dejavu
 from dejavu.logic.recognizer.microphone_recognizer import MicrophoneRecognizer
 from advent import __version__
@@ -156,6 +156,7 @@ class RecognizerThread(threading.Thread):
             else:
                 time.sleep(0.1)
 
+
 # Action watchdog
 class ActionTimeoutThread(threading.Thread):
 
@@ -173,10 +174,14 @@ class ActionTimeoutThread(threading.Thread):
                     LOGGER.warning('TV action rollback on timeout failed')
             time.sleep(1)
 
+
 # Keyboard handler
 def keyboard_event(key):
-    print('')
-    print(f"'{key}' pressed!")
+    if key == 'q':
+        print('')
+        LOGGER.info('USER: quit')
+        stop_listening()
+
 
 # Main
 def main():
@@ -288,6 +293,7 @@ def main():
         # Launch threads
         for n in range(0, NUM_THREADS):
             thread = RecognizerThread(tv)
+            thread.daemon = True
             thread.start()
         LOGGER.info(f'Started {NUM_THREADS} listening thread(s)')
         LOGGER.debug(f'Thread offset is {REC_OFFSET} s')
@@ -295,12 +301,12 @@ def main():
         if MUTE_TIMEOUT != 0:
             thread = ActionTimeoutThread(tv)
             thread.name = "Thread-WD"
+            thread.daemon = True
             thread.start()
 
         # Monitor user input
         listen_keyboard(on_press = keyboard_event)
 
-        # Never get here
         return 0
 
     return 1
