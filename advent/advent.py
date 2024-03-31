@@ -10,6 +10,7 @@ import logging
 from pkg_resources import Requirement, resource_filename
 from datetime import datetime
 from datetime import timedelta
+from sshkeyboard import listen_keyboard
 from dejavu import Dejavu
 from dejavu.logic.recognizer.microphone_recognizer import MicrophoneRecognizer
 from advent import __version__
@@ -155,6 +156,28 @@ class RecognizerThread(threading.Thread):
             else:
                 time.sleep(0.1)
 
+# Action watchdog
+class ActionTimeoutThread(threading.Thread):
+
+    def __init__(self, tv):
+        threading.Thread.__init__(self)
+        self.tv = tv
+
+    def run(self):
+        if self.tv.isInAction() and self.tv.getTimeSinceLastAction() >= MUTE_TIMEOUT_TD and self.tv.OKToAct():
+            print('')
+            if self.tv.stopAction():
+                LOGGER.info('TV action ended due to timeout')
+            else:
+                LOGGER.warning('TV action rollback on timeout failed')
+        time.sleep(1)
+
+# Keyboard handler
+def keyboard_event(key):
+    print('')
+    print(f"'{key}' pressed!")
+
+# Main
 def main():
     global DJV_CONFIG
     global NUM_THREADS
@@ -268,17 +291,14 @@ def main():
         LOGGER.info(f'Started {NUM_THREADS} listening thread(s)')
         LOGGER.debug(f'Thread offset is {REC_OFFSET} s')
 
-        # If action timeout is activated, monitor actions
         if MUTE_TIMEOUT != 0:
-            while True:
-                if tv.isInAction() and tv.getTimeSinceLastAction() >= MUTE_TIMEOUT_TD and tv.OKToAct():
-                    print('')
-                    if tv.stopAction():
-                        LOGGER.info('TV action ended due to timeout')
-                    else:
-                        LOGGER.warning('TV action rollback on timeout failed')
-                time.sleep(1)
+            thread = ActionTimeoutThread(tv)
+            thread.start()
 
+        # Monitor user input
+        listen_keyboard(on_press = keyboard_event)
+
+        # Never get here
         return 0
 
     return 1
