@@ -203,7 +203,7 @@ There are many different ways of watching TV these days. Currently supported aud
 
 * PulseAudio (when watching TV on Linux). This is a default;
 * [Logitech Harmony Hub](https://support.myharmony.com/en-es/hub) (deprecated);
-* (planned - issue [#64](https://github.com/denis-stepanov/advent/issues/64)) [BroadLink Universal Remote](https://www.broadlink.ae/universal-remote).
+* [BroadLink Universal Remote](https://www.broadlink.ae/universal-remote).
 
 ### Supported Actions
 
@@ -214,7 +214,7 @@ There are many different ways of watching TV these days. Currently supported aud
 
 ### Supported OS
 
-* recent Fedora (tested on Fedora 36). This is a default;
+* recent Fedora (tested on Fedora 36..39). This is a default;
 * Raspbian 10. Actually, it is less laborious to support than Fedora, as many problematic points are either non-existing on Raspbian, or implemented in more user-friendly way;
 * (Windows is not supported but the majority of software is in Python; should work as is, with the exception of TV controls module which would need contributions and testing - see issue [#16](https://github.com/denis-stepanov/advent/issues/16)).
 
@@ -237,8 +237,8 @@ Runnig AdVent is as simple as:
 The output should resemble to this:
 
 ```
-AdVent v1.5.0
-TV control is pulseaudio with action 'mute' for 600 s max
+AdVent v1.6.0
+TV control is 'pulseaudio' with action 'mute' for 600 s max
 Recognition interval is 2 s with confidence of 10%
 Started 2 listening thread(s)
 ...:o::o::::::o::::::::::o::ooo
@@ -257,11 +257,13 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 #### TV Control Options
 
-`-t TV_CONTROL` option allows selecting a TV controller. The default is `pulseaudio`; other options are `harmonyhub` for HarmonyHub, `nil` for TV control emulation (i.e., no real action). Emulation mode is useful during [jingle fingerprinting process](https://github.com/denis-stepanov/advent-db#step-2-single-out-a-jingle-of-interest) and when testing AdVent itself.
+`-t TV_CONTROL` option allows selecting a TV controller. The default is `pulseaudio`; other options are `harmonyhub` for HarmonyHub, `broadlink` for BroadLink Universal Remote, `nil` for TV control emulation (i.e., no real action). Emulation mode is useful during [jingle fingerprinting process](https://github.com/denis-stepanov/advent-db#step-2-single-out-a-jingle-of-interest) and when testing AdVent itself.
 
-`-a ACTION` option allow selecting a desired action between `mute` (default) and `lower_volume`.
+`-a ACTION` option allows selecting a desired action between `mute` (default) and `lower_volume`.
 
-`-V VOLUME` option allows specifying a target value for volume lowering when this action is selected via `-a`. The meaning of the volume specifier `VOLUME` is TV control-specific and is passed directly to a TV controller. In the case of PulseAudio there are many options available, like setting a fixed fraction (`30%`), lowering by a fixed fraction (`-20%`) or a choice of absolute units or decibels. See `man pactl` for more information. The default for PulseAudio is setting the volume to a half, i.e., to `50%`. In the case of HarmonyHub, one can only specify a relative change, like `-2`, where the number corresponds to a number of key presses of the `Volume Down` button on a TV remote. The default for HarmonyHub is `-5`. If you are a fan of commercials, you can specify a positive value ;-).
+`-V VOLUME` option allows specifying a target value for volume lowering when this action is selected via `-a`. The meaning of the volume specifier `VOLUME` is TV control-specific and is passed directly to a TV controller. In the case of PulseAudio there are many options available, like setting a fixed fraction (`30%`), lowering by a fixed fraction (`-20%`) or a choice of absolute units or decibels. See `man pactl` for more information. The default for PulseAudio is setting the volume to a half, i.e., to `50%`. In the case of HarmonyHub or BroadLink, one can only specify a relative change, like `-2`, where the number corresponds to a number of key presses of the `Volume Down` button on a TV remote. The default for HarmonyHub and BroadLink is `-5`. If you are a fan of commercials, you can specify a positive value ;-).
+
+`-d TV_CODES` option allows specifying a path to a folder holding TV control codes. These codes are needed for BroadLink controller only; see the BroadLink section below for details. The default is `$HOME/tv-codes`.
 
 `-m MUTE_TIMEOUT` option allows adjusting auto-unmute (or any other action selected) timeout, in seconds. Auto-unmute is active by default, and the default is 10 minutes (600 seconds). The timeout cannot be less than TV actuation dead time, currently set to 30 seconds. The interest of this feature is when AdVent for some reason does not detect an exit jingle and does not unmute on time, to be able to resume automatically normal TV watching at least few minutes later. It could also be of use when a microphone input is used, which by design can never unmute. If you want to disable auto-unmute altogether, pass `0` timeout.
 
@@ -930,6 +932,97 @@ It shoud mute the TV. Run it again to unmute.
 _Caveat2_: this simplistic command will try muting all devices known to Harmony. Usually, there's only a TV, so it is not an issue. If you have got other devices hooked to Harmony, you might need to opt for a more precise path. Please open a ticket if you need support for this.
 
 Note that AdVent relies on default Hub name which is `Harmony`. If your Hub name is different, the name needs to be corrected in the source code (and in the test command above). It there would be demand, it is possible to make a command line option for this (issue [#17](https://github.com/denis-stepanov/advent/issues/17)).
+
+### BroadLink Universal Remote
+
+(selected with `-t broadlink` option to AdVent)
+
+BroadLink Universal Remote can emulate a wide range of infra-red or radio signals. It also offers a local API and is remarkably reliable at the expense of being less intelligent than HarmonyHub. There are several generations and flavors available; I have [RM4 Pro](https://www.broadlink.ae/product-page/broadlink-rm4-pro).
+
+![Broadlink-RM4-Pro](https://github.com/denis-stepanov/advent/assets/22733222/a3d05803-46ff-45e5-83b8-83a3ed02eb20)
+
+
+#### BroadLink Setup
+
+It is assumed that you have already connected the Remote to your network using BroadLink app. If not, refer to instructions from BroadLink. The Remote must be in the same network where AdVent would be running. In the default configuration, the Remote is not discoverable (BroadLink calls this a "locked device"). AdVent would need the Remote to answer to discovery queries, so you need to unlock it in the app:
+
+![broadlink_lock](https://github.com/denis-stepanov/advent/assets/22733222/4e18b25b-ae85-49d1-a871-f73d6b92006f)
+
+Note 1: it is possible to use the Remote in locked mode, but one would need to specify an IP-address of the device. Currently it is not supported by AdVent; raise a request if you need it.
+
+Note 2: it is assumed that there is only one Remote present in the network. If there are multiple devices present, AdVent will select the first one returned from discovery process. Raise a request if you need finer control over this.
+
+#### Linux Setup
+
+Similarly to HarmonyHub, the firewall on Fedora would block attempts to discover BroadLink devices, so you need to authorize it on the firewall:
+
+```
+# firewall-cmd --permanent --add-source-port=80/udp
+```
+
+No action needed on Raspbian.
+
+A typical Remote setup from the BroadLink app would require teaching the Remote to recognize your TV-set using a remote supplied with the TV. Unfortunately, there is no way to reuse that information outside of BroadLink app, so you'd need to repeat the learning process specifically for the commands of interest for AdVent - that is, `mute`, `volume down` and `volume up`. The easiest way to do that is to use command-line tools from Python `broadlink` package. Again unfortunately, for some reason these tools are not included in the Python module, so the easiest way would be to grab them from GitHub:
+
+```
+$ git clone https://github.com/mjg59/python-broadlink.git
+$ cd python-broadlink/cli
+```
+
+Run discovery:
+
+```
+$ ./broadlink_discovery 
+Discovering...
+###########################################
+RM4PRO
+# broadlink_cli --type 0x5213 --host 192.168.0.100 --mac aabbccddeeff
+Device file data (to be used with --device @filename in broadlink_cli) : 
+0x5213 192.168.0.100 aabbccddeeff
+temperature = 22.3
+$
+```
+
+The `broadlink_cli` line above should be reused for subsequent learning process. Run `broadlink_cli` with your parameters, point your TV remote to BroadLink Remote and press the button of interest:
+
+```
+$ ./broadlink_cli --type 0x5213 --host 192.168.0.100 --mac aabbccddeeff --learnfile mute-toggle.code
+Learning...
+(press Mute button)
+Saving to mute-toggle.code
+$ ./broadlink_cli --type 0x5213 --host 192.168.0.100 --mac aabbccddeeff --learnfile volume-down.code
+Learning...
+(press Volume-Down button)
+Saving to volume-down.code
+$ ./broadlink_cli --type 0x5213 --host 192.168.0.100 --mac aabbccddeeff --learnfile volume-up.code
+Learning...
+(press Volume-Up button)
+Saving to volume-up.code
+$
+```
+
+Move the control codes to their final location:
+
+```
+$ mkdir ~/tv-codes
+$ mv *.code ~/tv-codes
+```
+
+Note 1: do not change the names of the files, or else AdVent would not be able to find them.
+
+Note 2: if you do not want the `tv-codes` folder in your home folder, you can specify a different location with `-d` option to AdVent, or simply make a symbolic link from your home.
+
+#### Testing
+
+Run command to test TV control:
+
+```
+$ ./broadlink_cli --type 0x5213 --host 192.168.0.100 --mac aabbccddeeff --send @$HOME/mute-toggle.code
+```
+
+It shoud mute the TV. Run it again to unmute.
+
+_Caveat_: The latest [version 0.18.3](https://github.com/mjg59/python-broadlink/releases/tag/0.18.3) of Python BroadLink support has a bug https://github.com/mjg59/python-broadlink/issues/721 affecting the `lower_volume` mode of AdVent. The bug consists of inadvertent duplication of commands sent to the Remote. Due to this, the volume would be lowered more than asked (`-V` option to AdVent), and similarly raised to a greater volume in the opposite direction. The resulting volume might not necessarily be equal to the original volume.
 
 ### Other Uses
 

@@ -16,6 +16,7 @@ from advent import __version__
 from tv_control.TVControl import TVControl
 from tv_control.TVControlPulseAudio import TVControlPulseAudio
 from tv_control.TVControlHarmonyHub import TVControlHarmonyHub
+from tv_control.TVControlBroadLink import TVControlBroadLink
 
 # Settings
 VERSION=__version__
@@ -29,6 +30,7 @@ LOG_FILE = 'advent.log'
 
 # Globals
 DJV_CONFIG = None
+TV_CODES = os.environ['HOME'] + '/' + 'tv-codes' # Folder where TV control codes are stored (used with BroadLink)
 REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
 REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
 TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
@@ -162,14 +164,16 @@ def main():
     global REC_OFFSET_TD
     global MUTE_TIMEOUT
     global MUTE_TIMEOUT_TD
+    global TV_CODES
 
     ## Command-line parser
     parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
-    parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub'], default='pulseaudio')
+    parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub', 'broadlink'], default='pulseaudio')
     parser.add_argument('-a', '--action', help='action on hit (default: mute)', choices=['mute', 'lower_volume'], default='mute')
-    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub: -5)', type=str)
+    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub and BroadLink: -5)', type=str)
+    parser.add_argument('-d', '--tv_codes', help='path to a folder with TV control codes (used with BroadLink; default: $HOME/tv-codes)', default=TV_CODES)
     parser.add_argument('-m', '--mute_timeout', help=f'undo hit action automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
     parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: {NUM_THREADS})', type=int)
     parser.add_argument('-i', '--rec_interval', help=f'audio recognition interval (s) (default: {REC_INTERVAL})', type=float)
@@ -197,14 +201,6 @@ def main():
         LOGGER.debug(f'Dejavu config {dejavu_cnf.name} loaded')
 
         # TV controls
-        if args.tv_control == 'pulseaudio':
-            tvc = TVControlPulseAudio()
-        elif args.tv_control == 'harmonyhub':
-            tvc = TVControlHarmonyHub()
-        else:
-            tvc = TVControl()
-        tv = TV(tvc, args.action, args.volume if args.volume != None else '')
-
         if args.mute_timeout != None:
             if args.mute_timeout < 0:
                 LOGGER.error(f'Error: invalid timeout for action: {args.mute_timeout}; ignoring')
@@ -216,7 +212,21 @@ def main():
                 MUTE_TIMEOUT = args.mute_timeout
                 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 
-        LOGGER.info(f'TV control is {args.tv_control} with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else ''))
+        LOGGER.info(f'TV control is \'{args.tv_control}\' with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else ''))
+
+        if args.tv_control == 'pulseaudio':
+            tvc = TVControlPulseAudio()
+        elif args.tv_control == 'harmonyhub':
+            tvc = TVControlHarmonyHub()
+        elif args.tv_control == 'broadlink':
+            if args.tv_codes:
+                TV_CODES=args.tv_codes
+            LOGGER.info(f'TV control codes folder: {TV_CODES}')
+            tvc = TVControlBroadLink(TV_CODES)
+        else:
+            tvc = TVControl()
+        tv = TV(tvc, args.action, args.volume if args.volume != None else '')
+
         if tv.isInAction():
             LOGGER.warning(f'Warning: TV starts with action in progress: \'{args.action}\'')
 
