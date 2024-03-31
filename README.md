@@ -962,7 +962,7 @@ Similarly to HarmonyHub, the firewall on Fedora would block attempts to discover
 
 No action needed on Raspbian.
 
-A typical Remote setup from the BroadLink app would require teaching the Remote to recognize your TV-set using a remote supplied with the TV. Unfortunately, there is no way to reuse that information outside of BroadLink app, so you'd need to repeat the learning process specifically for the commands of interest for AdVent - that is, `mute`, `volume down` and `volume up`. The easiest way to do that is to use command-line tools from Python `broadlink` package. Again unfortunately, these tools are not included in the Python module, so the easiest way would be to grab them from GitHub:
+A typical Remote setup from the BroadLink app would require teaching the Remote to recognize your TV-set using a remote supplied with the TV. Unfortunately, there is no way to reuse that information outside of BroadLink app, so you'd need to repeat the learning process specifically for the commands of interest for AdVent - that is, `mute`, `volume down` and `volume up`. The easiest way to do that is to use command-line tools from Python `broadlink` package. Again unfortunately, for some reason these tools are not included in the Python module, so the easiest way would be to grab them from GitHub:
 
 ```
 $ git clone https://github.com/mjg59/python-broadlink.git
@@ -1022,7 +1022,7 @@ $ ./broadlink_cli --type 0x5213 --host 192.168.0.100 --mac aabbccddeeff --send @
 
 It shoud mute the TV. Run it again to unmute.
 
-_Caveat_: The latest [version 0.18.3](https://github.com/mjg59/python-broadlink/releases/tag/0.18.3) of Python BroadLink support has a bug https://github.com/mjg59/python-broadlink/issues/721 affecting the `lower_module` mode of AdVent. The bug consists of inadvertent duplication of commands sent to the Remote. Due to this, the volume would be lowered more than asked (`-V` option to AdVent), and similarly raised to a greater volume in the opposite direction. The resulting volume might not necessarily be equal to the original volume.
+_Caveat_: The latest [version 0.18.3](https://github.com/mjg59/python-broadlink/releases/tag/0.18.3) of Python BroadLink support has a bug https://github.com/mjg59/python-broadlink/issues/721 affecting the `lower_volume` mode of AdVent. The bug consists of inadvertent duplication of commands sent to the Remote. Due to this, the volume would be lowered more than asked (`-V` option to AdVent), and similarly raised to a greater volume in the opposite direction. The resulting volume might not necessarily be equal to the original volume.
 
 ### Other Uses
 
