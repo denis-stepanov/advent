@@ -164,13 +164,14 @@ class ActionTimeoutThread(threading.Thread):
         self.tv = tv
 
     def run(self):
-        if self.tv.isInAction() and self.tv.getTimeSinceLastAction() >= MUTE_TIMEOUT_TD and self.tv.OKToAct():
-            print('')
-            if self.tv.stopAction():
-                LOGGER.info('TV action ended due to timeout')
-            else:
-                LOGGER.warning('TV action rollback on timeout failed')
-        time.sleep(1)
+        while True:
+            if self.tv.isInAction() and self.tv.getTimeSinceLastAction() >= MUTE_TIMEOUT_TD and self.tv.OKToAct():
+                print('')
+                if self.tv.stopAction():
+                    LOGGER.info('TV action ended due to timeout')
+                else:
+                    LOGGER.warning('TV action rollback on timeout failed')
+            time.sleep(1)
 
 # Keyboard handler
 def keyboard_event(key):
@@ -293,6 +294,7 @@ def main():
 
         if MUTE_TIMEOUT != 0:
             thread = ActionTimeoutThread(tv)
+            thread.name = "Thread-WD"
             thread.start()
 
         # Monitor user input
