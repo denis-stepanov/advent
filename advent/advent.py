@@ -105,6 +105,16 @@ class TV:
         self.action_lock.release()
         return ok
 
+    # Handle keyboard events
+    def handleKeyboard(self, key):
+        if key == 'q':
+            print('')
+            LOGGER.info('User: quit')
+            stop_listening()
+        elif key == ' ':
+            print('')
+            LOGGER.info('User: toggle mute')
+
 
 # Recognizer
 class RecognizerThread(threading.Thread):
@@ -173,14 +183,6 @@ class ActionTimeoutThread(threading.Thread):
                 else:
                     LOGGER.warning('TV action rollback on timeout failed')
             time.sleep(1)
-
-
-# Keyboard handler
-def keyboard_event(key):
-    if key == 'q':
-        print('')
-        LOGGER.info('USER: quit')
-        stop_listening()
 
 
 # Main
@@ -305,7 +307,7 @@ def main():
             thread.start()
 
         # Monitor user input
-        listen_keyboard(on_press = keyboard_event)
+        listen_keyboard(on_press = tv.handleKeyboard)
 
         return 0
 
