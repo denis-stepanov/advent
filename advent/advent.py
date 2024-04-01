@@ -134,7 +134,21 @@ class TV:
                     LOGGER.info(f'User: mute. TV muted')
                 else:
                     LOGGER.info(f'User: mute. TV failed to mute')
-
+        elif key == 'M':
+            if self.tvc.isMuted():
+                self.action_lock.acquire()
+                self.last_action_time = datetime.now()
+                self.action_lock.release()
+                self.tvc.toggleMute()
+                self.in_action = self.tvc.isMuted()
+                print('')
+                if self.in_action:
+                    LOGGER.info(f'User: unmute. TV failed to unmute')
+                else:
+                    LOGGER.info(f'User: unmute. TV unmuted')
+            else:
+                print('')
+                LOGGER.info('User: unmute. TV already unmuted')
 
 # Recognizer
 class RecognizerThread(threading.Thread):
@@ -327,7 +341,7 @@ def main():
             thread.start()
 
         # Monitor user input
-        listen_keyboard(on_press = tv.handleKeyboard)
+        listen_keyboard(on_press = tv.handleKeyboard, lower = False)
 
         return 0
 
