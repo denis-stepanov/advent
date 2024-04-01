@@ -119,6 +119,21 @@ class TV:
             self.in_action = self.tvc.isMuted()
             print('')
             LOGGER.info(f'User: toggle mute. TV is %s', "muted" if self.in_action else "unmuted")
+        elif key == 'm':
+            if self.tvc.isMuted():
+                print('')
+                LOGGER.info('User: mute. TV already muted')
+            else:
+                self.action_lock.acquire()
+                self.last_action_time = datetime.now()
+                self.action_lock.release()
+                self.tvc.toggleMute()
+                self.in_action = self.tvc.isMuted()
+                print('')
+                if self.in_action:
+                    LOGGER.info(f'User: mute. TV muted')
+                else:
+                    LOGGER.info(f'User: mute. TV failed to mute')
 
 
 # Recognizer
