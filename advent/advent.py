@@ -108,12 +108,17 @@ class TV:
     # Handle keyboard events
     def handleKeyboard(self, key):
         if key == 'q':
+            stop_listening()
             print('')
             LOGGER.info('User: quit')
-            stop_listening()
-        elif key == ' ':
+        elif key == 'space':
+            self.action_lock.acquire()
+            self.last_action_time = datetime.now()
+            self.action_lock.release()
+            self.tvc.toggleMute()
+            self.in_action = self.tvc.isMuted()
             print('')
-            LOGGER.info('User: toggle mute')
+            LOGGER.info(f'User: toggle mute. TV is %s', "muted" if self.in_action else "unmuted")
 
 
 # Recognizer
