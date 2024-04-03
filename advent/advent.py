@@ -149,6 +149,13 @@ class TV:
             else:
                 print('')
                 LOGGER.info('User: unmute. TV already unmuted')
+        elif key == 'h':
+            print('')
+            print('h     - help')
+            print('space - toggle mute')
+            print('m / M - mute / unmute')
+            print('c / C - decrease / increase confidence')
+            print('q     - quit')
 
 # Recognizer
 class RecognizerThread(threading.Thread):
@@ -341,6 +348,7 @@ def main():
             thread.start()
 
         # Monitor user input
+        LOGGER.info("Type 'h' for help")
         listen_keyboard(on_press = tv.handleKeyboard, lower = False)
 
         return 0
