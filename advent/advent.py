@@ -116,7 +116,7 @@ class TV:
             self.last_action_time = datetime.now()
             self.action_lock.release()
             self.tvc.toggleMute()
-            self.in_action = self.tvc.isMuted()
+            self.setAction('mute')
             print('')
             LOGGER.info(f'User: toggle mute. TV is %s', "muted" if self.in_action else "unmuted")
         elif key == 'm':
@@ -128,9 +128,9 @@ class TV:
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
                 self.tvc.toggleMute()
-                self.in_action = self.tvc.isMuted()
+                self.setAction('mute')
                 print('')
-                if self.in_action:
+                if self.isInAction():
                     LOGGER.info(f'User: mute. TV muted')
                 else:
                     LOGGER.info(f'User: mute. TV failed to mute')
@@ -140,9 +140,9 @@ class TV:
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
                 self.tvc.toggleMute()
-                self.in_action = self.tvc.isMuted()
+                self.setAction('mute')
                 print('')
-                if self.in_action:
+                if self.isInAction():
                     LOGGER.info(f'User: unmute. TV failed to unmute')
                 else:
                     LOGGER.info(f'User: unmute. TV unmuted')
@@ -154,6 +154,7 @@ class TV:
             print('h     - help')
             print('space - toggle mute')
             print('m / M - mute / unmute')
+            print('v / V - volume down / up')
             print('c / C - decrease / increase confidence')
             print('q     - quit')
 
