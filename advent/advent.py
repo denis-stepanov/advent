@@ -133,7 +133,7 @@ class TV:
                 if self.isInAction():
                     LOGGER.info(f'User: mute. TV muted')
                 else:
-                    LOGGER.info(f'User: mute. TV failed to mute')
+                    LOGGER.info(f'User: mute. TV action failed')
         elif key == 'M':
             if self.tvc.isMuted():
                 self.action_lock.acquire()
@@ -143,19 +143,41 @@ class TV:
                 self.setAction('mute')
                 print('')
                 if self.isInAction():
-                    LOGGER.info(f'User: unmute. TV failed to unmute')
+                    LOGGER.info(f'User: unmute. TV action failed')
                 else:
                     LOGGER.info(f'User: unmute. TV unmuted')
             else:
                 print('')
                 LOGGER.info('User: unmute. TV already unmuted')
+        elif key == 'v':
+                self.action_lock.acquire()
+                self.last_action_time = datetime.now()
+                self.action_lock.release()
+                self.tvc.lowerVolume('-1')
+                self.setAction('lower_volume')
+                print('')
+                if self.isInAction():
+                    LOGGER.info(f'User: lower volume. TV volume lowered by 1')
+                else:
+                    LOGGER.info(f'User: lower volume. TV action failed')
+        elif key == 'V':
+                self.action_lock.acquire()
+                self.last_action_time = datetime.now()
+                self.action_lock.release()
+                self.tvc.lowerVolume('+1')
+                self.setAction('lower_volume')
+                print('')
+                if self.isInAction():
+                    LOGGER.info(f'User: raise volume. TV volume raised by 1')
+                else:
+                    LOGGER.info(f'User: raise volume. TV action failed')
         elif key == 'h':
             print('')
             print('h     - help')
             print('space - toggle mute')
             print('m / M - mute / unmute')
-            print('v / V - volume down / up')
-            print('c / C - decrease / increase confidence')
+            print('v / V - volume lower / raise')
+            print('c / C - confidence decrease / increase')
             print('q     - quit')
 
 # Recognizer
