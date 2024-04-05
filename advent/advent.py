@@ -41,12 +41,12 @@ LOGGER = logging.getLogger('advent')
 # Generic TV
 class TV:
 
-    def __init__(self, tvc = TVControl(), action = 'mute', volume = ''):
+    def __init__(self, tvc = TVControl(), action = 'mute', volume_delta = 0):
         global TV_DEAD_TIME
 
         self.tvc = tvc
         self.setAction(action)
-        self.volume = volume
+        self.volume_delta = volume_delta
         self.detection_lock = threading.Lock()
         self.action_lock = threading.Lock()
         self.last_detection_time = datetime.now()
@@ -64,8 +64,8 @@ class TV:
 
     def startAction(self):
         if self.action == 'lower_volume':
-            if self.volume:
-                self.in_action = self.tvc.lowerVolume(self.volume)
+            if self.volume_delta:
+                self.in_action = self.tvc.lowerVolume(self.volume_delta)
             else:
                 self.in_action = self.tvc.lowerVolume()    # use device default
         else:
@@ -267,7 +267,7 @@ def main():
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub', 'broadlink'], default='pulseaudio')
     parser.add_argument('-a', '--action', help='action on hit (default: mute)', choices=['mute', 'lower_volume'], default='mute')
-    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: -50 (%%), HarmonyHub and BroadLink: -5)', type=str)
+    parser.add_argument('-V', '--volume', help=f'delta for volume lowering (defaults: PulseAudio: -50 (%%), HarmonyHub and BroadLink: -5)', type=int)
     parser.add_argument('-d', '--tv_codes', help='path to a folder with TV control codes (used with BroadLink; default: $HOME/tv-codes)', default=TV_CODES)
     parser.add_argument('-m', '--mute_timeout', help=f'undo hit action automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
     parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: {NUM_THREADS})', type=int)
@@ -320,7 +320,7 @@ def main():
             tvc = TVControlBroadLink(TV_CODES)
         else:
             tvc = TVControl()
-        tv = TV(tvc, args.action, args.volume if args.volume != None else '')
+        tv = TV(tvc, args.action, args.volume if args.volume != None else 0)
 
         if tv.isInAction():
             LOGGER.warning(f'Warning: TV starts with action in progress: \'{args.action}\'')
