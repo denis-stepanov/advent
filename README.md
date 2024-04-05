@@ -341,6 +341,36 @@ Debug log is useful to understand why AdVent reacted (or not). The log might loo
 
 Refer to `advent -h` for full synopsys.
 
+### Manual Tuning
+
+If AdVent would not trigger where you think it should have, you might need some manual tuning.
+
+#### 1. Check if your jingles are known to AdVent
+
+Run AdVent with `-l debug` option and inspect the log. If the matching confidence during jingle playback is less than 5%, it would mean that the jingle is not known to the database and would need enrollment as described in [AdVent DB manual](https://github.com/denis-stepanov/advent-db#if-you-want-to-create-your-own-hashes-read-further).
+
+If the log manifests jingle confidence between 5 and 10% (10% being a default fire-up threshold), it means that AdVent knows the jingle, but is not confident enough recognizing it. You can undertake the following steps.
+
+#### 2. Decrease confidence threshold
+
+Use the `-c` parameter to AdVent to decrease matching confidence from the default 10% to the confidence you actually observe (e.g., `-c 6`).
+
+If this would result in false positives firing up (e.g., jingles from another TV channel start showing up), look at the number of threads.
+
+#### 3. Increase the number of recognition threads
+
+Fix the `-c` confidence parameter at the lowest level where false positives do not creep in, and increase the number of threads from the default of 2 threads using the `-n` parameter (e.g., `-n 4`).
+
+You can go as high as the number of CPU cores on your machine (see `cat /proc/cpuinfo`), and even somewhat higher, depending on the size of RAM you have got and on the speed of disk. With plenty of resources you might be able to go twice as CPU cores number, e.g., to 5-8 threads on a 4 CPU machine.
+
+This would increase the matching confidence, but in a moderate way. As explained above, you would need quite a few more threads to significantly improve recognition confidence, heating up your device as a consequence. If increasing the number of threads would not help much, look at the recognition interval.
+
+#### 4. Increase the recognition interval
+
+Fix the `-n` threads parameter to the number of CPU cores you have and increase the recognition interval from the default of 2 s using the `-i` parameter (e.g., `-i 3`). Use increments of 0.5 s. You can go as high as the durations of jingle of interest (e.g, generally up to 4-6 s).
+
+This would considerable increase recognition confidence, at the expense that AdVent would kick in quite late (i.e., letting in few seconds of ads before muting).
+
 ### Database Service Tool (db-djv-pg)
 
 New jingles are fingerprinted following the regular Dejavu process (see ["Generate a Hash"](https://github.com/denis-stepanov/advent-db#step-3-generate-a-hash) in AdVent-DB). After the process they end up in an SQL database. Unfortunately, Dejavu does not provide a mechanism to share database content. To facilitate manipulations with the database, a service tool `db-djv-pg` is included with AdVent. It allows exporting / importing jingles as text files of [specific format](https://github.com/denis-stepanov/advent-db#jingle-hash-file-format-djv). Dejavu supports MySQL and PostgreSQL as databases, with default being MySQL. Unluckily(?), I am much more fluent with PostgreSQL, so AdVent supports PostgreSQL only (sorry MySQL folks :-); hence the `-pg` in the tool name. AdVent does not alter Dejavu database schema; additional information needed for AdVent functioning is encoded in the jingle name.
