@@ -153,7 +153,7 @@ class TV:
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
-                self.tvc.lowerVolume('-1')
+                self.tvc.lowerVolume(-1)
                 self.setAction('lower_volume')
                 print('')
                 if self.isInAction():
@@ -164,7 +164,7 @@ class TV:
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
-                self.tvc.lowerVolume('+1')
+                self.tvc.lowerVolume(1)
                 self.setAction('lower_volume')
                 print('')
                 if self.isInAction():
@@ -267,7 +267,7 @@ def main():
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub', 'broadlink'], default='pulseaudio')
     parser.add_argument('-a', '--action', help='action on hit (default: mute)', choices=['mute', 'lower_volume'], default='mute')
-    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub and BroadLink: -5)', type=str)
+    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: -50 (%%), HarmonyHub and BroadLink: -5)', type=str)
     parser.add_argument('-d', '--tv_codes', help='path to a folder with TV control codes (used with BroadLink; default: $HOME/tv-codes)', default=TV_CODES)
     parser.add_argument('-m', '--mute_timeout', help=f'undo hit action automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
     parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: {NUM_THREADS})', type=int)
