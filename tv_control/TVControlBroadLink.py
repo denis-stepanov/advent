@@ -43,7 +43,8 @@ class TVControlBroadLink(TVControl):
         except FileNotFoundError as e:
             print(f"Warning: file {e.filename} not found. Action 'lower_volume' will be disabled")
 
-        self.nominal_volume = "+5"
+        # No way to read volume from device
+        self.nominal_volume = 0
         self.current_volume = self.nominal_volume
 
     def toggleMute(self):
@@ -53,24 +54,23 @@ class TVControlBroadLink(TVControl):
         else:
             return False
 
-    def lowerVolume(self, new_volume = '-5'):
+    def lowerVolume(self, delta = -5):
         if self.CODE_VOLUME_DOWN != "" and self.CODE_VOLUME_UP != "":
             try:
-                vol = int(new_volume)
+                vol = int(delta)
             except ValueError:
-                print(f"Invalid volume parameter \'{new_volume}\' for 'lower_volume'")
+                print(f"Invalid volume parameter \'{delta}\' for 'lower_volume'")
                 return False
-            self.nominal_volume = str(-vol)
             command = self.CODE_VOLUME_DOWN if vol < 0 else self.CODE_VOLUME_UP
             for i in range(vol if vol >= 0 else -vol):
                 self.device.send_data(command)
-            return super().lowerVolume(new_volume)
+            return super().lowerVolume(delta)
         else:
             return False
 
     def restoreVolume(self):
         if self.CODE_VOLUME_DOWN != "" and self.CODE_VOLUME_UP != "":
-            vol = int(self.nominal_volume)
+            vol = self.nominal_volume - self.current_volume
             command = self.CODE_VOLUME_DOWN if vol < 0 else self.CODE_VOLUME_UP
             for i in range(vol if vol >= 0 else -vol):
                 self.device.send_data(command)
