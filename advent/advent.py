@@ -148,8 +148,13 @@ class TV:
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
+                if not self.tvc.isUnidirectional():
+                    vol = self.tvc.getVolume()
                 if self.tvc.changeVolume(-self.tvc.VOLUME_STEP):
-                    LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP}')
+                    if self.tvc.isUnidirectional():
+                        LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP}')
+                    else:
+                        LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
                 else:
                     LOGGER.info(f'\nUser: lower volume. TV action failed')
                 self.setAction('lower_volume')
@@ -157,8 +162,13 @@ class TV:
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
+                if not self.tvc.isUnidirectional():
+                    vol = self.tvc.getVolume()
                 if self.tvc.changeVolume(self.tvc.VOLUME_STEP):
-                    LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP}')
+                    if self.tvc.isUnidirectional():
+                        LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP}')
+                    else:
+                        LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
                 else:
                     LOGGER.info(f'\nUser: raise volume. TV action failed')
                 self.setAction('lower_volume')
@@ -311,6 +321,8 @@ def main():
             tvc = TVControlBroadLink(TV_CODES)
         else:
             tvc = TVControl()
+        if not tvc.isUnidirectional():
+            LOGGER.info('TV status: %s, volume: %d', "muted" if tvc.isMuted() else "unmuted", tvc.getVolume())
         tv = TV(tvc, args.action, args.volume if args.volume != None else 0)
 
         if tv.isInAction():
