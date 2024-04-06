@@ -32,7 +32,7 @@ class TVControlHarmonyHub(TVControl):
             return False
         command = "volume-down" if vol < 0 else "volume-up"
         try:
-            for i in range(vol if vol >= 0 else -vol):
+            for i in range(vol // self.VOLUME_STEP if vol >= 0 else -vol // self.VOLUME_STEP):
                 requests.post(self.api_server + command, data = self.command_data)
                 time.sleep(0.25)
             return super().lowerVolume(delta)
@@ -44,7 +44,7 @@ class TVControlHarmonyHub(TVControl):
         vol = self.nominal_volume - self.current_volume
         command = "volume-down" if vol < 0 else "volume-up"
         try:
-            for i in range(vol if vol >= 0 else -vol):
+            for i in range(vol // self.VOLUME_STEP if vol >= 0 else -vol // self.VOLUME_STEP):
                 requests.post(self.api_server + command, data = self.command_data)
                 time.sleep(0.25)
             return super().restoreVolume()

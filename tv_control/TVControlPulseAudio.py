@@ -10,6 +10,7 @@ class TVControlPulseAudio(TVControl):
 
     def __init__(self):
         super().__init__()
+        self.VOLUME_STEP = 5
         self.muted = subprocess.run(['pactl', 'get-sink-mute', '@DEFAULT_SINK@'], stdout=subprocess.PIPE).stdout.decode('utf-8') == "Mute: yes\n"
         self.nominal_volume = int(subprocess.run(['pactl', 'get-sink-volume', '@DEFAULT_SINK@'], stdout=subprocess.PIPE).stdout.decode('utf-8').split('/')[1].strip().strip('%'))
         self.current_volume = self.nominal_volume

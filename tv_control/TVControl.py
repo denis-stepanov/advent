@@ -3,10 +3,10 @@
 class TVControl:
 
     def __init__(self):
+        self.VOLUME_STEP = 1       # A value uset to change volume in steps
         self.muted = False
         self.nominal_volume = 100
         self.current_volume = 100
-        self.volume_step = 1
 
     # This method can be called as frequently as once per second, so do not override it with something querying network or real hardware
     # This should have been marked "final" but Python 3.7 does not support it yet
