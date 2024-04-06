@@ -12,14 +12,15 @@ class TVControl:
     def isUnidirectional(self):
         return False
 
-    # This method can be called as frequently as once per second, so do not override it with something querying network or real hardware
-    # This should have been marked "final" but Python 3.7 does not support it yet
-    def isMuted(self):
+    def isMuted(self, cached = True):
         return self.muted
 
     def toggleMute(self):
         self.muted = not self.muted
         return True
+
+    def getVolume(self, cached = True):
+        return self.current_volume
 
     def isChangedVolume(self):
         return self.current_volume != self.nominal_volume
