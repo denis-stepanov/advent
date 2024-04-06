@@ -16,6 +16,9 @@ class TVControlHarmonyHub(TVControl):
         self.api_server = "http://localhost:8282/hubs/harmony/commands/"
         self.command_data = {'on': 'on'}
 
+    def isUnidirectional(self):
+        return True
+
     def toggleMute(self):
         try:
             requests.post(self.api_server + "mute", data = self.command_data)
