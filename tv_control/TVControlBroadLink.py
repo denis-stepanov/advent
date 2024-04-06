@@ -54,7 +54,7 @@ class TVControlBroadLink(TVControl):
         else:
             return False
 
-    def lowerVolume(self, delta = -5):
+    def changeVolume(self, delta = -5):
         if self.CODE_VOLUME_DOWN != "" and self.CODE_VOLUME_UP != "":
             try:
                 vol = int(delta)
@@ -64,7 +64,7 @@ class TVControlBroadLink(TVControl):
             command = self.CODE_VOLUME_DOWN if vol < 0 else self.CODE_VOLUME_UP
             for i in range(vol // self.VOLUME_STEP if vol >= 0 else -vol // self.VOLUME_STEP):
                 self.device.send_data(command)
-            return super().lowerVolume(delta)
+            return super().changeVolume(delta)
         else:
             return False
 

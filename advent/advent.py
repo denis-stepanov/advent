@@ -57,7 +57,7 @@ class TV:
 
     def setAction(self, action):
         self.action = action
-        self.in_action = self.tvc.lowVolume() if self.action == 'lower_volume' else self.tvc.isMuted()
+        self.in_action = self.tvc.isChangedVolume() if self.action == 'lower_volume' else self.tvc.isMuted()
 
     def isInAction(self):
         return self.in_action
@@ -65,9 +65,9 @@ class TV:
     def startAction(self):
         if self.action == 'lower_volume':
             if self.volume_delta:
-                self.in_action = self.tvc.lowerVolume(self.volume_delta)
+                self.in_action = self.tvc.changeVolume(self.volume_delta)
             else:
-                self.in_action = self.tvc.lowerVolume()    # use device default
+                self.in_action = self.tvc.changeVolume()    # use device default
         else:
             self.in_action = self.tvc.toggleMute()
         return self.in_action
@@ -148,7 +148,7 @@ class TV:
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
-                if self.tvc.lowerVolume(-self.tvc.VOLUME_STEP):
+                if self.tvc.changeVolume(-self.tvc.VOLUME_STEP):
                     LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP}')
                 else:
                     LOGGER.info(f'\nUser: lower volume. TV action failed')
@@ -157,7 +157,7 @@ class TV:
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
-                if self.tvc.lowerVolume(self.tvc.VOLUME_STEP):
+                if self.tvc.changeVolume(self.tvc.VOLUME_STEP):
                     LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP}')
                 else:
                     LOGGER.info(f'\nUser: raise volume. TV action failed')

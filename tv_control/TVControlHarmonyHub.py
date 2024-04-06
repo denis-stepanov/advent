@@ -24,7 +24,7 @@ class TVControlHarmonyHub(TVControl):
             print(e)
         return False
 
-    def lowerVolume(self, delta = -5):
+    def changeVolume(self, delta = -5):
         try:
             vol = int(delta)
         except ValueError:
@@ -35,7 +35,7 @@ class TVControlHarmonyHub(TVControl):
             for i in range(vol // self.VOLUME_STEP if vol >= 0 else -vol // self.VOLUME_STEP):
                 requests.post(self.api_server + command, data = self.command_data)
                 time.sleep(0.25)
-            return super().lowerVolume(delta)
+            return super().changeVolume(delta)
         except requests.exceptions.RequestException as e:
             print(e)
         return False

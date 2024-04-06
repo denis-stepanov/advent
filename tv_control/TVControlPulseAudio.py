@@ -19,10 +19,10 @@ class TVControlPulseAudio(TVControl):
         ret = os.system("pactl set-sink-mute @DEFAULT_SINK@ toggle")
         return os.WIFEXITED(ret) and os.WEXITSTATUS(ret) == 0 and super().toggleMute()
 
-    def lowerVolume(self, delta = -50):
+    def changeVolume(self, delta = -50):
         new_volume = self.current_volume + delta
         ret = os.system("pactl set-sink-volume @DEFAULT_SINK@ " + str(new_volume) + "%")
-        return os.WIFEXITED(ret) and os.WEXITSTATUS(ret) == 0 and super().lowerVolume(delta)
+        return os.WIFEXITED(ret) and os.WEXITSTATUS(ret) == 0 and super().changeVolume(delta)
 
     def restoreVolume(self):
         ret = os.system("pactl set-sink-volume @DEFAULT_SINK@ " + str(self.nominal_volume) + "%")

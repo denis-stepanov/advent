@@ -17,10 +17,10 @@ class TVControl:
         self.muted = not self.muted
         return True
 
-    def lowVolume(self):
+    def isChangedVolume(self):
         return self.current_volume != self.nominal_volume
 
-    def lowerVolume(self, delta = -50):
+    def changeVolume(self, delta = -50):
         self.current_volume += delta
         return True
 
