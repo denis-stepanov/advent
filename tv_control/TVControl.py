@@ -8,6 +8,10 @@ class TVControl:
         self.nominal_volume = 100
         self.current_volume = 100
 
+    # False if we cannot read back TV status
+    def isUnidirectional(self):
+        return False
+
     # This method can be called as frequently as once per second, so do not override it with something querying network or real hardware
     # This should have been marked "final" but Python 3.7 does not support it yet
     def isMuted(self):

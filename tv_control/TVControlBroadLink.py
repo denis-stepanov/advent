@@ -47,6 +47,9 @@ class TVControlBroadLink(TVControl):
         self.nominal_volume = 0
         self.current_volume = self.nominal_volume
 
+    def isUnidirectional(self):
+        return True
+
     def toggleMute(self):
         if self.CODE_MUTE_TOGGLE != "":
             self.device.send_data(self.CODE_MUTE_TOGGLE)
