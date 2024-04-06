@@ -115,62 +115,60 @@ class TV:
             self.action_lock.acquire()
             self.last_action_time = datetime.now()
             self.action_lock.release()
-            self.tvc.toggleMute()
-            self.setAction('mute')
             print('')
-            LOGGER.info(f'User: toggle mute. TV is %s', "muted" if self.in_action else "unmuted")
+            if self.tvc.toggleMute():
+                LOGGER.info(f'User: toggle mute. TV is %s', "muted" if self.tvc.isMuted() else "unmuted")
+            else:
+                LOGGER.info('User: toggle mute. TV action failed')
+            self.setAction('mute')
         elif key == 'm':
             if self.tvc.isMuted():
                 print('')
-                LOGGER.info('User: mute. TV already muted')
+                LOGGER.info('User: mute. TV is already muted')
             else:
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
-                self.tvc.toggleMute()
-                self.setAction('mute')
                 print('')
-                if self.isInAction():
-                    LOGGER.info('User: mute. TV muted')
+                if self.tvc.toggleMute():
+                    LOGGER.info('User: mute. TV is muted')
                 else:
                     LOGGER.info('User: mute. TV action failed')
+                self.setAction('mute')
         elif key == 'M':
             if self.tvc.isMuted():
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
-                self.tvc.toggleMute()
-                self.setAction('mute')
                 print('')
-                if self.isInAction():
-                    LOGGER.info('User: unmute. TV action failed')
+                if self.tvc.toggleMute():
+                    LOGGER.info('User: unmute. TV is unmuted')
                 else:
-                    LOGGER.info('User: unmute. TV unmuted')
+                    LOGGER.info('User: unmute. TV action failed')
+                self.setAction('mute')
             else:
                 print('')
-                LOGGER.info('User: unmute. TV already unmuted')
+                LOGGER.info('User: unmute. TV is already unmuted')
         elif key == 'v':
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
-                self.tvc.lowerVolume(-self.tvc.VOLUME_STEP)
-                self.setAction('lower_volume')
                 print('')
-                if self.isInAction():
+                if self.tvc.lowerVolume(-self.tvc.VOLUME_STEP):
                     LOGGER.info(f'User: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP}')
                 else:
                     LOGGER.info('User: lower volume. TV action failed')
+                self.setAction('lower_volume')
         elif key == 'V':
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
-                self.tvc.lowerVolume(self.tvc.VOLUME_STEP)
-                self.setAction('lower_volume')
                 print('')
-                if self.isInAction():
+                if self.tvc.lowerVolume(self.tvc.VOLUME_STEP):
                     LOGGER.info(f'User: raise volume. TV volume raised by {self.tvc.VOLUME_STEP}')
                 else:
                     LOGGER.info('User: raise volume. TV action failed')
+                self.setAction('lower_volume')
         elif key == 'h':
             print('')
             print('h     - help')
