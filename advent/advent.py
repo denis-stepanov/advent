@@ -108,6 +108,11 @@ class TV:
     # Handle keyboard events
     def handleKeyboard(self, key):
         global REC_CONFIDENCE
+        global REC_INTERVAL
+        global REC_OFFSET
+        global REC_OFFSET_TD
+        global REC_DEADBAND
+        global NUM_THREADS
 
         if key == 'q':
             stop_listening()
@@ -177,15 +182,28 @@ class TV:
         elif key == 'c':
             if REC_CONFIDENCE > 0:
                 REC_CONFIDENCE -= 1
-                LOGGER.info(f'\nUser: decrease confidence. Confidence decreased by 1 ({REC_CONFIDENCE + 1} --> {REC_CONFIDENCE})')
+                LOGGER.info(f'\nUser: decrease confidence. Confidence decreased by 1% ({REC_CONFIDENCE + 1}% --> {REC_CONFIDENCE}%)')
             else:
-                LOGGER.info(f'\nUser: decrease confidence. Confidence is already at minimum (0)')
+                LOGGER.info(f'\nUser: decrease confidence. Confidence is already at minimum (0%)')
         elif key == 'C':
             if REC_CONFIDENCE < 100:
                 REC_CONFIDENCE += 1
-                LOGGER.info(f'\nUser: increase confidence. Confidence increased by 1 ({REC_CONFIDENCE - 1} --> {REC_CONFIDENCE})')
+                LOGGER.info(f'\nUser: increase confidence. Confidence increased by 1% ({REC_CONFIDENCE - 1}% --> {REC_CONFIDENCE}%)')
             else:
-                LOGGER.info(f'\nUser: increase confidence. Confidence is already at maximum (100)')
+                LOGGER.info(f'\nUser: increase confidence. Confidence is already at maximum (100%)')
+        elif key == 'i':
+            if REC_INTERVAL >= 1.5:
+                REC_INTERVAL -= 0.5
+                REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
+                REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+                LOGGER.info(f'\nUser: decrease interval. Interval decreased by 0.5 s ({REC_INTERVAL + 0.5} s --> {REC_INTERVAL} s)')
+            else:
+                LOGGER.info(f'\nUser: decrease interval. Interval is already at minimum (1 s)')
+        elif key == 'I':
+            REC_INTERVAL += 0.5
+            REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
+            REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+            LOGGER.info(f'\nUser: increase interval. Interval increased by 0.5 s ({REC_INTERVAL - 0.5} --> {REC_INTERVAL} s)')
         elif key == 'h':
             print('')
             print('h     - help')
@@ -193,6 +211,7 @@ class TV:
             print('m / M - mute / unmute')
             print('v / V - volume lower / raise')
             print('c / C - confidence decrease / increase')
+            print('i / I - interval decrease / increase')
             print('q     - quit')
 
 # Recognizer
