@@ -107,6 +107,8 @@ class TV:
 
     # Handle keyboard events
     def handleKeyboard(self, key):
+        global REC_CONFIDENCE
+
         if key == 'q':
             stop_listening()
             print('')
@@ -145,33 +147,45 @@ class TV:
             else:
                 LOGGER.info(f'\nUser: unmute. TV is already unmuted')
         elif key == 'v':
-                self.action_lock.acquire()
-                self.last_action_time = datetime.now()
-                self.action_lock.release()
-                if not self.tvc.isUnidirectional():
-                    vol = self.tvc.getVolume()
-                if self.tvc.changeVolume(-self.tvc.VOLUME_STEP):
-                    if self.tvc.isUnidirectional():
-                        LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP}')
-                    else:
-                        LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
+            self.action_lock.acquire()
+            self.last_action_time = datetime.now()
+            self.action_lock.release()
+            if not self.tvc.isUnidirectional():
+                vol = self.tvc.getVolume()
+            if self.tvc.changeVolume(-self.tvc.VOLUME_STEP):
+                if self.tvc.isUnidirectional():
+                    LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP}')
                 else:
-                    LOGGER.info(f'\nUser: lower volume. TV action failed')
-                self.setAction('lower_volume')
+                    LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
+            else:
+                LOGGER.info(f'\nUser: lower volume. TV action failed')
+            self.setAction('lower_volume')
         elif key == 'V':
-                self.action_lock.acquire()
-                self.last_action_time = datetime.now()
-                self.action_lock.release()
-                if not self.tvc.isUnidirectional():
-                    vol = self.tvc.getVolume()
-                if self.tvc.changeVolume(self.tvc.VOLUME_STEP):
-                    if self.tvc.isUnidirectional():
-                        LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP}')
-                    else:
-                        LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
+            self.action_lock.acquire()
+            self.last_action_time = datetime.now()
+            self.action_lock.release()
+            if not self.tvc.isUnidirectional():
+                vol = self.tvc.getVolume()
+            if self.tvc.changeVolume(self.tvc.VOLUME_STEP):
+                if self.tvc.isUnidirectional():
+                    LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP}')
                 else:
-                    LOGGER.info(f'\nUser: raise volume. TV action failed')
-                self.setAction('lower_volume')
+                    LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
+            else:
+                LOGGER.info(f'\nUser: raise volume. TV action failed')
+            self.setAction('lower_volume')
+        elif key == 'c':
+            if REC_CONFIDENCE > 0:
+                REC_CONFIDENCE -= 1
+                LOGGER.info(f'\nUser: decrease confidence. Confidence decreased by 1 ({REC_CONFIDENCE + 1} --> {REC_CONFIDENCE})')
+            else:
+                LOGGER.info(f'\nUser: decrease confidence. Confidence is already at minimum (0)')
+        elif key == 'C':
+            if REC_CONFIDENCE < 100:
+                REC_CONFIDENCE += 1
+                LOGGER.info(f'\nUser: increase confidence. Confidence increased by 1 ({REC_CONFIDENCE - 1} --> {REC_CONFIDENCE})')
+            else:
+                LOGGER.info(f'\nUser: increase confidence. Confidence is already at maximum (100)')
         elif key == 'h':
             print('')
             print('h     - help')
