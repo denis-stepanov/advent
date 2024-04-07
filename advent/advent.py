@@ -38,6 +38,26 @@ TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 LOGGER = logging.getLogger('advent')
 
+# Update interval helper
+def updateInterval(new_interval):
+    global REC_INTERVAL
+    global REC_OFFSET
+    global REC_OFFSET_TD
+    global REC_DEADBAND
+    global NUM_THREADS
+    global LOGGER
+
+    if new_interval > 0:
+        if new_interval < 1:
+            LOGGER.warning(f'Warning: recognition interval of {new_interval} s will result in no matches')
+        REC_INTERVAL = new_interval
+        REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
+        REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+        return True
+    else:
+        LOGGER.error(f'Error: invalid recognition interval: {new_interval} s; ignoring')
+        return False
+
 # Generic TV
 class TV:
 
@@ -109,10 +129,6 @@ class TV:
     def handleKeyboard(self, key):
         global REC_CONFIDENCE
         global REC_INTERVAL
-        global REC_OFFSET
-        global REC_OFFSET_TD
-        global REC_DEADBAND
-        global NUM_THREADS
 
         if key == 'q':
             stop_listening()
@@ -192,18 +208,14 @@ class TV:
             else:
                 LOGGER.info(f'\nUser: increase confidence. Confidence is already at maximum (100%)')
         elif key == 'i':
-            if REC_INTERVAL >= 1.5:
-                REC_INTERVAL -= 0.5
-                REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
-                REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
-                LOGGER.info(f'\nUser: decrease interval. Interval decreased by 0.5 s ({REC_INTERVAL + 0.5} s --> {REC_INTERVAL} s)')
+            if REC_INTERVAL > 0.5:
+                LOGGER.info(f'\nUser: decrease interval. Interval decreased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL - 0.5} s)')
             else:
-                LOGGER.info(f'\nUser: decrease interval. Interval is already at minimum (1 s)')
+                LOGGER.info(f'\nUser: decrease interval')
+            updateInterval(REC_INTERVAL - 0.5)
         elif key == 'I':
-            REC_INTERVAL += 0.5
-            REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
-            REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
-            LOGGER.info(f'\nUser: increase interval. Interval increased by 0.5 s ({REC_INTERVAL - 0.5} --> {REC_INTERVAL} s)')
+            LOGGER.info(f'\nUser: increase interval. Interval increased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL + 0.5} s)')
+            updateInterval(REC_INTERVAL + 0.5)
         elif key == 'h':
             print('')
             print('h     - help')
@@ -290,7 +302,6 @@ def main():
     global REC_INTERVAL
     global REC_CONFIDENCE
     global REC_OFFSET
-    global REC_OFFSET_TD
     global MUTE_TIMEOUT
     global MUTE_TIMEOUT_TD
     global TV_CODES
@@ -363,14 +374,7 @@ def main():
 
         # Recognition settings
         if args.rec_interval != None:
-            if args.rec_interval <= 0:
-                LOGGER.error(f'Error: invalid recognition interval: {args.rec_interval}; ignoring')
-            else:
-                if args.rec_interval < 1:
-                    LOGGER.warning(f'Warning: recognition interval of {args.rec_interval} s will result in no matches')
-                REC_INTERVAL = args.rec_interval
-                REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
-                REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+            updateInterval(args.rec_interval)
 
         if args.rec_confidence != None:
             if args.rec_confidence < 0 or args.rec_confidence > 100:
@@ -389,8 +393,7 @@ def main():
                 if args.num_threads > 2 * os.cpu_count():
                     LOGGER.warning(f'Warning: too high number of threads requested: {args.num_threads}; risk of system saturation')
                 NUM_THREADS = args.num_threads
-                REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
-                REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+                updateInterval(REC_INTERVAL)   # Depends on number of threads
 
         # Launch threads
         for n in range(0, NUM_THREADS):
