@@ -61,11 +61,11 @@ def updateInterval(new_interval):
 # Generic TV
 class TV:
 
-    def __init__(self, tvc = TVControl(), action = 'mute', volume_delta = 0):
+    def __init__(self, tvc = TVControl(), action = 'mute', in_action = False, volume_delta = 0):
         global TV_DEAD_TIME
 
         self.tvc = tvc
-        self.setAction(action)
+        self.setAction(action, in_action)
         self.volume_delta = volume_delta
         self.detection_lock = threading.Lock()
         self.action_lock = threading.Lock()
@@ -75,9 +75,12 @@ class TV:
     def getAction(self):
         return self.action
 
-    def setAction(self, action):
+    def setAction(self, action, in_action = False):
         self.action = action
-        self.in_action = self.tvc.isChangedVolume() if self.action == 'lower_volume' else self.tvc.isMuted()
+        if in_action:
+            self.in_action = in_action
+        else:
+            self.in_action = self.tvc.isChangedVolume() if self.action == 'lower_volume' else self.tvc.isMuted()
 
     def isInAction(self):
         return self.in_action
@@ -312,6 +315,7 @@ def main():
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub', 'broadlink'], default='pulseaudio')
     parser.add_argument('-a', '--action', help='action on hit (default: mute)', choices=['mute', 'lower_volume'], default='mute')
+    parser.add_argument('-A', '--in_action', help='start in action', action='store_true')
     parser.add_argument('-V', '--volume', help=f'delta for volume lowering (defaults: PulseAudio: -50 (%%), HarmonyHub and BroadLink: -5)', type=int)
     parser.add_argument('-d', '--tv_codes', help='path to a folder with TV control codes (used with BroadLink; default: $HOME/tv-codes)', default=TV_CODES)
     parser.add_argument('-m', '--mute_timeout', help=f'undo hit action automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
@@ -367,7 +371,7 @@ def main():
             tvc = TVControl()
         if not tvc.isUnidirectional():
             LOGGER.info('TV status: %s, volume: %d', "muted" if tvc.isMuted() else "unmuted", tvc.getVolume())
-        tv = TV(tvc, args.action, args.volume if args.volume != None else 0)
+        tv = TV(tvc, args.action, args.in_action, args.volume if args.volume != None else 0)
 
         if tv.isInAction():
             LOGGER.warning(f'Warning: TV starts with action in progress: \'{args.action}\'')
