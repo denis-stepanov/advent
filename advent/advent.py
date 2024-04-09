@@ -219,6 +219,13 @@ class TV:
         elif key == 'I':
             LOGGER.info(f'\nUser: increase interval. Interval increased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL + 0.5} s)')
             updateInterval(REC_INTERVAL + 0.5)
+        elif key == 'a':
+            LOGGER.info(f'\nUser: toggle TV in-action status. New status: {"not " if self.in_action else ""}in action')
+            self.in_action = not self.in_action
+            if self.in_action:
+                self.action_lock.acquire()
+                self.last_action_time = datetime.now()
+                self.action_lock.release()
         elif key == 'h':
             print('')
             print('h     - help')
@@ -227,6 +234,7 @@ class TV:
             print('v / V - volume lower / raise')
             print('c / C - confidence decrease / increase')
             print('i / I - interval decrease / increase')
+            print('a     - toggle TV \'in action\' status')
             print('q     - quit')
 
 # Recognizer
