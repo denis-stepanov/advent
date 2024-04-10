@@ -37,6 +37,7 @@ REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
 TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 LOGGER = logging.getLogger('advent')
+FORCE_HIT = False
 
 # Update interval helper
 def updateInterval(new_interval):
@@ -132,6 +133,7 @@ class TV:
     def handleKeyboard(self, key):
         global REC_CONFIDENCE
         global REC_INTERVAL
+        global FORCE_HIT
 
         if key == 'q':
             stop_listening()
@@ -226,6 +228,9 @@ class TV:
                 self.action_lock.acquire()
                 self.last_action_time = datetime.now()
                 self.action_lock.release()
+        elif key == 't':
+            LOGGER.info(f'\nUser: emulate a hit')
+            FORCE_HIT = True
         elif key == 'h':
             print('')
             print('h     - help')
@@ -235,6 +240,7 @@ class TV:
             print('c / C - confidence decrease / increase')
             print('i / I - interval decrease / increase')
             print('a     - toggle TV \'in action\' status')
+            print('t     - emulate a hit')
             print('q     - quit')
 
 # Recognizer
@@ -246,21 +252,38 @@ class RecognizerThread(threading.Thread):
         self.djv = Dejavu(DJV_CONFIG)
 
     def run(self):
+        global FORCE_HIT
+
         while True:
             # Space the threads in time
             if self.tv.OKToDetect():
                 start_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
                 matches = self.djv.recognize(MicrophoneRecognizer, seconds=REC_INTERVAL)[0]
                 end_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
-                if len(matches):
-                    best_match = matches[0]
-                    LOGGER.debug(f'Recognition start={start_time}, end={end_time}, match {best_match["song_name"].decode("utf-8")}, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
-                    if best_match["fingerprinted_confidence"] >= REC_CONFIDENCE / 100:
+
+                if FORCE_HIT:
+                    FORCE_HIT = False
+                    user_hit = True
+                else:
+                    user_hit = False
+
+                if user_hit or len(matches):
+                    if not user_hit:
+                        best_match = matches[0]
+                        LOGGER.debug(f'Recognition start={start_time}, end={end_time}, match {best_match["song_name"].decode("utf-8")}, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
+
+                    if user_hit or best_match["fingerprinted_confidence"] >= REC_CONFIDENCE / 100 or FORCE_HIT:
                         print('O', end='', flush=True)     # strong match
+
                         if self.tv.OKToAct():
                             print('')
-                            LOGGER.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
-                            flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
+                            if user_hit:
+                                LOGGER.info('Hit: USER')
+                                flags = 0b0011    # both entry and exit
+                            else:
+                                LOGGER.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
+                                flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
+
                             ad_start = bool(flags & 0b0001)
                             ad_end = bool(flags & 0b0010)
 
