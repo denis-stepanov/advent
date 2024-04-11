@@ -129,6 +129,12 @@ class TV:
         self.action_lock.release()
         return ok
 
+    # Unconditionally update action time
+    def updateActionTime(self):
+        self.action_lock.acquire()
+        self.last_action_time = datetime.now()
+        self.action_lock.release()
+
     # Handle keyboard events
     def handleKeyboard(self, key):
         global REC_CONFIDENCE
@@ -140,9 +146,7 @@ class TV:
             print('')
             LOGGER.info('User: quit')
         elif key == 'space':
-            self.action_lock.acquire()
-            self.last_action_time = datetime.now()
-            self.action_lock.release()
+            self.updateActionTime()
             if self.tvc.toggleMute():
                 LOGGER.info(f'\nUser: toggle mute. TV is %s', "muted" if self.tvc.isMuted() else "unmuted")
             else:
@@ -152,9 +156,7 @@ class TV:
             if self.tvc.isMuted():
                 LOGGER.info(f'\nUser: mute. TV is already muted')
             else:
-                self.action_lock.acquire()
-                self.last_action_time = datetime.now()
-                self.action_lock.release()
+                self.updateActionTime()
                 if self.tvc.toggleMute():
                     LOGGER.info(f'\nUser: mute. TV is muted')
                 else:
@@ -162,9 +164,7 @@ class TV:
                 self.setAction('mute')
         elif key == 'M':
             if self.tvc.isMuted():
-                self.action_lock.acquire()
-                self.last_action_time = datetime.now()
-                self.action_lock.release()
+                self.updateActionTime()
                 if self.tvc.toggleMute():
                     LOGGER.info(f'\nUser: unmute. TV is unmuted')
                 else:
@@ -173,9 +173,7 @@ class TV:
             else:
                 LOGGER.info(f'\nUser: unmute. TV is already unmuted')
         elif key == 'v':
-            self.action_lock.acquire()
-            self.last_action_time = datetime.now()
-            self.action_lock.release()
+            self.updateActionTime()
             if not self.tvc.isUnidirectional():
                 vol = self.tvc.getVolume()
             if self.tvc.changeVolume(-self.tvc.VOLUME_STEP):
@@ -187,9 +185,7 @@ class TV:
                 LOGGER.info(f'\nUser: lower volume. TV action failed')
             self.setAction('lower_volume')
         elif key == 'V':
-            self.action_lock.acquire()
-            self.last_action_time = datetime.now()
-            self.action_lock.release()
+            self.updateActionTime()
             if not self.tvc.isUnidirectional():
                 vol = self.tvc.getVolume()
             if self.tvc.changeVolume(self.tvc.VOLUME_STEP):
@@ -225,9 +221,7 @@ class TV:
             LOGGER.info(f'\nUser: toggle TV in-action status. New status: {"not " if self.in_action else ""}in action')
             self.in_action = not self.in_action
             if self.in_action:
-                self.action_lock.acquire()
-                self.last_action_time = datetime.now()
-                self.action_lock.release()
+                self.updateActionTime()
         elif key == 't':
             LOGGER.info(f'\nUser: emulate a hit')
             FORCE_HIT = True
