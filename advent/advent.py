@@ -10,6 +10,7 @@ import logging
 from pkg_resources import Requirement, resource_filename
 from datetime import datetime
 from datetime import timedelta
+from sshkeyboard import listen_keyboard, stop_listening
 from dejavu import Dejavu
 from dejavu.logic.recognizer.microphone_recognizer import MicrophoneRecognizer
 from advent import __version__
@@ -36,16 +37,37 @@ REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
 TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 LOGGER = logging.getLogger('advent')
+FORCE_HIT = False
+
+# Update interval helper
+def updateInterval(new_interval):
+    global REC_INTERVAL
+    global REC_OFFSET
+    global REC_OFFSET_TD
+    global REC_DEADBAND
+    global NUM_THREADS
+    global LOGGER
+
+    if new_interval > 0:
+        if new_interval < 1:
+            LOGGER.warning(f'Warning: recognition interval of {new_interval} s will result in no matches')
+        REC_INTERVAL = new_interval
+        REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
+        REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+        return True
+    else:
+        LOGGER.error(f'Error: invalid recognition interval: {new_interval} s; ignoring')
+        return False
 
 # Generic TV
 class TV:
 
-    def __init__(self, tvc = TVControl(), action = 'mute', volume = ''):
+    def __init__(self, tvc = TVControl(), action = 'mute', in_action = False, volume_delta = 0):
         global TV_DEAD_TIME
 
         self.tvc = tvc
-        self.setAction(action)
-        self.volume = volume
+        self.setAction(action, in_action)
+        self.volume_delta = volume_delta
         self.detection_lock = threading.Lock()
         self.action_lock = threading.Lock()
         self.last_detection_time = datetime.now()
@@ -54,19 +76,22 @@ class TV:
     def getAction(self):
         return self.action
 
-    def setAction(self, action):
+    def setAction(self, action, in_action = False):
         self.action = action
-        self.in_action = self.tvc.lowVolume() if self.action == 'lower_volume' else self.tvc.isMuted()
+        if in_action:
+            self.in_action = in_action
+        else:
+            self.in_action = self.tvc.isChangedVolume() if self.action == 'lower_volume' else self.tvc.isMuted()
 
     def isInAction(self):
         return self.in_action
 
     def startAction(self):
         if self.action == 'lower_volume':
-            if self.volume:
-                self.in_action = self.tvc.lowerVolume(self.volume)
+            if self.volume_delta:
+                self.in_action = self.tvc.changeVolume(self.volume_delta)
             else:
-                self.in_action = self.tvc.lowerVolume()    # use device default
+                self.in_action = self.tvc.changeVolume()    # use device default
         else:
             self.in_action = self.tvc.toggleMute()
         return self.in_action
@@ -104,6 +129,114 @@ class TV:
         self.action_lock.release()
         return ok
 
+    # Unconditionally update action time
+    def updateActionTime(self):
+        self.action_lock.acquire()
+        self.last_action_time = datetime.now()
+        self.action_lock.release()
+
+    # Handle keyboard events
+    def handleKeyboard(self, key):
+        global REC_CONFIDENCE
+        global REC_INTERVAL
+        global FORCE_HIT
+
+        if key == 'q':
+            stop_listening()
+            print('')
+            LOGGER.info('User: quit')
+        elif key == 'space':
+            self.updateActionTime()
+            if self.tvc.toggleMute():
+                LOGGER.info(f'\nUser: toggle mute. TV is %s', "muted" if self.tvc.isMuted() else "unmuted")
+            else:
+                LOGGER.info(f'\nUser: toggle mute. TV action failed')
+            self.setAction('mute')
+        elif key == 'm':
+            if self.tvc.isMuted():
+                LOGGER.info(f'\nUser: mute. TV is already muted')
+            else:
+                self.updateActionTime()
+                if self.tvc.toggleMute():
+                    LOGGER.info(f'\nUser: mute. TV is muted')
+                else:
+                    LOGGER.info(f'\nUser: mute. TV action failed')
+                self.setAction('mute')
+        elif key == 'M':
+            if self.tvc.isMuted():
+                self.updateActionTime()
+                if self.tvc.toggleMute():
+                    LOGGER.info(f'\nUser: unmute. TV is unmuted')
+                else:
+                    LOGGER.info(f'\nUser: unmute. TV action failed')
+                self.setAction('mute')
+            else:
+                LOGGER.info(f'\nUser: unmute. TV is already unmuted')
+        elif key == 'v':
+            self.updateActionTime()
+            if not self.tvc.isUnidirectional():
+                vol = self.tvc.getVolume()
+            if self.tvc.changeVolume(-self.tvc.VOLUME_STEP):
+                if self.tvc.isUnidirectional():
+                    LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP}')
+                else:
+                    LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
+            else:
+                LOGGER.info(f'\nUser: lower volume. TV action failed')
+            self.setAction('lower_volume')
+        elif key == 'V':
+            self.updateActionTime()
+            if not self.tvc.isUnidirectional():
+                vol = self.tvc.getVolume()
+            if self.tvc.changeVolume(self.tvc.VOLUME_STEP):
+                if self.tvc.isUnidirectional():
+                    LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP}')
+                else:
+                    LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
+            else:
+                LOGGER.info(f'\nUser: raise volume. TV action failed')
+            self.setAction('lower_volume')
+        elif key == 'c':
+            if REC_CONFIDENCE > 0:
+                REC_CONFIDENCE -= 1
+                LOGGER.info(f'\nUser: decrease confidence. Confidence decreased by 1% ({REC_CONFIDENCE + 1}% --> {REC_CONFIDENCE}%)')
+            else:
+                LOGGER.info(f'\nUser: decrease confidence. Confidence is already at minimum (0%)')
+        elif key == 'C':
+            if REC_CONFIDENCE < 100:
+                REC_CONFIDENCE += 1
+                LOGGER.info(f'\nUser: increase confidence. Confidence increased by 1% ({REC_CONFIDENCE - 1}% --> {REC_CONFIDENCE}%)')
+            else:
+                LOGGER.info(f'\nUser: increase confidence. Confidence is already at maximum (100%)')
+        elif key == 'i':
+            if REC_INTERVAL > 0.5:
+                LOGGER.info(f'\nUser: decrease interval. Interval decreased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL - 0.5} s)')
+            else:
+                LOGGER.info(f'\nUser: decrease interval')
+            updateInterval(REC_INTERVAL - 0.5)
+        elif key == 'I':
+            LOGGER.info(f'\nUser: increase interval. Interval increased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL + 0.5} s)')
+            updateInterval(REC_INTERVAL + 0.5)
+        elif key == 'a':
+            LOGGER.info(f'\nUser: toggle TV in-action status. New status: {"not " if self.in_action else ""}in action')
+            self.in_action = not self.in_action
+            if self.in_action:
+                self.updateActionTime()
+        elif key == 't':
+            LOGGER.info(f'\nUser: emulate a hit')
+            FORCE_HIT = True
+        elif key == 'h':
+            print('')
+            print('h     - help')
+            print('t     - emulate a hit')
+            print('a     - toggle TV \'in action\' status')
+            print('space - toggle mute')
+            print('m / M - mute / unmute')
+            print('v / V - volume lower / raise')
+            #      n / N is reserved for potential change of threads at runtime
+            print('i / I - interval decrease / increase')
+            print('c / C - confidence decrease / increase')
+            print('q     - quit')
 
 # Recognizer
 class RecognizerThread(threading.Thread):
@@ -114,21 +247,38 @@ class RecognizerThread(threading.Thread):
         self.djv = Dejavu(DJV_CONFIG)
 
     def run(self):
+        global FORCE_HIT
+
         while True:
             # Space the threads in time
             if self.tv.OKToDetect():
                 start_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
                 matches = self.djv.recognize(MicrophoneRecognizer, seconds=REC_INTERVAL)[0]
                 end_time = datetime.now().strftime('%H:%M:%S,%f')[:-3]
-                if len(matches):
-                    best_match = matches[0]
-                    LOGGER.debug(f'Recognition start={start_time}, end={end_time}, match {best_match["song_name"].decode("utf-8")}, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
-                    if best_match["fingerprinted_confidence"] >= REC_CONFIDENCE / 100:
+
+                if FORCE_HIT:
+                    FORCE_HIT = False
+                    user_hit = True
+                else:
+                    user_hit = False
+
+                if user_hit or len(matches):
+                    if not user_hit:
+                        best_match = matches[0]
+                        LOGGER.debug(f'Recognition start={start_time}, end={end_time}, match {best_match["song_name"].decode("utf-8")}, {int(best_match["fingerprinted_confidence"] * 100)}% confidence')
+
+                    if user_hit or best_match["fingerprinted_confidence"] >= REC_CONFIDENCE / 100 or FORCE_HIT:
                         print('O', end='', flush=True)     # strong match
+
                         if self.tv.OKToAct():
                             print('')
-                            LOGGER.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
-                            flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
+                            if user_hit:
+                                LOGGER.info('Hit: USER')
+                                flags = 0b0011    # both entry and exit
+                            else:
+                                LOGGER.info(f'Hit: {best_match["song_name"].decode("utf-8")}')
+                                flags = int(best_match["song_name"].decode("utf-8").split('_')[4])
+
                             ad_start = bool(flags & 0b0001)
                             ad_end = bool(flags & 0b0010)
 
@@ -155,13 +305,32 @@ class RecognizerThread(threading.Thread):
             else:
                 time.sleep(0.1)
 
+
+# Action watchdog
+class ActionTimeoutThread(threading.Thread):
+
+    def __init__(self, tv):
+        threading.Thread.__init__(self)
+        self.tv = tv
+
+    def run(self):
+        while True:
+            if self.tv.isInAction() and self.tv.getTimeSinceLastAction() >= MUTE_TIMEOUT_TD and self.tv.OKToAct():
+                print('')
+                if self.tv.stopAction():
+                    LOGGER.info('TV action ended due to timeout')
+                else:
+                    LOGGER.warning('TV action rollback on timeout failed')
+            time.sleep(1)
+
+
+# Main
 def main():
     global DJV_CONFIG
     global NUM_THREADS
     global REC_INTERVAL
     global REC_CONFIDENCE
     global REC_OFFSET
-    global REC_OFFSET_TD
     global MUTE_TIMEOUT
     global MUTE_TIMEOUT_TD
     global TV_CODES
@@ -172,7 +341,8 @@ def main():
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub', 'broadlink'], default='pulseaudio')
     parser.add_argument('-a', '--action', help='action on hit (default: mute)', choices=['mute', 'lower_volume'], default='mute')
-    parser.add_argument('-V', '--volume', help=f'target for volume lowering (defaults: PulseAudio: 50%%, HarmonyHub and BroadLink: -5)', type=str)
+    parser.add_argument('-A', '--in_action', help='start in action', action='store_true')
+    parser.add_argument('-V', '--volume', help=f'delta for volume lowering (defaults: PulseAudio: -50 (%%), HarmonyHub and BroadLink: -5)', type=int)
     parser.add_argument('-d', '--tv_codes', help='path to a folder with TV control codes (used with BroadLink; default: $HOME/tv-codes)', default=TV_CODES)
     parser.add_argument('-m', '--mute_timeout', help=f'undo hit action automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
     parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: {NUM_THREADS})', type=int)
@@ -225,21 +395,16 @@ def main():
             tvc = TVControlBroadLink(TV_CODES)
         else:
             tvc = TVControl()
-        tv = TV(tvc, args.action, args.volume if args.volume != None else '')
+        if not tvc.isUnidirectional():
+            LOGGER.info('TV status: %s, volume: %d', "muted" if tvc.isMuted() else "unmuted", tvc.getVolume())
+        tv = TV(tvc, args.action, args.in_action, args.volume if args.volume != None else 0)
 
         if tv.isInAction():
             LOGGER.warning(f'Warning: TV starts with action in progress: \'{args.action}\'')
 
         # Recognition settings
         if args.rec_interval != None:
-            if args.rec_interval <= 0:
-                LOGGER.error(f'Error: invalid recognition interval: {args.rec_interval}; ignoring')
-            else:
-                if args.rec_interval < 1:
-                    LOGGER.warning(f'Warning: recognition interval of {args.rec_interval} s will result in no matches')
-                REC_INTERVAL = args.rec_interval
-                REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
-                REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+            updateInterval(args.rec_interval)
 
         if args.rec_confidence != None:
             if args.rec_confidence < 0 or args.rec_confidence > 100:
@@ -258,26 +423,25 @@ def main():
                 if args.num_threads > 2 * os.cpu_count():
                     LOGGER.warning(f'Warning: too high number of threads requested: {args.num_threads}; risk of system saturation')
                 NUM_THREADS = args.num_threads
-                REC_OFFSET = (REC_INTERVAL + REC_DEADBAND) / NUM_THREADS
-                REC_OFFSET_TD = timedelta(seconds=REC_OFFSET)
+                updateInterval(REC_INTERVAL)   # Depends on number of threads
 
         # Launch threads
         for n in range(0, NUM_THREADS):
             thread = RecognizerThread(tv)
+            thread.daemon = True
             thread.start()
         LOGGER.info(f'Started {NUM_THREADS} listening thread(s)')
         LOGGER.debug(f'Thread offset is {REC_OFFSET} s')
 
-        # If action timeout is activated, monitor actions
         if MUTE_TIMEOUT != 0:
-            while True:
-                if tv.isInAction() and tv.getTimeSinceLastAction() >= MUTE_TIMEOUT_TD and tv.OKToAct():
-                    print('')
-                    if tv.stopAction():
-                        LOGGER.info('TV action ended due to timeout')
-                    else:
-                        LOGGER.warning('TV action rollback on timeout failed')
-                time.sleep(1)
+            thread = ActionTimeoutThread(tv)
+            thread.name = "Thread-WD"
+            thread.daemon = True
+            thread.start()
+
+        # Monitor user input
+        LOGGER.info("Type 'h' for help")
+        listen_keyboard(on_press = tv.handleKeyboard, lower = False)
 
         return 0
 

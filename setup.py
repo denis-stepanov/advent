@@ -21,6 +21,7 @@ setup(
         'PyDejavu',
         'psycopg2',
         'alive-progress',
+        'sshkeyboard',
         'requests',
         'broadlink',
     ],
