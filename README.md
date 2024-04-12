@@ -267,7 +267,7 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 `-V VOLUME` option allows specifying a target value for volume lowering when this action is selected via `-a`. The meaning of the volume specifier `VOLUME` is TV control-specific and is passed directly to a TV controller. In the case of PulseAudio or Nil controls the parameter is interpreted as percentage of volume, and the default is `-50%`. Note that with PulseAudio one could go above 100%, in principle. In the case of HarmonyHub or BroadLink, one has to specify a relative change, like `-2`, where the number corresponds to a number of key presses of the `Volume Down` button on a TV remote. The default for HarmonyHub and BroadLink is `-5`. If you are a fan of commercials, you can specify a positive value ;-).
 
-`-d TV_CODES` option allows specifying a path to a folder holding TV control codes. These codes are needed for BroadLink controller only; see the BroadLink section below for details. The default is `$HOME/tv-codes`. See more details on TV codes in [BroadLink section](#linux-setup-1).
+`-d TV_CODES` option allows specifying a path to a folder holding TV control codes. The default is `$HOME/tv-codes`. These codes are needed for BroadLink controller only; see more details on TV codes in [BroadLink section](#linux-setup-1).
 
 `-m MUTE_TIMEOUT` option allows adjusting auto-unmute (or any other action selected) timeout, in seconds. Auto-unmute is active by default, and the default is 10 minutes (600 seconds). The timeout cannot be less than TV actuation dead time, currently set to 30 seconds. The interest of this feature is when AdVent for some reason does not detect an exit jingle and does not unmute on time, to be able to resume automatically normal TV watching at least few minutes later. It could also be of use when a microphone input is used, which by design can never unmute. If you want to disable auto-unmute altogether, pass `0` timeout.
 
@@ -363,9 +363,9 @@ q     - quit
 
 `t` just emulates a hit. This action could be useful when AdVent for some reason would not react where it should, so you could give it a hand.
 
-`a` toggles the internal TV "in action" status, without making any specific action on TV. This action could be useful when AdVent for some reason comes out of sync with TV status (e.g., when AdVent is started with a uni-directional TV control and TV being muted).
+`a` toggles the TV internal "in action" status, without making any specific action on a TV. This action could be useful when AdVent for some reason comes out of sync with TV status (e.g., when AdVent is started with a uni-directional TV control and TV being muted).
 
-`space`, `m / M` and `v / V` act as TV control buttons, i.e., send the corresponding commands directly to TV. AdVent will nevertheless keep track of these events in order to avoid conflict between user actions and its own actions. Also, activating these controls will change the TV action mode to the last one requested by user (i.e., if `space` is pressed, AdVent would change is action type to `mute`).
+`space`, `m / M` and `v / V` act as TV control buttons, i.e., send the corresponding commands directly to a TV. AdVent will nevertheless keep track of these events in order to avoid conflict between user actions and its own actions. Also, activating these controls will change the TV action mode to the last one requested by user (i.e., if `space` is pressed, AdVent would change is action type to `mute`).
 
 `i / I` and `c / C` allow tuning the corresponding [AdVent parameters](#recognition-tuning-options) at run-time. Changing number of threads `n` on the fly is currently not possible (see issue [#68](https://github.com/denis-stepanov/advent/issues/68)).
 
@@ -379,11 +379,11 @@ Run AdVent with `-l debug` option and inspect the log. If the matching confidenc
 
 If the log manifests jingle confidence between 5 and 10% (10% being a default fire-up threshold), it means that AdVent knows the jingle, but is not confident enough recognizing it. You can undertake the following steps.
 
-#### 2. Decrease confidence threshold
+#### 2. Decrease the confidence threshold
 
 Use the `-c` parameter to AdVent (or the key `c` in interactive mode) to decrease matching confidence from the default 10% to the confidence you actually observe (e.g., `-c 6`).
 
-If this would result in false positives firing up (e.g., jingles from another TV channel start showing up), look at the number of threads.
+If this would result in false positives firing up (e.g., jingles from another TV channel starting showing up), look at the number of threads.
 
 #### 3. Increase the number of recognition threads
 
@@ -395,7 +395,7 @@ This would increase the matching confidence, but in a moderate way. As explained
 
 #### 4. Increase the recognition interval
 
-Fix the `-n` threads parameter to the number of CPU cores you have and increase the recognition interval from the default of 2 s using the `-i` parameter (e.g., `-i 3`) (or the key `I` == `shift+i` in interactive mode). Use increments of 0.5 s. You can go as high as the durations of jingle of interest (e.g, generally up to 4-6 s).
+Fix the `-n` threads parameter to the number of CPU cores you have got and increase the recognition interval from the default of 2 s using the `-i` parameter (e.g., `-i 3`) (or the key `I` == `Shift + i` in interactive mode). Use increments of 0.5 s. You can go as high as the duration of jingles of interest (e.g, generally up to 4-6 s).
 
 This would considerably increase recognition confidence, at the expense that AdVent would kick in quite late (i.e., letting in few seconds of ads before muting).
 
@@ -946,7 +946,7 @@ AdVent does just that. Another advantage with PulseAudio is that the application
 
 (selected with `-t harmonyhub` option to AdVent)
 
-I have been using this device for TV control from a smartphone since long time. Unfortunately, it is no longer sold nor supported by Logitech, and I no longer have the device in my possession, so it might be phased out with the next major version of AdVent.
+I have been using this device for TV control from a smartphone since long time. Unfortunately, it is no longer sold nor supported by Logitech, and I no longer have the device in my possession, so it might be phased out with the next major version of AdVent. The code for it is still maintained, but the last version of AdVent tested with real hardware was 1.5.0. If you happen to test a later version, please signal, or submit fixes if you encounter a problem.
 
 Apart from the default cloud interface, Harmony Hub it can also provide a local API, which is convenient for AdVent needs.
 
@@ -1039,7 +1039,7 @@ It is assumed that you have already connected the Remote to your network using B
 
 Note 1: it is possible to use the Remote in locked mode, but one would need to specify an IP-address of the device. Currently it is not supported by AdVent; raise a request if you need it.
 
-Note 2: it is assumed that there is only one Remote present in the network. If there are multiple devices present, AdVent will select the first one returned from discovery process. Raise a request if you need finer control over this.
+Note 2: it is assumed that there is only one Remote present in the network. If there are multiple devices present, AdVent will select the first one returned from the discovery process. Raise a request if you need finer control over this.
 
 #### Linux Setup
 
@@ -1051,7 +1051,7 @@ Similarly to HarmonyHub, the firewall on Fedora would block attempts to discover
 
 No action needed on Raspbian.
 
-A typical Remote setup from the BroadLink app would require teaching the Remote to recognize your TV-set using a remote supplied with the TV. Unfortunately, there is no way to reuse that information outside of BroadLink app, so you'd need to repeat the learning process specifically for the commands of interest for AdVent - that is, `mute`, `volume down` and `volume up`. The easiest way to do that is to use command-line tools from Python `broadlink` package. Again unfortunately, for some reason these tools are not included in the Python module, so you have to grab them from GitHub:
+A typical Remote setup from the BroadLink app would require teaching the Remote to recognize your TV-set using a remote supplied with the TV. Unfortunately, there is no way to reuse that information outside of BroadLink app (this is why I call it "less intelligent" than HarmonyHub), so you'd need to repeat the learning process specifically for the commands of interest for AdVent - that is, `mute`, `volume down` and `volume up`. The easiest way to do that is to use command-line tools from Python `broadlink` package. Again unfortunately, for some reason these tools are not included in the Python module, so you have to grab them from GitHub:
 
 ```
 $ git clone https://github.com/mjg59/python-broadlink.git
