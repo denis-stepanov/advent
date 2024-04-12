@@ -253,7 +253,7 @@ AdVent prints every second a character reflecting recognition progress. Meaning 
 * `o` - weak match
 * `O` - strong match, also called a "hit". When a hit happens, AdVent prints hit details and may take some action on a TV
 
-There is no standard way of exiting the application, as it is designed to run forever (this should be somewhat alleviated with issue [#8](https://github.com/denis-stepanov/advent/issues/8)). If you need to exit, press `Ctrl-C` twice; if that does not work, try harder with `Ctrl-\`.
+To exit, press `q`. Exiting via `Ctrl-C` might not always work; you might want to try harder with `Ctrl-\`.
 
 There is no option to select an audio source; AdVent takes a system default. See more details on audio inputs in a [dedicated section](#audio-inputs).
 
@@ -267,7 +267,7 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 `-V VOLUME` option allows specifying a target value for volume lowering when this action is selected via `-a`. The meaning of the volume specifier `VOLUME` is TV control-specific and is passed directly to a TV controller. In the case of PulseAudio or Nil controls the parameter is interpreted as percentage of volume, and the default is `-50%`. Note that with PulseAudio one could go above 100%, in principle. In the case of HarmonyHub or BroadLink, one has to specify a relative change, like `-2`, where the number corresponds to a number of key presses of the `Volume Down` button on a TV remote. The default for HarmonyHub and BroadLink is `-5`. If you are a fan of commercials, you can specify a positive value ;-).
 
-`-d TV_CODES` option allows specifying a path to a folder holding TV control codes. These codes are needed for BroadLink controller only; see the BroadLink section below for details. The default is `$HOME/tv-codes`.
+`-d TV_CODES` option allows specifying a path to a folder holding TV control codes. These codes are needed for BroadLink controller only; see the BroadLink section below for details. The default is `$HOME/tv-codes`. See more details on TV codes in [BroadLink section](#linux-setup-1).
 
 `-m MUTE_TIMEOUT` option allows adjusting auto-unmute (or any other action selected) timeout, in seconds. Auto-unmute is active by default, and the default is 10 minutes (600 seconds). The timeout cannot be less than TV actuation dead time, currently set to 30 seconds. The interest of this feature is when AdVent for some reason does not detect an exit jingle and does not unmute on time, to be able to resume automatically normal TV watching at least few minutes later. It could also be of use when a microphone input is used, which by design can never unmute. If you want to disable auto-unmute altogether, pass `0` timeout.
 
@@ -395,7 +395,7 @@ This would increase the matching confidence, but in a moderate way. As explained
 
 #### 4. Increase the recognition interval
 
-Fix the `-n` threads parameter to the number of CPU cores you have and increase the recognition interval from the default of 2 s using the `-i` parameter (e.g., `-i 3`) (or the key `I` == `shift+i` in ineractive mode). Use increments of 0.5 s. You can go as high as the durations of jingle of interest (e.g, generally up to 4-6 s).
+Fix the `-n` threads parameter to the number of CPU cores you have and increase the recognition interval from the default of 2 s using the `-i` parameter (e.g., `-i 3`) (or the key `I` == `shift+i` in interactive mode). Use increments of 0.5 s. You can go as high as the durations of jingle of interest (e.g, generally up to 4-6 s).
 
 This would considerably increase recognition confidence, at the expense that AdVent would kick in quite late (i.e., letting in few seconds of ads before muting).
 
@@ -899,7 +899,7 @@ Consider also tuning the hardware:
 
 ## TV Controls
 
-TV controls could be uni- or bi-directional. A typical example of a uni-directional control is an infra-read remote. Bi-directional controls allow AdVent fetching the current TV status, so it could start in sync. Below is a summary of supported controls:
+TV controls could be uni- or bi-directional. A typical example of a uni-directional control is an infra-read remote. Bi-directional controls allow AdVent fetching the current TV status, so it could start in sync. With uni-directional controls AdVent has to make assumptions about status of TV, which would be reasonable most of the time, but not always. Below is a summary of supported controls:
 
 <table>
 <tr>
