@@ -141,48 +141,48 @@ class TV:
         global REC_INTERVAL
         global FORCE_HIT
 
+        print('')
         if key == 'q':
             stop_listening()
-            print('')
             LOGGER.info('User: quit')
         elif key == 'space':
             self.updateActionTime()
             if self.tvc.toggleMute():
-                LOGGER.info(f'\nUser: toggle mute. TV is %s', "muted" if self.tvc.isMuted() else "unmuted")
+                LOGGER.info(f'User: toggle mute. TV is %s', "muted" if self.tvc.isMuted() else "unmuted")
             else:
-                LOGGER.info(f'\nUser: toggle mute. TV action failed')
+                LOGGER.info('User: toggle mute. TV action failed')
             self.setAction('mute')
         elif key == 'm':
             if self.tvc.isMuted():
-                LOGGER.info(f'\nUser: mute. TV is already muted')
+                LOGGER.info('User: mute. TV is already muted')
             else:
                 self.updateActionTime()
                 if self.tvc.toggleMute():
-                    LOGGER.info(f'\nUser: mute. TV is muted')
+                    LOGGER.info('User: mute. TV is muted')
                 else:
-                    LOGGER.info(f'\nUser: mute. TV action failed')
+                    LOGGER.info('User: mute. TV action failed')
                 self.setAction('mute')
         elif key == 'M':
             if self.tvc.isMuted():
                 self.updateActionTime()
                 if self.tvc.toggleMute():
-                    LOGGER.info(f'\nUser: unmute. TV is unmuted')
+                    LOGGER.info('User: unmute. TV is unmuted')
                 else:
-                    LOGGER.info(f'\nUser: unmute. TV action failed')
+                    LOGGER.info('User: unmute. TV action failed')
                 self.setAction('mute')
             else:
-                LOGGER.info(f'\nUser: unmute. TV is already unmuted')
+                LOGGER.info('User: unmute. TV is already unmuted')
         elif key == 'v':
             self.updateActionTime()
             if not self.tvc.isUnidirectional():
                 vol = self.tvc.getVolume()
             if self.tvc.changeVolume(-self.tvc.VOLUME_STEP):
                 if self.tvc.isUnidirectional():
-                    LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP}')
+                    LOGGER.info(f'User: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP}')
                 else:
-                    LOGGER.info(f'\nUser: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
+                    LOGGER.info(f'User: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
             else:
-                LOGGER.info(f'\nUser: lower volume. TV action failed')
+                LOGGER.info('User: lower volume. TV action failed')
             self.setAction('lower_volume')
         elif key == 'V':
             self.updateActionTime()
@@ -190,43 +190,42 @@ class TV:
                 vol = self.tvc.getVolume()
             if self.tvc.changeVolume(self.tvc.VOLUME_STEP):
                 if self.tvc.isUnidirectional():
-                    LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP}')
+                    LOGGER.info(f'User: raise volume. TV volume raised by {self.tvc.VOLUME_STEP}')
                 else:
-                    LOGGER.info(f'\nUser: raise volume. TV volume raised by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
+                    LOGGER.info(f'User: raise volume. TV volume raised by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
             else:
-                LOGGER.info(f'\nUser: raise volume. TV action failed')
+                LOGGER.info('User: raise volume. TV action failed')
             self.setAction('lower_volume')
         elif key == 'c':
             if REC_CONFIDENCE > 0:
                 REC_CONFIDENCE -= 1
-                LOGGER.info(f'\nUser: decrease confidence. Confidence decreased by 1% ({REC_CONFIDENCE + 1}% --> {REC_CONFIDENCE}%)')
+                LOGGER.info(f'User: decrease confidence. Confidence decreased by 1% ({REC_CONFIDENCE + 1}% --> {REC_CONFIDENCE}%)')
             else:
-                LOGGER.info(f'\nUser: decrease confidence. Confidence is already at minimum (0%)')
+                LOGGER.info('User: decrease confidence. Confidence is already at minimum (0%)')
         elif key == 'C':
             if REC_CONFIDENCE < 100:
                 REC_CONFIDENCE += 1
-                LOGGER.info(f'\nUser: increase confidence. Confidence increased by 1% ({REC_CONFIDENCE - 1}% --> {REC_CONFIDENCE}%)')
+                LOGGER.info(f'User: increase confidence. Confidence increased by 1% ({REC_CONFIDENCE - 1}% --> {REC_CONFIDENCE}%)')
             else:
-                LOGGER.info(f'\nUser: increase confidence. Confidence is already at maximum (100%)')
+                LOGGER.info('User: increase confidence. Confidence is already at maximum (100%)')
         elif key == 'i':
             if REC_INTERVAL > 0.5:
-                LOGGER.info(f'\nUser: decrease interval. Interval decreased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL - 0.5} s)')
+                LOGGER.info(f'User: decrease interval. Interval decreased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL - 0.5} s)')
             else:
-                LOGGER.info(f'\nUser: decrease interval')
+                LOGGER.info('User: decrease interval')
             updateInterval(REC_INTERVAL - 0.5)
         elif key == 'I':
-            LOGGER.info(f'\nUser: increase interval. Interval increased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL + 0.5} s)')
+            LOGGER.info(f'User: increase interval. Interval increased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL + 0.5} s)')
             updateInterval(REC_INTERVAL + 0.5)
         elif key == 'a':
-            LOGGER.info(f'\nUser: toggle TV in-action status. New status: {"not " if self.in_action else ""}in action')
+            LOGGER.info(f'User: toggle TV in-action status. New status: {"not " if self.in_action else ""}in action')
             self.in_action = not self.in_action
             if self.in_action:
                 self.updateActionTime()
         elif key == 't':
-            LOGGER.info(f'\nUser: emulate a hit')
+            LOGGER.info('User: emulate a hit')
             FORCE_HIT = True
         elif key == 'h':
-            print('')
             print('h     - help')
             print('t     - emulate a hit')
             print('a     - toggle TV \'in action\' status')
