@@ -141,6 +141,7 @@ class TV:
         global REC_INTERVAL
         global FORCE_HIT
 
+        threading.current_thread().name = "Thread-KB"
         print('')
         if key == 'q':
             stop_listening()
