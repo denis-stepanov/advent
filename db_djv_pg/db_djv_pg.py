@@ -77,14 +77,17 @@ def main():
     overwrite_group.add_argument('-o', '--overwrite', action='store_true', help='overwrite existing tracks if checksums differ');
     overwrite_group.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
 
+    parser_git = argparse.ArgumentParser(add_help=False)
+    parser_git.add_argument('-G', '--no-git', action='store_true', help='do not stage changes when working inside a git repo');
+
     parser = argparse.ArgumentParser(description='Process Dejavu tracks in PGSQL database',
         epilog='Use "COMMAND -h" to get command-specific help')
     subparsers = parser.add_subparsers(dest='cmd', required=True, metavar='COMMAND')
     parser_list   = subparsers.add_parser('list', help='list tracks')
-    parser_export = subparsers.add_parser('export', parents=[parser_overwrite], help='export tracks')
+    parser_export = subparsers.add_parser('export', parents=[parser_overwrite, parser_git], help='export tracks')
     parser_import = subparsers.add_parser('import', parents=[parser_overwrite], help='import tracks')
-    parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite], help='rename a track', epilog=f'Names ending with .{FORMAT} will result in file operation, otherwise rename will be done in the database')
-    parser_delete = subparsers.add_parser('delete', help='delete tracks')
+    parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite, parser_git], help='rename a track', epilog=f'Names ending with .{FORMAT} will result in file operation, otherwise rename will be done in the database')
+    parser_delete = subparsers.add_parser('delete', parents=[parser_git], help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
     parser_vacuum = subparsers.add_parser('vacuum', help='vacuum the database (improves performance)')
 
