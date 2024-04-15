@@ -239,7 +239,7 @@ def main():
 
                             conn.commit()
 
-                        print(song_name)
+                        print(f"{song_name} {total_hashes}")
                     else:
                         print(f"{f} (file not found)")
                     bar()
