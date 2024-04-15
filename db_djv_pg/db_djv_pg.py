@@ -164,7 +164,7 @@ def main():
                                 for fingerprint in cur2:
                                     djv_writer.writerow([fingerprint['offset'], bytes(fingerprint['hash']).hex()])
                                 cur2.close()
-                            print(f"{song['song_name']}: {fname}")
+                            print(f"{song['song_name']}: {fname} {song['total_hashes']}")
                             bar()
 
                 if args.cmd == 'export' and args.sync:
@@ -239,7 +239,7 @@ def main():
 
                             conn.commit()
 
-                        print(song_name)
+                        print(f"{song_name} {total_hashes}")
                     else:
                         print(f"{f} (file not found)")
                     bar()
