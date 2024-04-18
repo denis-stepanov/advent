@@ -2,6 +2,7 @@
 
 import os
 import sys
+import subprocess
 import argparse
 import psycopg2
 import psycopg2.extras
@@ -109,6 +110,14 @@ def main():
 
     with conn:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        if (args.cmd == 'export' or args.cmd == 'rename' or args.cmd == 'delete') and not(args.no_git):
+
+            # Check if we are in a repo
+            try:
+                subprocess.run(["git", "-C", ".", "rev-parse"], check=True)
+            except (FileNotFoundError, CalledProcessError):
+                args.no_git = True
 
         if args.cmd == 'export' or args.cmd == 'list':
 
