@@ -3,6 +3,7 @@
 import os
 import sys
 import subprocess
+import shutil
 import argparse
 import psycopg2
 import psycopg2.extras
@@ -79,16 +80,16 @@ def main():
     overwrite_group.add_argument('-O', '--overwrite-always', action='store_true', help='overwrite existing tracks unconditionally');
 
     parser_git = argparse.ArgumentParser(add_help=False)
-    parser_git.add_argument('-G', '--no-git', action='store_true', help='do not stage changes when working inside a git repo');
+    parser_git.add_argument('-G', '--no-git', action='store_true', help='do not inform git on (re)moving files inside a git repo');
 
     parser = argparse.ArgumentParser(description='Process Dejavu tracks in PGSQL database',
         epilog='Use "COMMAND -h" to get command-specific help')
     subparsers = parser.add_subparsers(dest='cmd', required=True, metavar='COMMAND')
     parser_list   = subparsers.add_parser('list', help='list tracks')
-    parser_export = subparsers.add_parser('export', parents=[parser_overwrite, parser_git], help='export tracks')
+    parser_export = subparsers.add_parser('export', parents=[parser_overwrite], help='export tracks')
     parser_import = subparsers.add_parser('import', parents=[parser_overwrite], help='import tracks')
     parser_rename = subparsers.add_parser('rename', parents=[parser_overwrite, parser_git], help='rename a track', epilog=f'Names ending with .{FORMAT} will result in file operation, otherwise rename will be done in the database')
-    parser_delete = subparsers.add_parser('delete', parents=[parser_git], help='delete tracks')
+    parser_delete = subparsers.add_parser('delete', help='delete tracks')
     parser_dbinfo = subparsers.add_parser('dbinfo', help='show database info')
     parser_vacuum = subparsers.add_parser('vacuum', help='vacuum the database (improves performance)')
 
@@ -111,7 +112,7 @@ def main():
     with conn:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-        if (args.cmd == 'export' or args.cmd == 'rename' or args.cmd == 'delete') and not(args.no_git):
+        if args.cmd == 'rename' and not(args.no_git):
 
             # Check if we are in a repo
             try:
@@ -309,9 +310,17 @@ def main():
                                 do_rename = False
 
                         if do_rename:
-                            with open(args.name1, newline='') as djv_file1:
+                            if args.no_git:
+                                file_src = args.name1
+                            else:
+                                file_src = args.name1 + ".tmp"
+                                shutil.copyfile(args.name1, file_src)
+
+                            with open(file_src, newline='') as djv_file1:
                                 djv_reader = csv.reader(djv_file1)
-                                if file_check(args.name1, djv_reader):
+                                if file_check(file_src, djv_reader):
+                                    if not(args.no_git):
+                                        subprocess.run(["git", "rename", args.name1, args.name2])
                                     with open(args.name2, mode='w') as djv_file2:
                                         djv_writer = csv.writer(djv_file2)
                                         djv_writer.writerow([FORMAT, FORMAT_VERSION])
@@ -322,11 +331,15 @@ def main():
                                         for row in djv_reader:
                                             djv_writer.writerow(row)
                                         print(f": {args.name2}")
+                                        if not(args.no_git):
+                                            subprocess.run(["git", "add", args.name2])
                                 else:
                                     do_rename = False
+                                    if not(args.no_git):
+                                        os.remove(file_src)
 
                             if do_rename:
-                                os.remove(args.name1)
+                                os.remove(file_src)
                     else:
                         print(" (file not found)")
                         do_rename = False
