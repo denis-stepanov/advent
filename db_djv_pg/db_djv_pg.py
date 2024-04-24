@@ -117,7 +117,7 @@ def main():
             # Check if we are in a repo
             try:
                 subprocess.run(["git", "-C", ".", "rev-parse"], check=True)
-            except (FileNotFoundError, CalledProcessError):
+            except (FileNotFoundError, subprocess.CalledProcessError):
                 args.no_git = True
 
         if args.cmd == 'export' or args.cmd == 'list':
