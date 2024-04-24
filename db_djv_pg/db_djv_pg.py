@@ -116,7 +116,7 @@ def main():
 
             # Check if we are in a repo
             try:
-                subprocess.run(["git", "-C", ".", "rev-parse"], check=True)
+                subprocess.run(["git", "-C", ".", "rev-parse"], check=True, stderr=subprocess.DEVNULL)
             except (FileNotFoundError, subprocess.CalledProcessError):
                 args.no_git = True
 
