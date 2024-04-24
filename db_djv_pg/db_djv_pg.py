@@ -321,6 +321,7 @@ def main():
                                 if file_check(file_src, djv_reader):
                                     if not(args.no_git):
                                         subprocess.run(["git", "mv", args.name1, args.name2])
+
                                     with open(args.name2, mode='w') as djv_file2:
                                         djv_writer = csv.writer(djv_file2)
                                         djv_writer.writerow([FORMAT, FORMAT_VERSION])
@@ -331,8 +332,9 @@ def main():
                                         for row in djv_reader:
                                             djv_writer.writerow(row)
                                         print(f": {args.name2}")
-                                        if not(args.no_git):
-                                            subprocess.run(["git", "add", args.name2])
+
+                                    if not(args.no_git):
+                                        subprocess.run(["git", "add", args.name2])
                                 else:
                                     do_rename = False
                                     if not(args.no_git):
