@@ -420,6 +420,8 @@ The tool by default does not overwrite existing tracks in any direction; if this
 
 To make sure the database is perfectly in sync with the snapshot on the file system, pass `-s` parameter during import. This will overwrite all tracks that appear different and delete all those not having a matching file. Similarly in opposite direction: if you specify `-s` during export, the file system snapshot will be aligned to the database content.
 
+It is not uncommon to store the database of fingerprints under version control. The tool will auto-detect if it operates in a git repository and inform git about changes it does on the disk. Currently only `rename` operation is concerned: the renaming change will be staged and the `STAGED` marker printed. On `export` the new files will remain unstaged. If git operations are undesired, an option `-G` could be used to suppress them.
+
 Long operations (such as mass import or export) are signalled with a progress bar.
 
 Examples of use:
