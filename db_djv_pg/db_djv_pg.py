@@ -331,7 +331,7 @@ def main():
 
                                         for row in djv_reader:
                                             djv_writer.writerow(row)
-                                        print(f": {args.name2}")
+                                        print(f": {args.name2}{'' if args.no_git else ' STAGED'}")
 
                                     if not(args.no_git):
                                         subprocess.run(["git", "add", args.name2])
