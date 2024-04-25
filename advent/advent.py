@@ -38,6 +38,7 @@ TV_DEAD_TIME_TD = timedelta(seconds=TV_DEAD_TIME)
 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 LOGGER = logging.getLogger('advent')
 FORCE_HIT = False
+FORCE_HIT_OVERRIDE = False
 
 # Update interval helper
 def updateInterval(new_interval):
@@ -117,13 +118,13 @@ class TV:
         return ok
 
     # Disable TV actions for TV_DEAD_TIME seconds
-    def OKToAct(self):
+    def OKToAct(self, override = False):
         global TV_DEAD_TIME_TD
 
         curr_time = datetime.now()
         ok = False
         self.action_lock.acquire()
-        if curr_time - self.last_action_time >= TV_DEAD_TIME_TD:
+        if curr_time - self.last_action_time >= TV_DEAD_TIME_TD or override:
             self.last_action_time = curr_time
             ok = True
         self.action_lock.release()
@@ -140,6 +141,7 @@ class TV:
         global REC_CONFIDENCE
         global REC_INTERVAL
         global FORCE_HIT
+        global FORCE_HIT_OVERRIDE
 
         threading.current_thread().name = "Thread-KB"
         print('')
@@ -226,9 +228,13 @@ class TV:
         elif key == 't':
             LOGGER.info('User: emulate a hit')
             FORCE_HIT = True
+        elif key == 'T':
+            LOGGER.info('User: emulate a hit without TV dead time')
+            FORCE_HIT_OVERRIDE = True
+            FORCE_HIT = True
         elif key == 'h':
             print('h     - help')
-            print('t     - emulate a hit')
+            print('t / T - emulate a hit / unconditionally')
             print('a     - toggle TV \'in action\' status')
             print('space - toggle mute')
             print('m / M - mute / unmute')
@@ -248,6 +254,7 @@ class RecognizerThread(threading.Thread):
 
     def run(self):
         global FORCE_HIT
+        global FORCE_HIT_OVERRIDE
 
         while True:
             # Space the threads in time
@@ -270,7 +277,7 @@ class RecognizerThread(threading.Thread):
                     if user_hit or best_match["fingerprinted_confidence"] >= REC_CONFIDENCE / 100 or FORCE_HIT:
                         print('O', end='', flush=True)     # strong match
 
-                        if self.tv.OKToAct():
+                        if self.tv.OKToAct(FORCE_HIT_OVERRIDE):
                             print('')
                             if user_hit:
                                 LOGGER.info('Hit: USER')
@@ -294,6 +301,7 @@ class RecognizerThread(threading.Thread):
                                         LOGGER.info('TV volume lowered' if self.tv.getAction() == 'lower_volume' else 'TV muted')
                                     else:
                                         LOGGER.warning('Warning: TV action failed')
+                            FORCE_HIT_OVERRIDE = False
                     else:
                       if best_match["fingerprinted_confidence"] > 0:
                           print('o', end='', flush=True) # weak match
