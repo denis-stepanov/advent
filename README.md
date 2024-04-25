@@ -351,7 +351,7 @@ AdVent allows dynamically adjusting some parameters at run-time by hitting keys 
 
 ```
 h     - help
-t     - emulate a hit
+t / T - emulate a hit / unconditionally
 a     - toggle TV 'in action' status
 space - toggle mute
 m / M - mute / unmute
@@ -361,9 +361,9 @@ c / C - confidence decrease / increase
 q     - quit
 ```
 
-`t` just emulates a hit. This action could be useful when AdVent for some reason would not react where it should, so you could give it a hand.
+`t` just emulates a hit. This action could be useful when AdVent for some reason would not react where it should, so you could give it a hand. Like any other hit, it would respect the TV dead time, i.e. will not act on TV if there has been another action recently. If you want to override this - e.g., to "undo" an erroneous AdVent hit - use `T`.
 
-`a` toggles the TV internal "in action" status, without making any specific action on a TV. This action could be useful when AdVent for some reason comes out of sync with TV status (e.g., when AdVent is started with a uni-directional TV control and TV being muted).
+`a` toggles the TV internal "in action" status, without making any specific action on a TV. This action could be useful when AdVent for some reason comes out of sync with TV status (e.g., when TV has been manually muted using its own remote).
 
 `space`, `m / M` and `v / V` act as TV control buttons, i.e., send the corresponding commands directly to a TV. AdVent will nevertheless keep track of these events in order to avoid conflict between user actions and its own actions. Also, activating these controls will change the TV action mode to the last one requested by user (i.e., if `space` is pressed, AdVent would change is action type to `mute`).
 
