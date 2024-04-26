@@ -335,7 +335,7 @@ def main():
     global TV_CODES
 
     ## Command-line parser
-    parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
+    parser = argparse.ArgumentParser(description='Combat TV commercials by detecting ad jingles in the input audio stream',
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub', 'broadlink'], default='pulseaudio')
@@ -344,6 +344,7 @@ def main():
     parser.add_argument('-V', '--volume', help=f'delta for volume lowering (defaults: PulseAudio: -50 (%%), HarmonyHub and BroadLink: -5)', type=int)
     parser.add_argument('-d', '--tv_codes', help='path to a folder with TV control codes (used with BroadLink; default: $HOME/tv-codes)', default=TV_CODES)
     parser.add_argument('-m', '--mute_timeout', help=f'undo hit action automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
+    parser.add_argument('-j', '--exit_jingle', help='exit hit action after N exit jingles (default: 1)', type=int)
     parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: {NUM_THREADS})', type=int)
     parser.add_argument('-i', '--rec_interval', help=f'audio recognition interval (s) (default: {REC_INTERVAL})', type=float)
     parser.add_argument('-c', '--rec_confidence', help=f'audio recognition confidence (%%) (default: {REC_CONFIDENCE})', type=int)
