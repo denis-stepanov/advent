@@ -149,34 +149,28 @@ class TV:
             stop_listening()
             LOGGER.info('User: quit')
         elif key == 'space':
-            self.updateActionTime()
+            # NB: direct TV actions could potentially race condition with recognition threads, but the probability of this is rather low
             if self.tvc.toggleMute():
                 LOGGER.info(f'User: toggle mute. TV is %s', "muted" if self.tvc.isMuted() else "unmuted")
             else:
                 LOGGER.info('User: toggle mute. TV action failed')
-            self.setAction('mute')
         elif key == 'm':
             if self.tvc.isMuted():
                 LOGGER.info('User: mute. TV is already muted')
             else:
-                self.updateActionTime()
                 if self.tvc.toggleMute():
                     LOGGER.info('User: mute. TV is muted')
                 else:
                     LOGGER.info('User: mute. TV action failed')
-                self.setAction('mute')
         elif key == 'M':
             if self.tvc.isMuted():
-                self.updateActionTime()
                 if self.tvc.toggleMute():
                     LOGGER.info('User: unmute. TV is unmuted')
                 else:
                     LOGGER.info('User: unmute. TV action failed')
-                self.setAction('mute')
             else:
                 LOGGER.info('User: unmute. TV is already unmuted')
         elif key == 'v':
-            self.updateActionTime()
             if not self.tvc.isUnidirectional():
                 vol = self.tvc.getVolume()
             if self.tvc.changeVolume(-self.tvc.VOLUME_STEP):
@@ -186,9 +180,7 @@ class TV:
                     LOGGER.info(f'User: lower volume. TV volume lowered by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
             else:
                 LOGGER.info('User: lower volume. TV action failed')
-            self.setAction('lower_volume')
         elif key == 'V':
-            self.updateActionTime()
             if not self.tvc.isUnidirectional():
                 vol = self.tvc.getVolume()
             if self.tvc.changeVolume(self.tvc.VOLUME_STEP):
@@ -198,7 +190,6 @@ class TV:
                     LOGGER.info(f'User: raise volume. TV volume raised by {self.tvc.VOLUME_STEP} (%d --> %d)', vol, self.tvc.getVolume())
             else:
                 LOGGER.info('User: raise volume. TV action failed')
-            self.setAction('lower_volume')
         elif key == 'c':
             if REC_CONFIDENCE > 0:
                 REC_CONFIDENCE -= 1
@@ -235,13 +226,13 @@ class TV:
         elif key == 'h':
             print('h     - help')
             print('t / T - emulate a hit / unconditionally')
-            print('a     - toggle TV \'in action\' status')
-            print('space - toggle mute')
-            print('m / M - mute / unmute')
-            print('v / V - volume lower / raise')
+            print('a     - toggle \'in action\' status')
             #      n / N is reserved for potential change of threads at runtime
             print('i / I - interval decrease / increase')
             print('c / C - confidence decrease / increase')
+            print('space - TV toggle mute')
+            print('m / M - TV mute / unmute')
+            print('v / V - TV volume lower / raise')
             print('q     - quit')
 
 # Recognizer
