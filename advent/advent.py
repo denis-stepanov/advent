@@ -226,13 +226,13 @@ class TV:
         elif key == 'h':
             print('h     - help')
             print('t / T - emulate a hit / unconditionally')
-            print('a     - toggle TV \'in action\' status')
-            print('space - toggle mute')
-            print('m / M - mute / unmute')
-            print('v / V - volume lower / raise')
+            print('a     - toggle \'in action\' status')
             #      n / N is reserved for potential change of threads at runtime
             print('i / I - interval decrease / increase')
             print('c / C - confidence decrease / increase')
+            print('space - TV toggle mute')
+            print('m / M - TV mute / unmute')
+            print('v / V - TV volume lower / raise')
             print('q     - quit')
 
 # Recognizer
