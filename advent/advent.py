@@ -27,6 +27,7 @@ REC_DEADBAND = 0.25       # (s) - Dejavu processing time for an interval of 2 s 
 REC_CONFIDENCE = 10       # (%) - lowest still OK without false positives
 TV_DEAD_TIME = 30         # (s) - action dead time after previous action taken on TV
 MUTE_TIMEOUT = 600        # (s) - if TV is muted, unmute automatically after this time. Must be >= TV_DEAD_TIME
+NUM_EXIT_JINGLES = 1      #     - number of exit jingles to consider in order to exit action
 LOG_FILE = 'advent.log'
 
 # Globals
@@ -73,6 +74,7 @@ class TV:
         self.action_lock = threading.Lock()
         self.last_detection_time = datetime.now()
         self.last_action_time = datetime.now() - timedelta(seconds=TV_DEAD_TIME)
+        self.exit_jingles = 0
 
     def getAction(self):
         return self.action
@@ -88,6 +90,9 @@ class TV:
         return self.in_action
 
     def startAction(self):
+        global NUM_EXIT_JINGLES
+
+        self.exit_jingles = NUM_EXIT_JINGLES
         if self.action == 'lower_volume':
             if self.volume_delta:
                 self.in_action = self.tvc.changeVolume(self.volume_delta)
@@ -98,8 +103,12 @@ class TV:
         return self.in_action
 
     def stopAction(self):
-        self.in_action = not(self.tvc.restoreVolume() if self.action == 'lower_volume' else self.tvc.toggleMute())
-        return not(self.in_action)
+        self.exit_jingles -= 1
+        if self.exit_jingles == 0:
+            self.in_action = not(self.tvc.restoreVolume() if self.action == 'lower_volume' else self.tvc.toggleMute())
+            return 2 if self.in_action else 0
+        else:
+            return 1
 
     def getTimeSinceLastAction(self):
         return datetime.now() - self.last_action_time
@@ -142,6 +151,7 @@ class TV:
         global REC_INTERVAL
         global FORCE_HIT
         global FORCE_HIT_OVERRIDE
+        global NUM_EXIT_JINGLES
 
         threading.current_thread().name = "Thread-KB"
         print('')
@@ -206,7 +216,7 @@ class TV:
             if REC_INTERVAL > 0.5:
                 LOGGER.info(f'User: decrease interval. Interval decreased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL - 0.5} s)')
             else:
-                LOGGER.info('User: decrease interval')
+                LOGGER.info('User: decrease interval. Interval is already at minimum (0.5 s)')
             updateInterval(REC_INTERVAL - 0.5)
         elif key == 'I':
             LOGGER.info(f'User: increase interval. Interval increased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL + 0.5} s)')
@@ -223,10 +233,20 @@ class TV:
             LOGGER.info('User: emulate a hit without TV dead time')
             FORCE_HIT_OVERRIDE = True
             FORCE_HIT = True
+        elif key == 'j':
+            if NUM_EXIT_JINGLES > 1:
+                NUM_EXIT_JINGLES -= 1
+                LOGGER.info(f'User: decrease number of exit jingles. Number decreased {NUM_EXIT_JINGLES + 1} --> {NUM_EXIT_JINGLES}')
+            else:
+                LOGGER.info(f'User: decrease number of exit jingles. The number is already at minimum (1)')
+        elif key == 'J':
+            NUM_EXIT_JINGLES += 1
+            LOGGER.info(f'User: increase number of exit jingles. Number increased {NUM_EXIT_JINGLES - 1} --> {NUM_EXIT_JINGLES}')
         elif key == 'h':
             print('h     - help')
             print('t / T - emulate a hit / unconditionally')
             print('a     - toggle \'in action\' status')
+            print('j / J - exit jingles\' number decrease / increase')
             #      n / N is reserved for potential change of threads at runtime
             print('i / I - interval decrease / increase')
             print('c / C - confidence decrease / increase')
@@ -282,8 +302,11 @@ class RecognizerThread(threading.Thread):
 
                             if self.tv.isInAction():
                                 if ad_end:
-                                    if self.tv.stopAction():
+                                    ret = self.tv.stopAction()
+                                    if ret == 0:
                                         LOGGER.info('TV volume restored' if self.tv.getAction() == 'lower_volume' else 'TV unmuted')
+                                    elif ret == 1:
+                                        LOGGER.info('Muti-jingle ignored; remaining in action')
                                     else:
                                         LOGGER.warning('Warning: TV action failed')
                             else:
@@ -333,9 +356,10 @@ def main():
     global MUTE_TIMEOUT
     global MUTE_TIMEOUT_TD
     global TV_CODES
+    global NUM_EXIT_JINGLES
 
     ## Command-line parser
-    parser = argparse.ArgumentParser(description='Mute TV commercials by detecting ad jingles in the input audio stream',
+    parser = argparse.ArgumentParser(description='Combat TV commercials by detecting ad jingles in the input audio stream',
         epilog='See https://github.com/denis-stepanov/advent for full manual. For database updates visit https://github.com/denis-stepanov/advent-db')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parser.add_argument('-t', '--tv_control', help='use a given TV control mechanism (default: pulseaudio)', choices=['nil', 'pulseaudio', 'harmonyhub', 'broadlink'], default='pulseaudio')
@@ -344,6 +368,7 @@ def main():
     parser.add_argument('-V', '--volume', help=f'delta for volume lowering (defaults: PulseAudio: -50 (%%), HarmonyHub and BroadLink: -5)', type=int)
     parser.add_argument('-d', '--tv_codes', help='path to a folder with TV control codes (used with BroadLink; default: $HOME/tv-codes)', default=TV_CODES)
     parser.add_argument('-m', '--mute_timeout', help=f'undo hit action automatically after timeout (s) (default: {MUTE_TIMEOUT}; use 0 to disable)', type=int)
+    parser.add_argument('-j', '--exit_jingles', help='exit hit action after N exit jingles (default: 1)', type=int)
     parser.add_argument('-n', '--num_threads', help=f'run N recognition threads (default: {NUM_THREADS})', type=int)
     parser.add_argument('-i', '--rec_interval', help=f'audio recognition interval (s) (default: {REC_INTERVAL})', type=float)
     parser.add_argument('-c', '--rec_confidence', help=f'audio recognition confidence (%%) (default: {REC_CONFIDENCE})', type=int)
@@ -381,7 +406,10 @@ def main():
                 MUTE_TIMEOUT = args.mute_timeout
                 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 
-        LOGGER.info(f'TV control is \'{args.tv_control}\' with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else ''))
+        if args.exit_jingles != None:
+            NUM_EXIT_JINGLES = args.exit_jingles
+
+        LOGGER.info(f'TV control is \'{args.tv_control}\' with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else '') + f' and {NUM_EXIT_JINGLES} exit jingle{"" if NUM_EXIT_JINGLES % 10 == 1 and not (NUM_EXIT_JINGLES == 11) else "s"}')
 
         if args.tv_control == 'pulseaudio':
             tvc = TVControlPulseAudio()
