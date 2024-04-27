@@ -151,6 +151,7 @@ class TV:
         global REC_INTERVAL
         global FORCE_HIT
         global FORCE_HIT_OVERRIDE
+        global NUM_EXIT_JINGLES
 
         threading.current_thread().name = "Thread-KB"
         print('')
@@ -215,7 +216,7 @@ class TV:
             if REC_INTERVAL > 0.5:
                 LOGGER.info(f'User: decrease interval. Interval decreased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL - 0.5} s)')
             else:
-                LOGGER.info('User: decrease interval')
+                LOGGER.info('User: decrease interval. Interval is already at minimum (0.5 s)')
             updateInterval(REC_INTERVAL - 0.5)
         elif key == 'I':
             LOGGER.info(f'User: increase interval. Interval increased by 0.5 s ({REC_INTERVAL} s --> {REC_INTERVAL + 0.5} s)')
@@ -232,10 +233,20 @@ class TV:
             LOGGER.info('User: emulate a hit without TV dead time')
             FORCE_HIT_OVERRIDE = True
             FORCE_HIT = True
+        elif key == 'j':
+            if NUM_EXIT_JINGLES > 1:
+                NUM_EXIT_JINGLES -= 1
+                LOGGER.info(f'User: decrease number of exit jingles. Number decreased {NUM_EXIT_JINGLES + 1} --> {NUM_EXIT_JINGLES}')
+            else:
+                LOGGER.info(f'User: decrease number of exit jingles. The number is already at minimum (1)')
+        elif key == 'J':
+            NUM_EXIT_JINGLES += 1
+            LOGGER.info(f'User: increase number of exit jingles. Number increased {NUM_EXIT_JINGLES - 1} --> {NUM_EXIT_JINGLES}')
         elif key == 'h':
             print('h     - help')
             print('t / T - emulate a hit / unconditionally')
             print('a     - toggle \'in action\' status')
+            print('j / J - exit jingles\' number decrease / increase')
             #      n / N is reserved for potential change of threads at runtime
             print('i / I - interval decrease / increase')
             print('c / C - confidence decrease / increase')
