@@ -30,7 +30,7 @@ AdVent is added in parallel (path in orange), using the same or similar tools fo
 Clearly, the approach of looking for ad jingles has inherent limitations:
 
 * TV channels not using entry / exit jingles would not work (I do not have these in my reach);
-* complex ad breaks (such as those lasting for 20 mins and employing multiple jingles in between) would likely not work well (there are means to combat these too - e.g., see feature [#53](https://github.com/denis-stepanov/advent/issues/53));
+* complex ad breaks (such as those lasting for 15 mins and employing multiple jingles in between) would likely not work well. If the pattern is regular, `--exit_jingles` option could be used to alleviate that;
 * very short jingles (< 1 s) won't work out of the box (not seen in practice).
 
 However, most TV channels I watch here in France do fall in line. So the mission was, taking into account these external limitations, make the rest working  - and working well. The particular use case of interest is the evening movie watching, where ad breaks are sparsed and of simple structure.
@@ -271,6 +271,8 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 `-m MUTE_TIMEOUT` option allows adjusting auto-unmute (or any other action selected) timeout, in seconds. Auto-unmute is active by default, and the default is 10 minutes (600 seconds). The timeout cannot be less than TV actuation dead time, currently set to 30 seconds. The interest of this feature is when AdVent for some reason does not detect an exit jingle and does not unmute on time, to be able to resume automatically normal TV watching at least few minutes later. It could also be of use when a microphone input is used, which by design can never unmute. If you want to disable auto-unmute altogether, pass `0` timeout.
 
+`-j EXIT_JINGLES` option allows specifying a number of exit jingles to be processed before actually actuating an exit action on TV. The default is 1; i.e., any exit jingle would end the TV action in progress. This option could be useful for long ad breaks where multiple jingles could be seen.
+
 #### Recognition Tuning Options
 
 `-n NUM_THREADS` option allows selecting a number of recognition threads to run. The offset between threads will be adjusted automatically. The default is two threads. Increasing this number would improve coverage of jingles in the input stream, potentially improving recognition and reactivity. However, making it significantly higher than the number of CPU cores available (which on end user computers - Raspberry Pi included - is very often 4) would likely not attain the desired result because of system starvation. Decreasing this number will decrease the system load but also decrease jingle coverage, increasing a chance to miss one. `-n 1` will result in single-thread execution, which would result in small fractions of input not submitted to recognition due to inevitable Dejavu deadband.
@@ -353,6 +355,7 @@ AdVent allows recognition process steering at run-time by hitting keys in the co
 h     - help
 t / T - emulate a hit / unconditionally
 a     - toggle 'in action' status
+j / J - exit jingles' number decrease / increase
 i / I - interval decrease / increase
 c / C - confidence decrease / increase
 space - TV toggle mute
@@ -364,6 +367,8 @@ q     - quit
 `t` just emulates a hit. This action could be useful when AdVent for some reason would not react where it should have, so you could give it a hand. Like with any other hit, it would respect the TV dead time, i.e. will not act on TV if there has been another action happening recently. If you want to override this - e.g., to "undo" an erroneous AdVent hit which has just occured - use `T`.
 
 `a` toggles the TV internal "in action" status, without making any specific action on a TV. This action could be useful when AdVent for some reason comes out of sync with TV status (e.g., when TV has been manually muted using its own remote).
+
+`j / J` changes the number of exit jingles to be taken into account for the actual action exit.
 
 `i / I` and `c / C` allow tuning the corresponding [AdVent parameters](#recognition-tuning-options) at run-time. Interval can be changed from 0 to infinity in steps of 0.5 s (but remember that intervals below 1 s [are rather useless](#advent-tuning)). Confidence can be changed from 0 to 100% in 1% steps. Changing the number of threads `n` on the fly is currently not supported (upvote the issue [#68](https://github.com/denis-stepanov/advent/issues/68) if you need this).
 
