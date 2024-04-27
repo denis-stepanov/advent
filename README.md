@@ -239,7 +239,7 @@ The output should resemble to this:
 
 ```
 AdVent v1.6.0
-TV control is 'pulseaudio' with action 'mute' for 600 s max
+TV control is 'pulseaudio' with action 'mute' for 600 s max and 1 exit jingle
 Recognition interval is 2 s with confidence of 10%
 Started 2 listening thread(s)
 Type 'h' for help
