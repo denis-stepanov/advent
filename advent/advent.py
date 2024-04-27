@@ -395,7 +395,10 @@ def main():
                 MUTE_TIMEOUT = args.mute_timeout
                 MUTE_TIMEOUT_TD = timedelta(seconds=MUTE_TIMEOUT)
 
-        LOGGER.info(f'TV control is \'{args.tv_control}\' with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else ''))
+        if args.exit_jingles != None:
+            NUM_EXIT_JINGLES = args.exit_jingles
+
+        LOGGER.info(f'TV control is \'{args.tv_control}\' with action \'{args.action}\'' + (f' for {MUTE_TIMEOUT} s max' if MUTE_TIMEOUT != 0 else '') + f' and {NUM_EXIT_JINGLES} exit jingle{"" if NUM_EXIT_JINGLES % 10 == 1 and not (NUM_EXIT_JINGLES == 11) else "s"}')
 
         if args.tv_control == 'pulseaudio':
             tvc = TVControlPulseAudio()
@@ -427,9 +430,6 @@ def main():
                     LOGGER.warning(f'Warning: recognition confidence of {args.rec_confidence}% is not reliable')
                 REC_CONFIDENCE = args.rec_confidence
         LOGGER.info(f'Recognition interval is {REC_INTERVAL} s with confidence of {REC_CONFIDENCE}%')
-
-        if args.exit_jingles != None:
-            NUM_EXIT_JINGLES = args.exit_jingles
 
         # Thread control
         if args.num_threads != None:
