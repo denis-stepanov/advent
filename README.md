@@ -647,7 +647,7 @@ On Fedora, it is recommended to add `wheel` package to your virtual environment,
 [My clone of Dejavu](https://github.com/denis-stepanov/dejavu) includes several minor but necessary adjustments allowing better co-habitation with AdVent. For AdVent to work you need to install that fork instead of Dejavu upstream:
 
 ```
-(advent-pyenv) $ pip install https://github.com/denis-stepanov/dejavu/zipball/tags/0.1.3-ds1.3.0   # or any latest tag
+(advent-pyenv) $ pip install https://github.com/denis-stepanov/dejavu/zipball/tags/0.1.3+ds1.3.0   # or any latest tag
 (advent-pyenv) $ pip install https://github.com/denis-stepanov/advent/zipball/main  # or any stable tag
 ```
 
