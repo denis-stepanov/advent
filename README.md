@@ -974,7 +974,7 @@ This control emulates a real TV control without making any action. A TV is prese
 $ pactl set-sink-mute @DEFAULT_SINK@ toggle
 ```
 
-AdVent does just that. Another advantage with PulseAudio is that the application can query the status of speaker on startup and thus start in sync. There is often no way to do that with other TV controls, which are mostly unidirectional.
+AdVent does just that. Another advantage with PulseAudio is that the application will query the status of speaker on startup and thus start in sync.
 
 ### Logitech Harmony Hub (deprecated)
 
