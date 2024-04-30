@@ -1145,7 +1145,7 @@ $ ./broadlink_cli --type 0x5213 --host 192.168.0.100 --mac aabbccddeeff --send @
 
 It shoud mute the TV. Run it again to unmute.
 
-_Caveat_: The latest [version 0.18.3](https://github.com/mjg59/python-broadlink/releases/tag/0.18.3) of Python BroadLink support has a bug https://github.com/mjg59/python-broadlink/issues/721 affecting the `lower_volume` mode of AdVent. The bug consists of inadvertent duplication of commands sent to the Remote. Due to this, the volume would be lowered more than asked (`-V` option to AdVent), and similarly raised to a greater volume in the opposite direction. The resulting volume might not necessarily be equal to the original volume.
+_Caveat_: The latest [version 0.19.0](https://github.com/mjg59/python-broadlink/releases/tag/0.19.0) of Python BroadLink support has a bug https://github.com/mjg59/python-broadlink/issues/721 affecting the `lower_volume` mode of AdVent. The bug consists of inadvertent duplication of commands sent to the Remote. Due to this, the volume would be lowered more than asked (`-V` option to AdVent), and similarly raised to a greater volume in the opposite direction. The resulting volume might not necessarily be equal to the original volume.
 
 ### Other Uses
 
