@@ -339,6 +339,12 @@ Some useful presets:
 <td>5</td>
 <td>100</td>
 </tr>
+<tr>
+<td>Fast & furious</td>
+<td>8</td>
+<td>2</td>
+<td>10</td>
+</tr>
 </table>
 
 "TV remote" preset would result in nearly no hits irrespectively of input, so AdVent could de-facto be used as a pass-through TV remote using its interactive controls.
