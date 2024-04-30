@@ -292,6 +292,13 @@ Some useful presets:
 <th>c</th>
 </tr>
 <tr>
+<td>TV remote</td>
+<td>1</td>
+<td>1</td>
+<td>100</td>
+</tr>
+<tr>
+<tr>
 <td>Optimal (default)</td>
 <td>2</td>
 <td>2</td>
@@ -322,6 +329,8 @@ Some useful presets:
 <td>100</td>
 </tr>
 </table>
+
+"TV remote" preset would result in nearly no hits irrespectively of input, so AdVent could de-facto be used as a pass-through TV remote using interactive controls.
 
 #### Miscellaneous Options
 
