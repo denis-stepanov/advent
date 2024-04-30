@@ -304,6 +304,12 @@ Some useful presets:
 <td>0</td>
 </tr>
 <tr>
+<td>I'm feeling lucky</td>
+<td>2</td>
+<td>2</td>
+<td>5</td>
+</tr>
+<tr>
 <td>Optimal (default)</td>
 <td>2</td>
 <td>2</td>
