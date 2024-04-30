@@ -250,9 +250,9 @@ Type 'h' for help
 AdVent prints every second a character reflecting recognition progress. Meaning of characters:
 
 * `.` - no signal (usually when there's silence or no input connected at all)
-* `:` - signal but no match
-* `o` - weak match
-* `O` - strong match, also called a "hit". When a hit happens, AdVent prints hit details and may take some action on a TV
+* `:` - a signal but no match
+* `o` - a weak match
+* `O` - a strong match, also called a "hit". When a hit happens, AdVent prints hit details and may take some action on a TV
 
 To exit, press `q`. Exiting via `Ctrl-C` might not always work; you might want to try harder with `Ctrl-\`.
 
@@ -645,7 +645,7 @@ On Raspbian, this step is the same, but you do not have to be `root` to run `sud
 
 ### Step 4: Install Python virtual environment for Dejavu
 
-The latest Dejavu mainstream does not run on Python 3.10 shipped with Fedora 36 (pull requests are welcome), so we need a virtual environment for Python 3.7:
+The latest Dejavu mainstream does not run on Python 3.10-12 shipped with Fedora 36-39 (pull requests are welcome), so we need a virtual environment for Python 3.7:
 
 Fedora:
 
