@@ -298,6 +298,11 @@ Some useful presets:
 <td>100</td>
 </tr>
 <tr>
+<td>Noise detector</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+</tr>
 <tr>
 <td>Optimal (default)</td>
 <td>2</td>
@@ -305,15 +310,15 @@ Some useful presets:
 <td>10</td>
 </tr>
 <tr>
-<td>Noise detector</td>
-<td>2</td>
-<td>1</td>
-<td>0</td>
-</tr>
-<tr>
 <td>Super-fast</td>
 <td>4</td>
 <td>1</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Reliable</td>
+<td>4</td>
+<td>3</td>
 <td>10</td>
 </tr>
 <tr>
@@ -330,7 +335,7 @@ Some useful presets:
 </tr>
 </table>
 
-"TV remote" preset would result in nearly no hits irrespectively of input, so AdVent could de-facto be used as a pass-through TV remote using interactive controls.
+"TV remote" preset would result in nearly no hits irrespectively of input, so AdVent could de-facto be used as a pass-through TV remote using its interactive controls.
 
 #### Miscellaneous Options
 
