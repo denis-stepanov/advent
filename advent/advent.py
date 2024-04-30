@@ -239,8 +239,12 @@ class TV:
                 LOGGER.info(f'User: decrease number of exit jingles. Number decreased {NUM_EXIT_JINGLES + 1} --> {NUM_EXIT_JINGLES}')
             else:
                 LOGGER.info(f'User: decrease number of exit jingles. The number is already at minimum (1)')
+            if self.exit_jingles > 1:
+                self.exit_jingles -= 1
         elif key == 'J':
             NUM_EXIT_JINGLES += 1
+            if self.exit_jingles > 0:
+                self.exit_jingles += 1
             LOGGER.info(f'User: increase number of exit jingles. Number increased {NUM_EXIT_JINGLES - 1} --> {NUM_EXIT_JINGLES}')
         elif key == 'h':
             print('h     - help')
