@@ -103,7 +103,8 @@ class TV:
         return self.in_action
 
     def stopAction(self):
-        self.exit_jingles -= 1
+        if self.exit_jingles > 0:
+            self.exit_jingles -= 1
         if self.exit_jingles == 0:
             self.in_action = not(self.tvc.restoreVolume() if self.action == 'lower_volume' else self.tvc.toggleMute())
             return 2 if self.in_action else 0
@@ -310,7 +311,7 @@ class RecognizerThread(threading.Thread):
                                     if ret == 0:
                                         LOGGER.info('TV volume restored' if self.tv.getAction() == 'lower_volume' else 'TV unmuted')
                                     elif ret == 1:
-                                        LOGGER.info('Muti-jingle ignored; remaining in action')
+                                        LOGGER.info('Multi-jingle ignored; remaining in action')
                                     else:
                                         LOGGER.warning('Warning: TV action failed')
                             else:
