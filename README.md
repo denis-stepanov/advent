@@ -215,7 +215,7 @@ There are many different ways of watching TV these days. Currently supported aud
 
 ### Supported OS
 
-* recent Fedora (tested on Fedora 36..39). This is a default;
+* recent Fedora (tested on Fedora 36..39). This is a default. Fedora 40 is currently not supported, as it [no longer ships Python 3.7](https://fedoraproject.org/wiki/Changes/RetirePython3.7) which is needed for current DejaVu. Works to port DejaVu are planned (see https://github.com/denis-stepanov/dejavu/issues/2).
 * Raspbian 10. Actually, it is less laborious to support than Fedora, as many problematic points are either non-existing on Raspbian, or implemented in more user-friendly way;
 * (Windows is not supported but the majority of software is in Python; should work as is, with the exception of TV controls module which would need contributions and testing - see issue [#16](https://github.com/denis-stepanov/advent/issues/16)).
 
