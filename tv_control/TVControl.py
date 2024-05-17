@@ -15,8 +15,12 @@ class TVControl:
     def isMuted(self, cached = True):
         return self.muted
 
-    def toggleMute(self):
+    def toggleMuteStatus(self):
         self.muted = not self.muted
+        return True
+
+    def toggleMute(self):
+        self.toggleMuteStatus()
         return True
 
     def getVolume(self, cached = True):

@@ -81,8 +81,10 @@ class TV:
 
     def setAction(self, action, in_action = False):
         self.action = action
-        if in_action:
+        if self.tvc.isUnidirectional() and in_action:
             self.in_action = in_action
+            if self.action == 'mute':
+                self.tvc.toggleMuteStatus()
         else:
             self.in_action = self.tvc.isChangedVolume() if self.action == 'lower_volume' else self.tvc.isMuted()
 
@@ -428,6 +430,8 @@ def main():
         else:
             tvc = TVControl()
         if not tvc.isUnidirectional():
+            if args.in_action:
+                LOGGER.warning("Selected TV control is bi-directional; manually passed 'in action' status will be ignored")
             LOGGER.info('TV status: %s, volume: %d', "muted" if tvc.isMuted() else "unmuted", tvc.getVolume())
         tv = TV(tvc, args.action, args.in_action, args.volume if args.volume != None else 0)
 
