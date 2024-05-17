@@ -238,7 +238,7 @@ Runnig AdVent is as simple as:
 The output should resemble to this:
 
 ```
-AdVent v1.6.0
+AdVent v1.6.1
 TV control is 'pulseaudio' with action 'mute' for 600 s max and 1 exit jingle
 TV status: unmuted, volume: 50
 Recognition interval is 2 s with confidence of 10%
@@ -264,7 +264,7 @@ There is no option to select an audio source; AdVent takes a system default. See
 
 `-a ACTION` option allows selecting a desired action between `mute` (default) and `lower_volume`.
 
-`-A` option allows starting TV control as if it was in the middle of AdVent action (i.e., muted or volume lowered). This option could be useful for uni-directional TV controls (such as HarmonyHub or BroadLink) to indicate to AdVent an unusual TV status, as it cannot be fetched. For bi-directional controls there is little sense in using this option, as AdVent will read the status from TV upon starting.
+`-A` option allows starting TV control as if it was in the middle of AdVent action (i.e., muted or volume lowered). This option could be useful for uni-directional TV controls (such as HarmonyHub or BroadLink) to indicate to AdVent an unusual TV status, as it cannot be fetched. For bi-directional controls this option will be ignored, as AdVent will read the status from TV upon starting.
 
 `-V VOLUME` option allows specifying a target value for volume lowering when this action is selected via `-a`. The meaning of the volume specifier `VOLUME` is TV control-specific and is passed directly to a TV controller. In the case of PulseAudio or Nil controls the parameter is interpreted as percentage of volume, and the default is `-50%`. Note that with PulseAudio one could go above 100%, in principle. In the case of HarmonyHub or BroadLink, one has to specify a relative change, like `-2`, where the number corresponds to a number of key presses of the `Volume Down` button on a TV remote. The default for HarmonyHub and BroadLink is `-5`. If you are a fan of commercials, you can specify a positive value ;-).
 
