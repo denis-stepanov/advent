@@ -441,7 +441,7 @@ The tool allows for the following operations on jingles (aka "tracks"):
 - (planned - issue [#50](https://github.com/denis-stepanov/advent/issues/50)) `info` - display track information
 - `export` - export tracks from the database to files (add `-d` to arrange exported files in folders)
 - `import` - import tracks from files to the database
-- `rename` - rename a track in the database or on disk (for disk, specify `.djv` extension. Caveat: for a file tree under version control this might be a disruptive action - see issue [#55](https://github.com/denis-stepanov/advent/issues/55))
+- `rename` - rename a track in the database or on disk (for disk, specify `.djv` extension)
 - `delete` - delete tracks from the database (file deletion planned - see issue [#54](https://github.com/denis-stepanov/advent/issues/54))
 - `dbinfo` - display database information and statistics (add `-c` for health checks)
 - `vacuum` - vacuum the database (add `-f` to run full vacuum)
