@@ -9,7 +9,7 @@ Here AdVent is running next to a TV stream in browser, watched by a user using h
 
 Once the ads are over, AdVent turns the sound back on (not part of this demo).
 
-Web TV is nice for testing, but the main target are conventional TV-sets. Here is an example of AdVent on a Raspberry Pi controlling a Sony BRAVIA TV-set:
+Web TV is nice for testing, but the main target are conventional TV-sets. Here is an example of AdVent on a Raspberry Pi equipped with a sound card controlling a Sony BRAVIA TV-set:
 
 ![AdVent on Raspberry Pi](https://user-images.githubusercontent.com/22733222/180578361-5f08129c-bd5b-498e-8b03-324fc9c2b74d.jpg)
 
