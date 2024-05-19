@@ -104,7 +104,9 @@ class TV:
             self.in_action = self.tvc.toggleMute()
         return self.in_action
 
-    def stopAction(self):
+    def stopAction(self, force = False):
+        if force:
+            self.exit_jingles = 1
         if self.exit_jingles > 0:
             self.exit_jingles -= 1
         if self.exit_jingles == 0:
@@ -346,10 +348,10 @@ class ActionTimeoutThread(threading.Thread):
         while True:
             if self.tv.isInAction() and self.tv.getTimeSinceLastAction() >= MUTE_TIMEOUT_TD and self.tv.OKToAct():
                 print('')
-                if self.tv.stopAction():
-                    LOGGER.info('TV action ended due to timeout')
-                else:
+                if self.tv.stopAction(True):
                     LOGGER.warning('TV action rollback on timeout failed')
+                else:
+                    LOGGER.info('TV action ended due to timeout')
             time.sleep(1)
 
 
