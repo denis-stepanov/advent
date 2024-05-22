@@ -497,27 +497,27 @@ Refer to `db-djv-pg -h` for exact synopsis.
 ```
 (advent-pyenv) $ db-djv-pg dbinfo
 Dejavu database info:
-  Fingerprinted / total tracks = 117 / 117
-  Peak groups                  = 29482 (avg. ~= 252 per track)
-  Fingerprints                 = 760255 (avg. ~= 6498 per track)
-  Total fingerprinted time    ~= 489 s (avg. ~= 4.2 s per track)
-  Database size               ~= 117 MB (avg. ~= 1.0 MB per track)
-  Fingerprinting frequency    ~= 1555 Hz (~= 3.53% of sampling frequency 44100 Hz)
+  Fingerprinted / total tracks = 386 / 386
+  Peak groups                  = 123250 (avg. ~= 319 per track)
+  Fingerprints                 = 3303679 (avg. ~= 8559 per track)
+  Total fingerprinted time    ~= 1873 s (avg. ~= 4.9 s per track)
+  Database size               ~= 474 MB (avg. ~= 1.23 MB per track)
+  Fingerprinting frequency    ~= 1764 Hz (~= 4.00% of sampling frequency 44100 Hz)
   Hash size                    = 10 B
-  Hash collisions             ~= 19.74%
-  First update                ~= 2022-10-27 23:19:34
-  Last update                 ~= 2022-10-27 23:24:19
-  Last vacuum                 ~= 2022-10-27 23:46:24
+  Hash collisions             ~= 42.02%
+  First update                ~= 2024-05-14 00:02:17
+  Last update                 ~= 2024-05-19 00:02:31
+  Last vacuum                 ~= 2024-05-19 00:06:01
 
 AdVent database info:
   Countries                    = 1
-  TV channels                  = 11 (avg. ~= 11 per country)
-  Jingles                      = 117 (avg. ~= 11 per TV channel)
-  Pure entry / entry jingles   = 36 / 70
-  Pure exit / exit jingles     = 47 / 81
+  TV channels                  = 13 (avg. ~= 13 per country)
+  Jingles                      = 386 (avg. ~= 30 per TV channel)
+  Pure entry / entry jingles   = 91 / 273
+  Pure exit / exit jingles     = 113 / 295
   No action jingles            = 0
   Time coverage from           = 2022-02-05
-  Time coverage till           = 2022-10-14
+  Time coverage till           = 2024-05-17
 (advent-pyenv) $ 
 ```
 
