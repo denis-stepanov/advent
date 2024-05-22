@@ -1140,7 +1140,7 @@ Note 2: if you do not want the `tv-codes` folder in your home folder, you can sp
 Run command to test TV control:
 
 ```
-$ ./broadlink_cli --type 0x5213 --host 192.168.0.100 --mac aabbccddeeff --send @$HOME/mute-toggle.code
+$ ./broadlink_cli --type 0x5213 --host 192.168.0.100 --mac aabbccddeeff --send @$HOME/tv-codes/mute-toggle.code
 ```
 
 It shoud mute the TV. Run it again to unmute.
