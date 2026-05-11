@@ -215,7 +215,7 @@ There are many different ways of watching TV these days. Currently supported aud
 
 ### Supported OS
 
-* recent Fedora (tested on Fedora 36..39). This is a default. Fedora 40 is currently not supported, as it [no longer ships Python 3.7](https://fedoraproject.org/wiki/Changes/RetirePython3.7) which is needed for current DejaVu. Works to port DejaVu are planned (see https://github.com/denis-stepanov/dejavu/issues/2).
+* recent Fedora (tested on Fedora 36..44). Note that Fedora > 39 [no longer ships Python 3.7](https://fedoraproject.org/wiki/Changes/RetirePython3.7) which is needed for the current DejaVu. Works to port DejaVu are planned (see https://github.com/denis-stepanov/dejavu/issues/2).
 * Raspbian 10. Actually, it is less laborious to support than Fedora, as many problematic points are either non-existing on Raspbian, or implemented in more user-friendly way;
 * (Windows is not supported but the majority of software is in Python; should work as is, with the exception of TV controls module which would need contributions and testing - see issue [#16](https://github.com/denis-stepanov/advent/issues/16)).
 
@@ -604,8 +604,10 @@ Allow localhost connections using password. As `root`, edit `/var/lib/pgsql/data
 
 ```
 < host    all             all             127.0.0.1/32            ident
+< host    all             all             ::1/128                 ident
 ---
 > host    all             all             127.0.0.1/32            md5
+> host    all             all             ::1/128                 md5
 ```
 
 Add PostgreSQL to auto-start and run it:
@@ -613,13 +615,6 @@ Add PostgreSQL to auto-start and run it:
 ```
 # systemctl enable postgresql
 # systemctl start postgresql
-```
-
-One more word on services. Recent Fedoras bring up a particularly agressive OOMD (out-of-memory killer daemon). Despite the name, memory is not its only concern. It regularly tries shooting to death my busy Firefox in the midst of a morning coffee sip. Because AdVent is a CPU-intensive application, OOMD will try taking its life too. If you observe AdVent silently exiting after some time, you know the reason. Probably, there is a way to make an exception, but because I do not like it anyway, I just disarm:
-
-```
-# systemctl stop systemd-oomd
-# systemctl mask systemd-oomd
 ```
 
 ### Step 3: Set up a database for AdVent
@@ -645,12 +640,20 @@ On Raspbian, this step is the same, but you do not have to be `root` to run `sud
 
 ### Step 4: Install Python virtual environment for Dejavu
 
-The latest Dejavu mainstream does not run on Python 3.10-12 shipped with Fedora 36-39 (pull requests are welcome), so we need a virtual environment for Python 3.7:
+The latest Dejavu mainstream does not run on Python 3.10-14 shipped with Fedora 36-44 (pull requests are welcome), so we need a virtual environment for Python 3.7:
 
-Fedora:
+Fedora < 40:
 
 ```
 # dnf install python3.7 python3-virtualenv
+```
+
+Fedora >= 40:
+
+```
+# dnf install https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/39/Everything/x86_64/os/Packages/p/python3.7-3.7.17-3.fc39.x86_64.rpm \
+https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/39/Everything/x86_64/os/Packages/o/openssl1.1-1.1.1q-5.fc39.x86_64.rpm \
+python3-virtualenv
 ```
 
 On Raspbian 10, Python is already - quite conveniently - 3.7, and support for virtual environment is installed by default.
